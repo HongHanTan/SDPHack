@@ -24,4 +24,5 @@ export const THRESHOLDS: Thresholds = { road: 0.15, home: 0.3 };
 export const MMHR = 1 / 3.6e6; // mm/hr -> m/s
 export const INFILTRATION_MMHR = { ROOF: 0, ROAD: 0, LAWN: 15, PARK: 25, POND: 0, RIVER: 0, BIOSWALE: 60 };
 
-export const SIM = { dt: 0.25, recessionS: 3600, frameEveryS: 30 };
+// dt is the coupling step (rain, inlets, pipes, outfalls); the surface is sub-stepped inside the engine.
+export const SIM = { dt: 0.5, recessionS: 3600, frameEveryS: 30 };

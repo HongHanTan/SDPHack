@@ -2,7 +2,7 @@ import { captureInlets, exchangeOutfalls, runPumps, spillOverflow } from './coup
 import { createMetricsTracker } from './metrics';
 import { createNetworkState, routePipes, type NetworkState } from './pipes';
 import { resetRiver, stageAt } from './river';
-import { createSurface, stepSurface, type SurfaceState } from './surface';
+import { createSurface, stepSurface, surfaceSubsteps, type SurfaceState } from './surface';
 import { LandUse, SimError, type Frame, type Scenario, type SimResult } from './types';
 
 export interface EngineState {
@@ -65,10 +65,6 @@ export function stepEngine(sc: Scenario, st: EngineState): number {
   const h = st.surf.h;
   const level = stageAt(sc.river, st.t);
 
-  const r = resetRiver(grid, st.surf, st.riverCells, level);
-  st.riverIn += r.added;
-  st.riverOut += r.removed;
-
   const rain = rainRate(sc, st.t) * dt;
   for (const c of st.landCells) {
     const wet = h[c] + rain;
@@ -78,7 +74,17 @@ export function stepEngine(sc: Scenario, st: EngineState): number {
   }
   st.rainVol += rain * area * st.landCells.length;
 
-  stepSurface(grid, st.surf, dt);
+  // Surface flow is sub-stepped so any coupling dt is stable (see maxStableDt). The river stage is a
+  // boundary condition of the surface solver, so it is re-imposed every sub-step: forcing it only once
+  // per coupling step pumps a near-resonant checkerboard into water bodies connected to the river.
+  const n = surfaceSubsteps(grid.dx, dt);
+  const sub = dt / n;
+  for (let k = 0; k < n; k++) {
+    const r = resetRiver(grid, st.surf, st.riverCells, stageAt(sc.river, st.t + k * sub));
+    st.riverIn += r.added;
+    st.riverOut += r.removed;
+    stepSurface(grid, st.surf, sub);
+  }
   captureInlets(grid, st.surf, sc.network, st.net, dt);
   routePipes(st.net, dt);
   const outfallQ = exchangeOutfalls(grid, st.surf, sc.network, st.net, level, dt);
