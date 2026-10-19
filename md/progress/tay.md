@@ -8,7 +8,7 @@ Owner：Tay。只有 Tay 身份的 agent 更新本文件；Jiajie 读取交接�
 - 当前任务：T1 DONE；下一项 T2：storm 创建、持久化、不可变 run、HTTP 执行与结果查询。
 - 当前接口版本：`1.0.0`，schema 保持兼容，新增真实离线 run / frames / metrics 样例；HTTP 模拟接口仍为 planned，实际返回 501，等待 T2。
 - 仓库基线：开始时 Git 工作区干净、只有规划资料；现已新增后端基础代码、seed、契约和测试。当前在 `tay` 分支，未修改 Jiajie 文件。
-- Git 共享：IN_PROGRESS（用户已授权提交、push 并合并到 main）；已 fetch origin，远端 `JJ_Branch` 有 J0 / J1 工作。`gh` 与可用浏览器均缺失，采用独立临时 worktree 的 Git 合并 / push 路径，不创建 PR。本次只发布 Tay 的 T0 / T1，不合并或修改 JJ_Branch。
+- Git 共享：T0 / T1 核心提交 `1703f75` 已推送 `origin/tay`。独立临时 worktree 已从 `origin/main` fast-forward 合并并通过 22 项测试、契约与 native 证据检查；本条交接随 main 发布。`gh` 与可用浏览器均缺失，采用 Git 合并 / push，不创建 PR。主工作目录保持 `tay`，不合并或修改 `JJ_Branch`。
 
 ## 任务队列
 
@@ -32,6 +32,7 @@ T1 只支持 constant storm（正的 5 分钟时长增量、总时窗 <24h）、
 ## 交接给 Jiajie
 
 - 职责已确认：Tay 后端，Jiajie 前端。
+- Git 同步：在 Jiajie 自己的 checkout、`JJ_Branch` 上，先保存 / 提交已有工作，再执行 `git fetch origin` 和 `git merge origin/main`，然后重新阅读本交接区。T0 / T1 已按 Tay 范围发布，不需要等 J1 全部完成再同步。
 - 已发布契约 `contracts/openapi.json` v1.0.0；消费约定见 `contracts/README.md`。可直接读取 `contracts/examples/assets.json` / `bootstrap.json`，和真实 API 同形状，来源始终为 synthetic / assumed。
 - 已实现 `GET /api/health`、`GET /api/bootstrap`、`GET /api/townships/taman_kyra_demo/assets`。CORS 支持 `http://localhost:5173` 与 `http://127.0.0.1:5173`。
 - T1 新增真实离线样例：`contracts/examples/{run,frames,metrics}-baseline.json`（80 mm/h）与 `...-stronger.json`（120 mm/h）。两者都降雨 3600s、总模拟 7200s、normal tailwater、clean direct-node entry。完整证据在 `data/validation/t1/`，不是 mock。可用于明确标为离线真实 SWMM 结果的回放。
@@ -88,6 +89,15 @@ T1 只支持 constant storm（正的 5 分钟时长增量、总时窗 <24h）、
 仍未运行：入口限制、debris 质量守恒、Docker、前端端到端联调；T2 HTTP 提交 / 持久化尚未实现。
 
 ## 最近实现记录
+
+### 2026-10-19 — T0 / T1 Git 共享交接
+
+- 用户授权提交、push 并合入 main；核心提交 `1703f75`（Complete backend T0 and SWMM T1 validation）已推送 `origin/tay`。
+- 独立临时 worktree 从 main 验证 fast-forward 合并，不切换共享工作目录分支，不修改 Jiajie 的进度 / 前端 / JJ_Branch。
+- 从 Git checkout 后再次验证：22 passed，1 既有 dependency deprecation warning；contract export --check 通过；engine.execution_verified=true。原始 .inp / .rpt / .out 的字节 hash 在新 checkout 中保持一致。
+- `data/validation/.gitattributes` 保留原始证据字节并关闭这些文件的 whitespace 检查，避免 Windows CRLF / 原生 SWMM 报表空白被误报；源码的 whitespace 检查正常启用。
+- 新 checkout 的 `data/runtime` 默认不存在，已在 `md/BACKEND_SETUP.md` 的测试命令前补充创建父目录，避免 pytest --basetemp 建目录失败。
+- GitHub PR 工具 / 浏览器不可用，因此本次使用直接 Git fast-forward 合并与 push；Jiajie 同步命令已写入上方交接区。
 
 ### 2026-10-19 — T1 DONE
 

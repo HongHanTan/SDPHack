@@ -48,6 +48,7 @@ Curated successful evidence is retained in `data/validation/t1/`; portable runna
 ## Verification and contract export
 
 ```powershell
+New-Item -ItemType Directory -Force data/runtime | Out-Null
 $tayTestTemp = Join-Path (Get-Location).Path ('data/runtime/pytest-' + [guid]::NewGuid().ToString('N'))
 .\services\api\.venv\Scripts\python.exe -m pytest tests/api tests/simulation -q --basetemp=$tayTestTemp
 .\services\api\.venv\Scripts\python.exe -m services.api.export_contracts --check
