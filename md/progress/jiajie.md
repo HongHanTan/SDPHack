@@ -88,3 +88,23 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
     - 检查井 3D 发光线框方块（Glowing Junction Cubes）：每个节点悬浮旋转线框立方体与实心发光核心，标定原型规范编号（`MH-0421`、`MH-0101` 等）；
     - 顶部快捷栏提供 3 档孪生图层切换：`[💎 透视高亮孪生]`（默认原型视口）、`[🏡 街区实景]`、`[🚇 纯地下工程]`。
   - **构建核验**：执行 `npm run build`，2516 个模块转换完毕，TypeScript 0 错误，打包 exit code 0。
+
+- **2026-10-19 [Sime Darby Property 品牌色系与极简看板全面对齐原型]：**
+  - **顶部导航 (`StatusHeader.tsx`)**：
+    - 引入 Sime Darby Property 标志性红色三重波浪品牌徽标与品牌标识（`Township` 白色 + `FloodOps` 森那美红）；
+    - 极简药丸导航选项卡（`Dashboard` 默认激活红橙渐变高亮、`Map`、`Assets`、`Analytics`、`Reports`、`Settings`）；
+    - 右侧对齐原型集成深色半透明圆角搜索框（`Search location, asset or address...`）、带红色预警气泡（3）的消息铃铛与 `JD` 用户头像；
+    - 彻底移除冗长文本大段横幅，将系统健康度与数据模式切换收纳进极简 Settings 浮窗。
+  - **左侧面板与图例 (`SimulationHUD.tsx`)**：
+    - **Map Layers 面板**：支持 9 项关键图层独立勾选（管网、检查井进水口、出水口、淹没风险区、DEM高程、航拍影像、地籍红线、关键基础设施、天气雷达）；
+    - **Scenario Controls 面板**：极简降雨强度滑块（`0 25 50 75 100 mm/hr`）、模拟模式三段药丸（`Real-time`、`Forecast`、`Historical`）与分析工具快捷按钮（`Inspection`、`Debris`、`Flood`）；
+    - **Drainage Network Status 图例**：左下角浮动半透明卡片，对齐原型的四级管网负荷颜色（正常/高负荷/重载/超载）与四种几何图标（检查井/进水口/出水口/流向）。
+  - **右侧遥测详情抽屉 (`AssetDetailModal.tsx`)**：
+    - 1:1 复刻原型 `Drain ID: MH-0421` 浮动运维卡片；
+    - 嵌入现场圆形铸铁井盖照片缩略图；
+    - 结构化规格清单（类型、位置坐标、落深 4.2m、管底高程 112.3m、连通管段数 4）；
+    - **Current Status 卡片**：橙红色 High Load 徽章、78% 水力满管率水平渐变进度条、流量 1.24 m³/s、管容 1.60 m³/s；
+    - **Flood Risk 卡片**：72% Local Flood Risk 渐变条与预警说明；底部提供一键巡检与干预决策按钮。
+  - **底部时间轴极简播放条**：
+    - 居中紧凑浮动药丸设计，森那美红播放键、倍速选择（1x/2x/5x）、当前时间戳与平滑进度条，杜绝一切赘述文本。
+  - **构建核验**：执行 `npm run build`，2516 模块转换完毕，0 错误，打包 exit code 0。

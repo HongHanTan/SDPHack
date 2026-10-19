@@ -329,6 +329,7 @@ export function App() {
         onClose={() => setSelectedAsset(null)}
         inspections={inspections}
         onOpenInspect={(assetId) => setInspectingAssetId(assetId)}
+        onOpenInterventions={() => setIsInterventionDashboardOpen(true)}
         currentFrame={frames[currentFrameIndex] || null}
       />
 
@@ -356,6 +357,14 @@ export function App() {
           onToggleUnderground={() =>
             setTwinViewMode((prev) => (prev === 'underground_only' ? 'twin_highlight' : 'underground_only'))
           }
+          twinViewMode={twinViewMode}
+          onSelectTwinViewMode={(m) => setTwinViewMode(m)}
+          isRainActive={isRainActive}
+          onToggleRain={() => setRainEnabled(!rainEnabled)}
+          onOpenDebrisLab={() => setIsDebrisLabOpen(true)}
+          onOpenInspect={() => setInspectingAssetId('NODE-J07')}
+          appMode={appMode}
+          onChangeAppMode={handleSwitchAppMode}
         />
       )}
 

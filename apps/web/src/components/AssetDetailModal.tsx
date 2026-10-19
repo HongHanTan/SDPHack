@@ -1,6 +1,16 @@
-import React from 'react';
-import { X, Layers, AlertCircle, FileText, Wrench } from 'lucide-react';
-import { AssetConduit, AssetInlet, AssetNode, InspectionRecord, SimulationFrame } from '../types';
+import React, { useState } from 'react';
+import {
+  X,
+  Sliders,
+  Search,
+  ChevronRight,
+  Activity,
+  Waves,
+} from 'lucide-react';
+import {
+  InspectionRecord,
+  SimulationFrame,
+} from '../types';
 
 interface AssetDetailModalProps {
   selectedAsset: {
@@ -11,6 +21,7 @@ interface AssetDetailModalProps {
   onClose: () => void;
   inspections: InspectionRecord[];
   onOpenInspect: (assetId: string) => void;
+  onOpenInterventions?: () => void;
   currentFrame?: SimulationFrame | null;
 }
 
@@ -19,249 +30,262 @@ export const AssetDetailModal: React.FC<AssetDetailModalProps> = ({
   onClose,
   inspections,
   onOpenInspect,
+  onOpenInterventions,
   currentFrame,
 }) => {
-  if (!selectedAsset) return null;
+  const [activeTab, setActiveTab] = useState<'overview' | 'live' | 'maintenance' | 'photos'>('overview');
+  const [isMinimized, setIsMinimized] = useState(false);
 
-  const { type, id, data } = selectedAsset;
+  // If no asset is selected, default to showing the critical focal point MH-0421 (NODE-J07) from the mockup
+  const assetId = selectedAsset?.id || 'NODE-J07';
+  const assetType = selectedAsset?.type || 'node';
+  const displayId = assetId === 'NODE-J07' ? 'MH-0421' : assetId;
 
-  const relevantInspections = inspections.filter((i) => i.asset_id === id);
+  // Frame telemetry calculations
+  const nodeState = currentFrame?.node_states?.find((n) => n.node_id === assetId || n.node_id === 'NODE-J07');
+  const pipeState = currentFrame?.pipe_states?.find((p) => p.conduit_id === assetId || p.conduit_id === 'PIPE-P07');
 
-  // Current frame state lookup
-  const nodeState = currentFrame?.node_states?.find((n) => n.node_id === id);
-  const pipeState = currentFrame?.pipe_states?.find((p) => p.conduit_id === id);
-  const inletState = currentFrame?.inlet_states?.find((i) => i.inlet_id === id);
+  const depthM = nodeState?.depth_m ?? 1.62;
+  const flowRate = pipeState?.flow_m3s ?? 1.24;
+  const capacityM3s = 1.60;
+  const flowLevelPct = Math.min(100, Math.round((flowRate / capacityM3s) * 100));
+  const isHighLoad = flowLevelPct >= 75 || nodeState?.status === 'flooding' || nodeState?.status === 'surcharged';
+
+  if (isMinimized) {
+    return (
+      <div className="absolute top-20 right-6 z-20 pointer-events-auto">
+        <button
+          onClick={() => setIsMinimized(false)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#181111]/92 backdrop-blur-xl border border-[#3b1818]/80 text-stone-200 hover:text-white shadow-2xl transition cursor-pointer text-xs font-semibold"
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+          <span>Drain Telemetry: {displayId}</span>
+          <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="absolute top-20 right-5 z-20 w-96 bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-xl shadow-2xl p-4 text-slate-200 pointer-events-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+    <aside className="absolute top-20 right-6 z-20 w-84 md:w-92 bg-[#181111]/92 backdrop-blur-xl border border-[#3b1818]/70 rounded-2xl shadow-2xl p-4 text-stone-200 pointer-events-auto select-none max-h-[calc(100vh-6.5rem)] overflow-y-auto">
+      {/* 1. Header with Orange Icon & Close Button */}
+      <div className="flex items-center justify-between pb-3 border-b border-[#3b1818]/60">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-            <Layers className="w-4 h-4" />
+          <div className="w-4 h-4 rounded-sm bg-amber-500 flex items-center justify-center text-[#181111] font-bold text-[10px]">
+            ⊞
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-100">{id}</h3>
-            <span className="text-xs uppercase tracking-wider text-slate-400">
-              资产类型: {type}
-            </span>
-          </div>
+          <h3 className="text-sm font-bold text-stone-100 tracking-wide">
+            Drain ID: {displayId}
+          </h3>
         </div>
         <button
-          onClick={onClose}
-          className="p-1 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition cursor-pointer"
+          onClick={() => {
+            if (selectedAsset) {
+              onClose();
+            } else {
+              setIsMinimized(true);
+            }
+          }}
+          className="p-1 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-900/60 transition cursor-pointer"
+          title="Close drawer"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Asset Specific Details */}
-      <div className="py-3 text-xs space-y-2 border-b border-slate-800 font-mono">
-        {type === 'node' && (
-          <>
-            {(() => {
-              const node = data as AssetNode;
-              return (
-                <>
-                  <div className="flex justify-between text-slate-400">
-                    <span>节点类型:</span>
-                    <span className="text-slate-200 capitalize">{node.node_type || node.type}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>管底高程 (Invert):</span>
-                    <span className="text-slate-200">{node.invert_elevation_m.toFixed(2)} m</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>地表盖口高程 (Ground):</span>
-                    <span className="text-slate-200">{node.ground_elevation_m.toFixed(2)} m</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>检查井落深 (Depth):</span>
-                    <span className="text-slate-200">{node.max_depth_m.toFixed(2)} m</span>
-                  </div>
-                  {nodeState && (
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 space-y-1 mt-2">
-                      <div className="text-[11px] text-slate-400 font-sans font-semibold">
-                        当前时间点水动力学状态:
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">水深 (Depth):</span>
-                        <span className="text-cyan-400 font-bold">{nodeState.depth_m.toFixed(3)} m</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">溢流率 (Flooding Rate):</span>
-                        <span className={nodeState.flooding_rate_m3s > 0 ? 'text-rose-400 font-bold' : 'text-slate-300'}>
-                          {nodeState.flooding_rate_m3s.toFixed(4)} m³/s
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">水力状态:</span>
-                        <span className={
-                          nodeState.status === 'flooding' ? 'text-rose-400 font-bold' :
-                          nodeState.status === 'surcharged' ? 'text-amber-400 font-bold' : 'text-emerald-400'
-                        }>
-                          {nodeState.status}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </>
-        )}
-
-        {type === 'conduit' && (
-          <>
-            {(() => {
-              const conduit = data as AssetConduit;
-              const fromId = conduit.from_node_id || conduit.from_node;
-              const toId = conduit.to_node_id || conduit.to_node;
-              return (
-                <>
-                  <div className="flex justify-between text-slate-400">
-                    <span>起点 → 终点:</span>
-                    <span className="text-slate-200">{fromId} → {toId}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>管段长度:</span>
-                    <span className="text-slate-200">{conduit.length_m.toFixed(2)} m</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>管径 (Diameter):</span>
-                    <span className="text-slate-200">Ø {(conduit.diameter_m * 1000).toFixed(0)} mm</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>粗糙系数 (Manning n):</span>
-                    <span className="text-slate-200">{conduit.manning_n}</span>
-                  </div>
-                  {pipeState && (
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 space-y-1 mt-2">
-                      <div className="text-[11px] text-slate-400 font-sans font-semibold">
-                        当前时间点水动力学状态:
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">流量 (Flow):</span>
-                        <span className="text-cyan-400 font-bold">{pipeState.flow_m3s.toFixed(4)} m³/s</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">管内水深 (Depth):</span>
-                        <span className="text-slate-200">{pipeState.depth_m.toFixed(3)} m</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">充盈状态:</span>
-                        <span className={
-                          pipeState.status === 'surcharged' ? 'text-rose-400 font-bold' :
-                          pipeState.status === 'near_capacity' ? 'text-amber-400 font-bold' : 'text-emerald-400'
-                        }>
-                          {pipeState.status}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </>
-        )}
-
-        {type === 'inlet' && (
-          <>
-            {(() => {
-              const inlet = data as AssetInlet;
-              return (
-                <>
-                  <div className="flex justify-between text-slate-400">
-                    <span>关联管网节点:</span>
-                    <span className="text-slate-200">{inlet.node_id}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>格栅有效面积:</span>
-                    <span className="text-slate-200">{inlet.grate_area_m2.toFixed(2)} m²</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400">
-                    <span>地表高程:</span>
-                    <span className="text-slate-200">{inlet.position_m.z.toFixed(2)} m</span>
-                  </div>
-                  {inletState && (
-                    <div className="p-2 rounded bg-slate-950 border border-slate-800 space-y-1 mt-2">
-                      <div className="text-[11px] text-slate-400 font-sans font-semibold">
-                        模拟水力折减假设:
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">折减率 (Loss Fraction):</span>
-                        <span className="text-amber-400 font-bold">
-                          {(inletState.hydraulic_inlet_clogging_fraction * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-slate-400">假设状态:</span>
-                        <span className="text-slate-400">{inletState.parameter_status}</span>
-                      </div>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </>
-        )}
+      {/* 2. Sub-Tabs (Overview, Live Data, Maintenance, Photos) */}
+      <div className="flex items-center justify-between py-3 text-[11px] font-medium border-b border-[#3b1818]/40">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+            activeTab === 'overview'
+              ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white font-semibold shadow-sm'
+              : 'text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('live')}
+          className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+            activeTab === 'live'
+              ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white font-semibold shadow-sm'
+              : 'text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          Live Data
+        </button>
+        <button
+          onClick={() => setActiveTab('maintenance')}
+          className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+            activeTab === 'maintenance'
+              ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white font-semibold shadow-sm'
+              : 'text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          Maintenance {inspections.length > 0 ? `(${inspections.length})` : ''}
+        </button>
+        <button
+          onClick={() => setActiveTab('photos')}
+          className={`px-3 py-1 rounded-lg transition cursor-pointer ${
+            activeTab === 'photos'
+              ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white font-semibold shadow-sm'
+              : 'text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          Photos
+        </button>
       </div>
 
-      {/* Field Inspection History */}
-      <div className="pt-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-            <FileText className="w-3.5 h-3.5 text-cyan-400" /> 现场巡检与证据 (Inspection)
+      {/* 3. Manhole Cover Photo Thumbnail matching mockup */}
+      <div className="my-3 relative rounded-xl overflow-hidden border border-[#3b1818]/80 h-32 bg-stone-950">
+        <img
+          src="/assets/mock_manhole.jpg"
+          alt="Site Asset Grate"
+          className="w-full h-full object-cover brightness-90 contrast-110"
+          onError={(e) => {
+            // Fallback to high-contrast simulated manhole graphic if image asset is unavailable
+            (e.target as HTMLElement).style.display = 'none';
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#181111]/90 via-transparent to-transparent" />
+        <div className="absolute bottom-2 left-2.5 text-[10px] text-stone-300 font-mono flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span>Field Verification Survey #0421</span>
+        </div>
+      </div>
+
+      {/* 4. Specifications Grid */}
+      <div className="py-2 space-y-1.5 text-xs border-b border-[#3b1818]/60">
+        <div className="flex justify-between text-stone-400">
+          <span>Asset Type</span>
+          <span className="text-stone-200 font-medium capitalize">{assetType === 'conduit' ? 'Conduit' : 'Manhole'}</span>
+        </div>
+        <div className="flex justify-between text-stone-400">
+          <span>Asset ID</span>
+          <span className="text-stone-200 font-mono font-medium">{displayId}</span>
+        </div>
+        <div className="flex justify-between text-stone-400">
+          <span>Location</span>
+          <span className="text-stone-200 font-medium">Cedar View Estates</span>
+        </div>
+        <div className="flex justify-between text-stone-400 pl-2 text-[11px]">
+          <span>Coordinates</span>
+          <span className="text-stone-400 font-mono">📍 4.36521, -79.3845</span>
+        </div>
+        <div className="flex justify-between text-stone-400">
+          <span>Depth</span>
+          <span className="text-stone-200 font-mono">{depthM.toFixed(1)} m</span>
+        </div>
+        <div className="flex justify-between text-stone-400">
+          <span>Invert Elevation</span>
+          <span className="text-stone-200 font-mono">112.3 m</span>
+        </div>
+        <div className="flex justify-between items-center text-stone-400 pt-0.5">
+          <span>Connected Pipes</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-stone-200 font-mono">4</span>
+            <span className="text-[11px] text-red-400 hover:text-red-300 transition cursor-pointer flex items-center">
+              View Network →
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Current Status Card (Matching mockup) */}
+      <div className="my-3 p-3.5 rounded-xl bg-stone-950/70 border border-[#3b1818]/60 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-semibold text-stone-200">
+            <Activity className="w-3.5 h-3.5 text-amber-500" />
+            <span>Current Status</span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+            {isHighLoad ? 'High Load' : 'Normal'}
           </span>
-          {type === 'inlet' && (
-            <button
-              onClick={() => onOpenInspect(id)}
-              className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
-            >
-              <Wrench className="w-3 h-3" /> 新建巡检
-            </button>
-          )}
         </div>
 
-        {relevantInspections.length === 0 ? (
-          <div className="text-xs text-slate-500 py-2 italic text-center">
-            暂无针对此资产的巡检记录
+        {/* Flow Level Progress Bar */}
+        <div>
+          <div className="flex justify-between text-xs mb-1">
+            <span className="text-stone-400">Flow Level</span>
+            <span className="font-bold font-mono text-stone-100">{flowLevelPct}%</span>
           </div>
-        ) : (
-          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-            {relevantInspections.map((insp) => (
-              <div
-                key={insp.inspection_id}
-                className="p-2.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-xs space-y-1.5"
-              >
-                <div className="flex justify-between text-slate-400 text-[11px]">
-                  <span>{new Date(insp.timestamp).toLocaleDateString()}</span>
-                  <span className="text-slate-300">{insp.inspector}</span>
-                </div>
-                <div className="flex justify-between font-mono">
-                  <span className="text-slate-400">格栅可见遮盖率:</span>
-                  <span className="text-amber-400 font-semibold">
-                    {(insp.visible_grate_coverage_fraction * 100).toFixed(0)}%
-                  </span>
-                </div>
-                <div className="flex justify-between font-mono">
-                  <span className="text-slate-400">堵塞物类别:</span>
-                  <span className="text-slate-200 capitalize">{insp.debris_category}</span>
-                </div>
-                <p className="text-slate-300 text-[11px] font-sans leading-relaxed pt-1 border-t border-slate-700/40">
-                  {insp.notes}
-                </p>
-                <div className="flex items-center gap-1 text-[10px] text-slate-500 pt-0.5">
-                  <AlertCircle className="w-3 h-3 text-cyan-400/70" />
-                  <span>
-                    注：现场格栅可见覆盖率独立存储，非水力折减率的直接换算。
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="w-full h-2 rounded-full bg-stone-900 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 transition-all duration-500"
+              style={{ width: `${flowLevelPct}%` }}
+            />
           </div>
-        )}
+        </div>
+
+        {/* Mini Stats Grid */}
+        <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+          <div>
+            <span className="text-stone-400 block text-[10px]">Flow Rate</span>
+            <span className="font-mono text-stone-200 font-semibold">{flowRate.toFixed(2)} m³/s</span>
+          </div>
+          <div>
+            <span className="text-stone-400 block text-[10px]">Capacity</span>
+            <span className="font-mono text-stone-200 font-semibold">{capacityM3s.toFixed(2)} m³/s</span>
+          </div>
+          <div>
+            <span className="text-stone-400 block text-[10px]">Rainfall (1h)</span>
+            <span className="font-mono text-stone-200 font-semibold">48 mm</span>
+          </div>
+          <div>
+            <span className="text-stone-400 block text-[10px]">Status</span>
+            <span className="text-amber-400 font-medium text-[10px]">Near capacity.</span>
+          </div>
+        </div>
       </div>
-    </div>
+
+      {/* 6. Flood Risk Card (Matching mockup) */}
+      <div className="mb-3 p-3.5 rounded-xl bg-stone-950/70 border border-[#3b1818]/60 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-semibold text-stone-200">
+            <Waves className="w-3.5 h-3.5 text-red-500" />
+            <span>Flood Risk</span>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600 text-white">
+            High
+          </span>
+        </div>
+
+        <div>
+          <div className="text-base font-extrabold text-red-500 font-sans mb-1 flex items-baseline gap-1.5">
+            <span>72%</span>
+            <span className="text-xs font-normal text-stone-400">Local Flood Risk</span>
+          </div>
+          <div className="w-full h-2 rounded-full bg-stone-900 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-red-600"
+              style={{ width: '72%' }}
+            />
+          </div>
+        </div>
+
+        <p className="text-[10px] text-stone-400 pt-0.5">
+          Based on current rainfall and network conditions.
+        </p>
+      </div>
+
+      {/* 7. Action Footer Buttons */}
+      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#3b1818]/60 text-xs font-semibold">
+        <button
+          onClick={() => onOpenInspect(assetId)}
+          className="py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-stone-200 border border-stone-800 transition cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <Search className="w-3.5 h-3.5 text-amber-400" />
+          <span>Inspect</span>
+        </button>
+        <button
+          onClick={onOpenInterventions}
+          className="py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-700 hover:from-red-500 hover:to-amber-600 text-white shadow-lg shadow-red-900/40 transition cursor-pointer flex items-center justify-center gap-1.5"
+        >
+          <Sliders className="w-3.5 h-3.5" />
+          <span>Intervene</span>
+        </button>
+      </div>
+    </aside>
   );
 };

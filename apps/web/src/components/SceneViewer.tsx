@@ -439,17 +439,17 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   };
 
   return (
-    <div className="w-full h-full relative bg-slate-950">
+    <div className="w-full h-full relative bg-[#0c0909]">
       {/* Top Floating View & Preset Quick Control Bar */}
-      <div className="absolute top-22 left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-slate-900/90 backdrop-blur-md border border-slate-800 text-[11px] text-slate-300 shadow-2xl">
+      <div className="absolute top-18 left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-[#181111]/92 backdrop-blur-xl border border-[#3b1818]/70 text-[11px] text-stone-300 shadow-2xl">
         {/* 1. Twin View Modes (Matching user mockup) */}
-        <div className="flex items-center rounded-xl bg-slate-950/80 p-0.5 border border-slate-800/80">
+        <div className="flex items-center rounded-xl bg-stone-950/80 p-0.5 border border-stone-800/80">
           <button
             onClick={() => handleSelectMode('twin_highlight')}
             className={`px-3 py-1 rounded-lg transition cursor-pointer font-medium flex items-center gap-1.5 ${
               currentMode === 'twin_highlight'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
+                : 'text-stone-400 hover:text-stone-200'
             }`}
             title="地上街区与地下发光管网同时高亮透视显示 (北极星原型视口)"
           >
@@ -459,8 +459,8 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
             onClick={() => handleSelectMode('realistic')}
             className={`px-2.5 py-1 rounded-lg transition cursor-pointer font-medium ${
               currentMode === 'realistic'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
+                : 'text-stone-400 hover:text-stone-200'
             }`}
             title="住宅区高写实地表街区"
           >
@@ -470,8 +470,8 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
             onClick={() => handleSelectMode('underground_only')}
             className={`px-2.5 py-1 rounded-lg transition cursor-pointer font-medium ${
               currentMode === 'underground_only'
-                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
+                : 'text-stone-400 hover:text-stone-200'
             }`}
             title="纯地下管网落深与水力坡降"
           >
@@ -484,23 +484,23 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           onClick={handleToggleRain}
           className={`px-2.5 py-1 rounded-xl border text-[11px] transition cursor-pointer flex items-center gap-1.5 ${
             rainActive
-              ? 'bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-sm'
-              : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:text-slate-200'
+              ? 'bg-red-600/20 text-red-300 border-red-500/50 shadow-sm'
+              : 'bg-stone-950/80 text-stone-400 border-stone-800 hover:text-stone-200'
           }`}
           title="开关三维空间暴雨粒子降水动画"
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${rainActive ? 'bg-blue-400 animate-ping' : 'bg-slate-600'}`} />
+          <span className={`w-1.5 h-1.5 rounded-full ${rainActive ? 'bg-red-500 animate-ping' : 'bg-stone-600'}`} />
           <span>🌧️ 降雨渲染 {rainActive ? '开' : '关'}</span>
         </button>
 
-        <div className="h-3.5 w-px bg-slate-700/60 mx-0.5" />
+        <div className="h-3.5 w-px bg-stone-800/80 mx-0.5" />
 
         {/* 3. Camera Preset Quick Buttons */}
-        <div className="flex items-center gap-1 text-slate-400">
-          <span className="text-[10px] text-slate-500 font-medium px-1">视角:</span>
+        <div className="flex items-center gap-1 text-stone-400">
+          <span className="text-[10px] text-stone-500 font-medium px-1">视角:</span>
           <button
             onClick={() => handlePreset('overview')}
-            className="px-2 py-0.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            className="px-2 py-0.5 rounded-lg hover:bg-stone-900 text-stone-300 hover:text-white transition cursor-pointer"
           >
             全貌
           </button>
@@ -512,19 +512,19 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           </button>
           <button
             onClick={() => handlePreset('outfall')}
-            className="px-2 py-0.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            className="px-2 py-0.5 rounded-lg hover:bg-stone-900 text-stone-300 hover:text-white transition cursor-pointer"
           >
             出水口
           </button>
           <button
             onClick={() => handlePreset('north')}
-            className="px-2 py-0.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+            className="px-2 py-0.5 rounded-lg hover:bg-stone-900 text-stone-300 hover:text-white transition cursor-pointer"
           >
             源头
           </button>
         </div>
 
-        <div className="h-3.5 w-px bg-slate-700/60 mx-0.5" />
+        <div className="h-3.5 w-px bg-stone-800/80 mx-0.5" />
 
         {/* 4. Virtual Debris Lab Quick Button */}
         <button

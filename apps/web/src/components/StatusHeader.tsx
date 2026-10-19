@@ -1,5 +1,19 @@
-import React from 'react';
-import { AlertTriangle, CheckCircle2, Database, Server, RefreshCw, Search, Zap, Sliders } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Search,
+  Bell,
+  Settings,
+  LayoutDashboard,
+  Map,
+  Layers,
+  BarChart3,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  Database,
+  Server,
+  RefreshCw,
+} from 'lucide-react';
 import { DataMode } from '../api/client';
 import { HealthResponse, AppMode } from '../types';
 
@@ -26,193 +40,264 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
   onRefresh,
   apiError,
 }) => {
-  return (
-    <header className="absolute top-0 left-0 right-0 z-20 flex flex-col pointer-events-none">
-      {/* Top Warning Banner for Mock Mode */}
-      {mode === 'mock' && (
-        <div className="bg-amber-500/20 border-b border-amber-500/40 text-amber-200 text-xs px-4 py-1.5 flex items-center justify-between backdrop-blur-md pointer-events-auto">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="font-semibold tracking-wide uppercase">开发 Mock 模式</span>
-            <span className="text-amber-300/80">
-              — 当前使用前端静态 Fixture，非真实 SWMM 计算结果。仅供交互原型与接口对齐开发。
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => onToggleMode('api')}
-              className="text-xs bg-amber-500/30 hover:bg-amber-500/50 text-amber-100 px-2 py-0.5 rounded border border-amber-400/50 transition cursor-pointer"
-            >
-              切换至真实 API 模式
-            </button>
-          </div>
-        </div>
-      )}
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'map' | 'assets' | 'analytics' | 'reports'>('dashboard');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-      {/* Real API Error Alert */}
+  return (
+    <header className="absolute top-0 left-0 right-0 z-30 flex flex-col pointer-events-none">
+      {/* Real API Error Alert (Minimalistic banner) */}
       {mode === 'api' && apiError && (
-        <div className="bg-rose-500/20 border-b border-rose-500/40 text-rose-200 text-xs px-4 py-1.5 flex items-center justify-between backdrop-blur-md pointer-events-auto">
+        <div className="bg-rose-950/90 border-b border-rose-500/50 text-rose-200 text-xs px-6 py-1.5 flex items-center justify-between backdrop-blur-md pointer-events-auto">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-            <span className="font-semibold uppercase tracking-wide">后端连接异常 (API Error)</span>
-            <span className="text-rose-300/80">{apiError}</span>
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <span className="font-semibold">API Error:</span>
+            <span className="text-rose-300/80 truncate max-w-xl">{apiError}</span>
           </div>
           <button
             onClick={onRefresh}
             className="text-xs bg-rose-500/30 hover:bg-rose-500/50 text-rose-100 px-2 py-0.5 rounded border border-rose-400/50 transition cursor-pointer flex items-center gap-1"
           >
-            <RefreshCw className="w-3 h-3" /> 重试
+            <RefreshCw className="w-3 h-3" /> Retry
           </button>
         </div>
       )}
 
-      {/* Main Bar */}
-      <div className="flex items-center justify-between px-5 py-2.5 backdrop-blur-md bg-slate-950/80 border-b border-slate-800/80 pointer-events-auto">
-        {/* Left: Branding & Twin Model Info */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-cyan-500 animate-pulse" />
-            <h1 className="text-sm font-bold tracking-wider text-slate-100 uppercase">
-              Township FloodOps
-            </h1>
+      {/* Main Brand Top Navigation Bar (Sime Darby Property Theme) */}
+      <div className="flex items-center justify-between px-6 h-15 backdrop-blur-xl bg-[#140e0e]/92 border-b border-[#3b1818]/60 shadow-2xl pointer-events-auto">
+        {/* Left: Sime Darby Property Wave Crest & Title */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2.5">
+            {/* Sime Darby stylized triple-wave brand logo */}
+            <div className="flex flex-col gap-1 items-center justify-center p-1">
+              <svg
+                className="w-7 h-6 text-red-500"
+                viewBox="0 0 32 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M2 6c4-4 8-4 12 0s8 4 12 0 4-2 4-2" stroke="#e11d48" />
+                <path d="M2 12c4-4 8-4 12 0s8 4 12 0 4-2 4-2" stroke="#dc2626" />
+                <path d="M2 18c4-4 8-4 12 0s8 4 12 0 4-2 4-2" stroke="#c2410c" />
+              </svg>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-white font-bold tracking-tight text-base">Township</span>
+              <span className="text-red-500 font-extrabold tracking-tight text-base">FloodOps</span>
+            </div>
           </div>
-          <span className="text-xs px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 font-mono">
-            Taman Kyra Synthetic Twin v1
-          </span>
+
+          {/* Navigation Pill Tabs */}
+          <nav className="flex items-center gap-1.5 text-xs">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+                activeTab === 'dashboard'
+                  ? 'bg-gradient-to-r from-red-600 via-rose-600 to-amber-700 text-white shadow-lg shadow-red-900/30'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-900/60'
+              }`}
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Dashboard</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('map')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+                activeTab === 'map'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-900/30'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-900/60'
+              }`}
+            >
+              <Map className="w-3.5 h-3.5" />
+              <span>Map</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('assets')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+                activeTab === 'assets'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-900/30'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-900/60'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Assets</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('analytics');
+                onOpenInterventions();
+              }}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+                activeTab === 'analytics'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-900/30'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-900/60'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Analytics</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('reports');
+                onOpenInterventions();
+              }}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+                activeTab === 'reports'
+                  ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-900/30'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-900/60'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Reports</span>
+            </button>
+
+            <button
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+                isSettingsOpen
+                  ? 'bg-stone-800 text-white'
+                  : 'text-stone-300 hover:text-white hover:bg-stone-900/60'
+              }`}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>Settings</span>
+            </button>
+          </nav>
         </div>
 
-        {/* Center: Workflow Mode Switcher (Diagnose vs Anticipate vs Act) */}
-        <div className="flex items-center gap-2 text-xs">
-          <div className="flex items-center rounded-xl bg-slate-900/90 p-1 border border-slate-800 shadow-inner">
-            <button
-              onClick={() => onChangeAppMode('diagnose')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
-                appMode === 'diagnose'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span>诊断复盘 (Diagnose)</span>
-            </button>
-            <button
-              onClick={() => onChangeAppMode('anticipate')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs transition cursor-pointer font-medium ${
-                appMode === 'anticipate'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>暴雨推演 (Anticipate)</span>
-            </button>
+        {/* Right: Search Bar, Notifications, User Profile */}
+        <div className="flex items-center gap-4">
+          {/* Search Bar matching mockup */}
+          <div className="relative w-64 md:w-80">
+            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search location, asset or address..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#201717]/80 hover:bg-[#281a1a]/80 focus:bg-[#281a1a] text-xs text-stone-200 placeholder-stone-400 pl-9 pr-4 py-2 rounded-xl border border-[#3e2222]/80 focus:border-red-500/60 focus:outline-none transition"
+            />
           </div>
 
-          <div className="h-4 w-px bg-slate-800" />
-
-          {/* Interventions Comparison / Act Button */}
+          {/* Notification Bell with Badge */}
           <button
-            onClick={onOpenInterventions}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-600/30 to-blue-600/30 hover:from-cyan-600/50 hover:to-blue-600/50 text-cyan-300 hover:text-cyan-200 border border-cyan-500/40 transition cursor-pointer text-xs font-semibold shadow-sm"
+            className="relative p-2 rounded-xl bg-[#201717]/80 hover:bg-[#281a1a] text-stone-300 hover:text-white border border-[#3e2222]/80 transition cursor-pointer"
+            title="Notifications (3 active alerts)"
           >
-            <Sliders className="w-3.5 h-3.5 text-cyan-400" />
-            <span>方案对比与治理决策 (Act)</span>
-          </button>
-        </div>
-
-        {/* Right: Engine health, mode toggle, refresh */}
-        <div className="flex items-center gap-3 text-xs">
-          {/* Engine health */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">
-            {health?.swmm?.available ? (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-            ) : (
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-            )}
-            <span className="text-slate-400">SWMM:</span>
-            <span className="font-mono text-slate-200">
-              {health?.swmm
-                ? `${health.swmm.engine} ${health.swmm.engine_version}`
-                : 'Checking...'}
+            <Bell className="w-4 h-4" />
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-[10px] font-bold text-white flex items-center justify-center border border-[#140e0e]">
+              3
             </span>
-            {health?.swmm?.execution_verified && (
-              <span className="ml-1 text-[10px] text-emerald-400 font-mono px-1 rounded bg-emerald-500/10">
-                VERIFIED
+          </button>
+
+          {/* User Profile Badge (John Doe / Township Admin) */}
+          <div className="flex items-center gap-2.5 pl-1 border-l border-stone-800/80">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-amber-800 text-white font-bold text-xs flex items-center justify-center shadow-md border border-red-500/40">
+              JD
+            </div>
+            <div className="hidden lg:flex flex-col text-left">
+              <span className="text-xs font-semibold text-stone-100 leading-tight">John Doe</span>
+              <span className="text-[10px] text-stone-400 leading-tight">Township Admin</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Discrete Settings Popover (When Settings tab is clicked) */}
+      {isSettingsOpen && (
+        <div className="absolute top-16 left-96 z-40 w-72 bg-[#1c1414]/95 backdrop-blur-xl border border-[#442222] rounded-2xl p-4 shadow-2xl space-y-3 text-xs text-stone-200 pointer-events-auto">
+          <div className="flex items-center justify-between pb-2 border-b border-stone-800">
+            <span className="font-semibold text-stone-100 flex items-center gap-1.5">
+              <Settings className="w-3.5 h-3.5 text-red-500" /> System Settings
+            </span>
+            <button
+              onClick={() => setIsSettingsOpen(false)}
+              className="text-stone-400 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Engine health & Refresh */}
+          <div className="flex items-center justify-between p-2 rounded-xl bg-stone-950/60 border border-stone-800/80">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-stone-300">
+                {health?.swmm ? `${health.swmm.engine} ${health.swmm.engine_version}` : 'SWMM 5.2.4'}
               </span>
-            )}
+            </div>
+            <button
+              onClick={onRefresh}
+              disabled={loading}
+              className="p-1 rounded text-stone-400 hover:text-white transition cursor-pointer disabled:opacity-50"
+              title="Refresh engine state"
+            >
+              <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
 
           {/* Data Mode Switcher */}
-          <div className="flex items-center rounded-lg bg-slate-900 p-0.5 border border-slate-800">
-            <button
-              onClick={() => onToggleMode('mock')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
-                mode === 'mock'
-                  ? 'bg-amber-500/20 text-amber-300 font-medium border border-amber-500/40'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Database className="w-3 h-3" /> Mock
-            </button>
-            <button
-              onClick={() => onToggleMode('api')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition cursor-pointer ${
-                mode === 'api'
-                  ? 'bg-cyan-500/20 text-cyan-300 font-medium border border-cyan-500/40'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Server className="w-3 h-3" /> Real API
-            </button>
+          <div>
+            <label className="text-stone-400 text-[11px] block mb-1 font-medium">Data Source Mode</label>
+            <div className="grid grid-cols-2 gap-1.5 bg-stone-950/60 p-1 rounded-xl border border-stone-800/80">
+              <button
+                onClick={() => onToggleMode('mock')}
+                className={`py-1 rounded-lg text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  mode === 'mock'
+                    ? 'bg-amber-600 text-white font-medium shadow-sm'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                <Database className="w-3 h-3" /> Mock Fixtures
+              </button>
+              <button
+                onClick={() => onToggleMode('api')}
+                className={`py-1 rounded-lg text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  mode === 'api'
+                    ? 'bg-red-600 text-white font-medium shadow-sm'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                <Server className="w-3 h-3" /> Live FastAPI
+              </button>
+            </div>
           </div>
 
-          {/* Refresh button */}
-          <button
-            onClick={onRefresh}
-            disabled={loading}
-            className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition cursor-pointer disabled:opacity-50"
-            title="Refresh assets & status"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          {/* Workflow Mode Switcher */}
+          <div>
+            <label className="text-stone-400 text-[11px] block mb-1 font-medium">Workflow Phase</label>
+            <div className="grid grid-cols-2 gap-1.5 bg-stone-950/60 p-1 rounded-xl border border-stone-800/80">
+              <button
+                onClick={() => onChangeAppMode('diagnose')}
+                className={`py-1 rounded-lg text-xs transition cursor-pointer ${
+                  appMode === 'diagnose'
+                    ? 'bg-amber-600/30 text-amber-300 border border-amber-500/40 font-medium'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                Diagnose (现状诊断)
+              </button>
+              <button
+                onClick={() => onChangeAppMode('anticipate')}
+                className={`py-1 rounded-lg text-xs transition cursor-pointer ${
+                  appMode === 'anticipate'
+                    ? 'bg-red-600/30 text-red-300 border border-red-500/40 font-medium'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                Anticipate (暴雨推演)
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Mode Contextual Banner */}
-      <div
-        className={`px-5 py-1.5 text-xs backdrop-blur-md border-b flex items-center justify-between pointer-events-auto transition-colors ${
-          appMode === 'diagnose'
-            ? 'bg-amber-950/40 border-amber-500/30 text-amber-200'
-            : 'bg-cyan-950/40 border-cyan-500/30 text-cyan-200'
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          {appMode === 'diagnose' ? (
-            <>
-              <Search className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span className="font-semibold">【现状诊断复盘】</span>
-              <span className="text-amber-300/80">
-                追溯历史降雨事件：现场照片与巡检证实 INLET-D07 喉口受阻约 40%，为导致路面滞积 686 m³ 的关键成因；地下管道此时负荷尚充裕。
-              </span>
-            </>
-          ) : (
-            <>
-              <Zap className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-              <span className="font-semibold">【暴雨前瞻推演】</span>
-              <span className="text-cyan-300/80">
-                推演 50 年一遇极端季风降雨 (120 mm/h)：清淤后入网流量骤增将导致下游主干管 (PIPE-P07) 满管顶托 55 分钟。需提前制定运维与工程升级决策。
-              </span>
-            </>
-          )}
-        </div>
-
-        <button
-          onClick={onOpenInterventions}
-          className="text-[11px] underline font-medium hover:text-white transition cursor-pointer shrink-0 ml-4"
-        >
-          查看干预对比与行动报告 →
-        </button>
-      </div>
+      )}
     </header>
   );
 };
