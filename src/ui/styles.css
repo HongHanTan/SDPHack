@@ -41,3 +41,7 @@ dialog { max-width: 720px; border: 0; border-radius: 10px; padding: 20px; }
 dialog table { border-collapse: collapse; width: 100%; font-size: 13px; }
 dialog th { text-align: left; vertical-align: top; padding: 6px 12px 6px 0; white-space: nowrap; color: var(--muted); }
 dialog td { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.custom-list { list-style: none; padding: 0; margin: 6px 0 0; font-size: 12px; }
+.custom-list li { display: flex; justify-content: space-between; padding: 3px 0; }
+.custom-list button { border: 0; background: none; color: var(--worse); cursor: pointer; }
+#draw.active { background: var(--navy); color: #fff; }

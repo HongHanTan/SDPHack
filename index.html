@@ -19,6 +19,15 @@
         <h2>Interventions</h2>
         <div id="interventions"></div>
         <p class="note">Costs are indicative placeholders — replace with SDP quantity-surveyor rates.</p>
+        <h2>Custom pipes</h2>
+        <select id="pipe-d">
+          <option value="0.3">300 mm</option>
+          <option value="0.45">450 mm</option>
+          <option value="0.6" selected>600 mm</option>
+          <option value="0.9">900 mm</option>
+        </select>
+        <button id="draw" class="secondary">Draw pipe: off</button>
+        <ul id="custom-list" class="custom-list"></ul>
         <button id="run" class="primary">Run storm</button>
         <h2>Timeline</h2>
         <input id="scrubber" type="range" min="0" max="0" value="0" />

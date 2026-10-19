@@ -1,6 +1,6 @@
 import './ui/styles.css';
 import { createScene } from './render/scene';
-import { baseTownship, buildTownship } from './scenario/index';
+import { baseTownship, buildTownship, customPipeCost, type CustomPipe } from './scenario/index';
 import { totalCost } from './scenario/interventions';
 import { STORMS } from './scenario/storms';
 import { renderAssumptions } from './ui/assumptions';
@@ -35,6 +35,52 @@ const updateStormNote = () => {
 const controls = renderControls($('storm'), $('interventions'), updateStormNote);
 updateStormNote();
 
+const custom: CustomPipe[] = [];
+let drawing = false;
+let pending: string | null = null;
+const drawBtn = $<HTMLButtonElement>('draw');
+
+const renderCustom = () => {
+  const t = buildTownship(controls.selected(), custom);
+  view.setTownship(t);
+  $('custom-list').innerHTML = custom
+    .map(
+      (c, k) =>
+        `<li>${c.from} → ${c.to}, ${c.diameter * 1000} mm · RM ${(customPipeCost(t, c) / 1e6).toFixed(2)}M <button data-k="${k}">✕</button></li>`,
+    )
+    .join('');
+};
+
+drawBtn.addEventListener('click', () => {
+  drawing = !drawing;
+  pending = null;
+  drawBtn.textContent = `Draw pipe: ${drawing ? 'click two manholes' : 'off'}`;
+  drawBtn.classList.toggle('active', drawing);
+});
+
+$('custom-list').addEventListener('click', (e) => {
+  const k = (e.target as HTMLElement).dataset.k;
+  if (k === undefined) return;
+  custom.splice(Number(k), 1);
+  renderCustom();
+});
+
+view.canvas.addEventListener('click', (e) => {
+  if (!drawing) return;
+  const r = view.canvas.getBoundingClientRect();
+  const id = view.pickNode(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  if (!id) return;
+  if (pending === null) {
+    pending = id;
+    status(`From ${id} — now click the downstream manhole.`);
+  } else if (id !== pending) {
+    custom.push({ from: pending, to: id, diameter: Number($<HTMLSelectElement>('pipe-d').value) });
+    pending = null;
+    status('Pipe added. Click Run storm to simulate.');
+    renderCustom();
+  }
+});
+
 renderAssumptions($('assumptions-body'));
 $('assumptions-btn').addEventListener('click', () => $<HTMLDialogElement>('assumptions').showModal());
 $('assumptions-close').addEventListener('click', () => $<HTMLDialogElement>('assumptions').close());
@@ -47,11 +93,17 @@ runBtn.addEventListener('click', async () => {
   try {
     if (!runner.isCached([], storm)) status('Simulating baseline…');
     const base = await runner.run([], storm);
-    view.setTownship(buildTownship(ids));
+    const township = buildTownship(ids, custom);
+    view.setTownship(township);
     player.reset();
-    status(ids.length ? 'Simulating scenario…' : 'Replaying baseline…');
-    const cur = await runner.run(ids, storm, (f) => player.push(f));
-    renderResults($('cards'), base.metrics, cur.metrics, totalCost(ids));
+    status(ids.length || custom.length ? 'Simulating scenario…' : 'Replaying baseline…');
+    const cur = await runner.run(ids, storm, (f) => player.push(f), custom);
+    renderResults(
+      $('cards'),
+      base.metrics,
+      cur.metrics,
+      totalCost(ids) + custom.reduce((s, c) => s + customPipeCost(township, c), 0),
+    );
     renderSagChart($('chart'), base.metrics, cur.metrics);
     renderBalance($('balance'), cur.metrics.balance.error);
     status('Done.');
