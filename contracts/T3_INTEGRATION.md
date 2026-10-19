@@ -1,6 +1,6 @@
 # T3 → Jiajie：inspection / media / debris / native inlet capture
 
-接口 v1.2.0；T3 后端已本地验证，Git 发布状态以 `md/progress/tay.md` 为准。没有修改前端或 Jiajie 进度。既有资产 / run / frames / metrics 主字段保留；新增字段见 OpenAPI。G2 浏览器体验仍由 Jiajie 接线验收。
+接口 v1.2.0；T3 后端已验证并 push，[PR #3](https://github.com/zerngx/sdphack/pull/3) 目标 main，具体同步状态见 `md/progress/tay.md`。发布期间 Jiajie 已把 J3 / T2 polling 接线提交到 main=`a79131b`；本 PR 没有修改前端或 Jiajie 进度。下面是 v1.2 的新增接线要求，既有资产 / run / frames / metrics 主字段保留。G1/G2 的真实浏览器联合验收仍需记录。
 
 ## 1. 保存巡检与证据
 

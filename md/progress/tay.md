@@ -5,12 +5,13 @@ Owner：Tay。只有 Tay 身份的 agent 更新本文件；Jiajie 读取交接�
 ## 当前状态
 
 - 最近更新：2026-10-19（T3 本地完成，88 项测试及实际 TCP / 新 API 进程重启、原生入口 0/20/40/60%、独立重复与半步长验证通过）。
-- 当前任务：T3 DONE，按用户要求提交 / push 并创建 tay → main PR 中；下一项 T4：同条件 clean / upsize 比较，再做 storage / replay。G1/G2 浏览器闭环仍待 Jiajie 接线验收。
+- 当前任务：T3 DONE，已 push origin/tay 并创建 [PR #3](https://github.com/zerngx/sdphack/pull/3) → main，等待 review / merge；下一项 T4：同条件 clean / upsize 比较，再做 storage / replay。Jiajie 已发布 J3，T3 v1.2 接线与联合浏览器验收仍待双方确认。
 - 当前接口版本：`1.2.0`。新增 append-only inspection / media / provenance、独立 debris mass balance、原生 CUSTOM DIVERSION / INLET_USAGE 有限入口限制及 capture/backflow/bypass 结果；保留 T1/T2 direct-node 基线和核心字段。high tailwater / interventions 仍拒绝。
 - 仓库基线：开始时 Git 工作区干净、只有规划资料；现已新增后端基础代码、seed、契约和测试。当前在 `tay` 分支，未修改 Jiajie 文件。
 - Git 共享：T0 / T1 核心提交 `1703f75` 已推送 `origin/tay`。独立临时 worktree 已从 `origin/main` fast-forward 合并并通过 22 项测试、契约与 native 证据检查；本条交接随 main 发布。`gh` 与可用浏览器均缺失，采用 Git 合并 / push，不创建 PR。主工作目录保持 `tay`，不合并或修改 `JJ_Branch`。
 - 最新共享基线：发布前 main=`97b2394`（合入 Jiajie PR #2 / `1860feb` 的 J1/J2）；T2 核心 `594f846` 已推送 origin/tay，并在独立 worktree 合并为 `a78242f`，验证通过。本条最终记录随合并版本发布 main，再将 tay fast-forward 同步；Jiajie 前端与进度文件与 `97b2394` 完全一致。
-- T3 开发起点：tay / origin/main / origin/JJ_Branch 均为 `c6c847b`，工作区干净。发布前 fetch 确认远端仍在该提交；用户要求 push 并开 PR，本次只发布 tay 与创建目标 main 的 PR，不直接合并 main。未修改前端、Jiajie 进度或分支。
+- T3 核心提交 `961cb95` 已 push origin/tay，独立 Git checkout 的 88 tests / 契约 / T1–T3 原字节证据检查通过。发布期间 main / JJ_Branch 更新为 `a79131b`（Jiajie J3），本次没有直接合并 main、修改前端或切换共享工作目录分支。
+- PR [#3](https://github.com/zerngx/sdphack/pull/3) 的 base 为 zerngx:main。现有 GitHub API 登录 Tay25006739 无原仓库协作者权限，直接从原仓库 tay 创建 PR 被 GitHub 拒绝；已用标准 fork 流程创建 Tay25006739/sdphack:tay-t3，镜像 origin/tay 的完全相同提交后发起 PR。后续文档记录随两个 source 分支同步，main 保持待 review / merge。
 
 ## 任务队列
 
@@ -19,13 +20,13 @@ Owner：Tay。只有 Tay 身份的 agent 更新本文件；Jiajie 读取交接�
 | T0 | DONE | FastAPI、health / CORS、基础 OpenAPI / examples、9 nodes / 8 conduits / 4 inlets 的 synthetic assets、启动说明；实际 HTTP 启动检查通过 |
 | T1 | DONE | SWMM 5.2.4 实际执行 80 / 120 mm/h；两者各自重复及半步长验证，共 6 次；保留 .inp / .rpt / .out / logs / hash / QA，解析真实 frames / metrics，实体 ID 对齐 |
 | T2 | DONE | POST storm / async run -> SQLite 状态 / 不可变快照 / hash -> 真实 frames / metrics；历史 / 日志、重启读取、失败 / 超时 / 排队 / 中断恢复；与最新 J1/J2 合并后 49 tests + 实际 TCP / restart 通过，已共享 |
-| T3 | DONE | append-only inspection / media / provenance、storm-bound debris kg 时间序列、原生有限入口 0/20/40/60% 与独立 capture/bypass；88 tests、实际 TCP / restart / repeat / half-step 通过，提交及 PR 发布中 |
+| T3 | DONE | append-only inspection / media / provenance、storm-bound debris kg 时间序列、原生有限入口 0/20/40/60% 与独立 capture/bypass；88 tests、实际 TCP / restart / repeat / half-step 通过；已 push，PR #3 待合并 |
 | T4 | TODO | clean / upsize 比较、storage、统一 replay 执行链 |
 | T5 | TODO | Docker / 复现、数值与 API 检查、假设说明、联调修复 |
 
 ## 下一次直接执行
 
-读取 AGENTS.md、TEAM_WORKFLOW、双方交接，检查工作区与远端。T3 已本地完成；如用户要求共享，只提交 Tay 文件并验证后发布。开发下一项为 T4，同条件 clean / upsize 比较先做可验证单元，storage 随后补齐。
+读取 AGENTS.md、TEAM_WORKFLOW、双方交接，检查工作区与远端和 PR #3 状态。T3 已 push / 开 PR，不能把 main 当成已合入 T3；Jiajie J3 已在 main=a79131b。本地 tay 尚未合并这项并行前端更新，需按用户授权与工作区状态同步。开发下一项为 T4，同条件 clean / upsize 比较先做可验证单元，storage 随后补齐。
 
 复用现有 SQLite、不可变 scenario / run 快照及 simulation/swmm 唯一执行链。比较 baseline 与 candidate 必须保持相同 storm / tailwater、相同有限入口模型和全部其余参数；原 baseline 不得修改。finite 0% 是有限入口清理基线，旧 demo_inlet_clean 是不同的 unlimited direct-node 模型，不能混为清理效果。upsize 只改目标管径，记录每个候选 run_id / 输入差异 / 成功失败 / 实际 metrics / delta，失败不给改善分数。
 
@@ -35,7 +36,8 @@ T3 mass cleaning events 只更新质量库存；hydraulic loss 仍是独立常�
 
 ### 当前 T3 交接（优先于下方 T2 历史记录）
 
-- T3 DONE，API v1.2.0；完整请求、状态、限制、前端字段适配和验收见 [`contracts/T3_INTEGRATION.md`](../../contracts/T3_INTEGRATION.md)。按用户要求发布 tay → main PR 中；main 合并前可在独立 checkout 显式同步 origin/tay，不能把远端 main 当成已有 T3。
+- T3 DONE，API v1.2.0，已 push 并开 [PR #3](https://github.com/zerngx/sdphack/pull/3)；完整请求、状态、限制、前端字段适配和验收见 [`contracts/T3_INTEGRATION.md`](../../contracts/T3_INTEGRATION.md)。main 合并前可在独立 checkout 显式同步 origin/tay，不能把远端 main 当成已有 T3。
+- 发布时读到最新 main / JJ_Branch=`a79131b`：Jiajie J3 已提交，进度记录 T2 polling / capability guards 已接线，前端 build 已通过。本 PR 不重做这些工作；请继续对接 v1.2 的显式 timestamp / source、multipart 上传、flat DebrisCreate、storm 绑定、有限 0% 对照和 capture/bypass，并记录真实 G1/G2 浏览器验收。
 - 新增 POST/GET inspections、GET 单条；POST inspections/{id}/media multipart file、GET 附件；POST/GET debris/scenarios。inspections / debris capabilities=true，comparisons=false。依赖新增 python-multipart==0.0.32，安装 updated requirements 后重启后端。
 - Inspection 必须显式提交带时区 timestamp / source_type，3D 虚拟巡检填 synthetic；保留独立 created_at / asset/model/source_reference / visible coverage。GET 历史按采集时间降序；媒体追加、不覆盖，保留大小 / hash / 类型和 URL。FormData 上传不得使用现有 JSON Content-Type。文件错误 413 / 415 / MEDIA_ARTIFACT_INVALID 明确显示。
 - Debris 请求扁平化：name / inlet_id / storm_id / optional inspection_id / 独立 hydraulic_inlet_clogging_fraction / debris_parameters；响应兼容原 DebrisPreset.parameters，并附完整 inspection/media/storm 快照、质量守恒 time_series。质量 kg 与照片覆盖率不会自动映射水力损失。场景固定关联 storm；跨 storm 返回 SCENARIO_STORM_MISMATCH，需新建场景。
@@ -43,7 +45,7 @@ T3 mass cleaning events 只更新质量库存；hydraulic loss 仍是独立常�
 - 新 frame inlet capture_flow_m3s / bypass_flow_m3s 是实际报告样本；metrics.inlet_volumes 是 native routing-step 积分的 capture/backflow/bypass m3，direct 模式为 null。限制增强可能降低 sewer flooding 并提高 bypass；必须一起展示，不画成校准二维淹水深度。
 - 资产公开仍是 9 nodes / 8 pipes / 4 inlets；12 个辅助节点和 8 个辅助 links 仅存于 input_snapshot.inlet_model.elements 的受控映射。不要把它们当新现场资产。原 pipe geometry 未改，完整假设 / native 曲线 / loss 全部进入 input_hash。
 - 真实证据在 data/validation/t3/，契约样例为 contracts/examples/{inspection-*,media-created,debris-*,native-inlet-*}.json。UUID 只属于保留 runtime；新开发数据库应重新 POST。synthetic-pixel.png 仅为字节上传测试，不是现场照片。CLI python -m services.api.check_t3 可在新目录独立复现并停止自己的服务。
-- Jiajie 下一步：先补齐 J2 轮询 / API 与 offline fixture 分离，再实现 J3 表单 / multipart / 证据回放 / mass 曲线与 native finite 场景，执行 G1/G2 浏览器验收，记录真实 run IDs。Tay 不修改你的进度或前端，发现后端问题请附请求 / 状态码 / run_id。
+- Jiajie 下一步：基于已提交 J3，适配 T3 的 multipart / 证据快照 / mass 曲线与 native finite 场景，确认 API 与 offline fixture 分离，执行 G1/G2 浏览器验收并记录真实 run IDs。Tay 不修改你的进度或前端，发现后端问题请附请求 / 状态码 / run_id。
 
 ### T2 历史交接（v1.1.0，以下未实现限制已由上述 T3 更新）
 
@@ -70,7 +72,7 @@ T3 mass cleaning events 只更新质量库存；hydraulic loss 仍是独立常�
 
 ## 阻塞与待确认
 
-- T0–T3 后端单元无阻塞；T0–T2 已共享，T3 本地待发布。Python 3.12.10、SWMM 5.2.4、实际 HTTP 与重启持久化已验证。G1/G2 浏览器联调待 Jiajie 接线验收，未宣称联合闭环通过。
+- T0–T3 后端单元无阻塞；T0–T2 已在 main，T3 已 push / PR #3 待合并。Python 3.12.10、SWMM 5.2.4、实际 HTTP 与重启持久化已验证。Jiajie J3 已提交，v1.2 接线与 G1/G2 浏览器联合验收仍待完成。
 - 首次 sandbox 中 pip 下载遇到 WinError 10013；经授权的依赖安装执行后成功，非当前阻塞。
 - Docker CLI 存在，但 daemon / 容器执行未检查；T0 不依赖 Docker。
 - 测试有 1 条依赖弃用警告：Starlette 0.52.1 引用 AnyIO 4.15.1 的 `anyio.abc.BlockingPortal` alias；当前测试 / HTTP 功能均通过。未屏蔽警告。
@@ -125,6 +127,13 @@ T3 mass cleaning events 只更新质量库存；hydraulic loss 仍是独立常�
 实际 HTTP baseline run=`run_683638975fab4bfd9e9cd2ad7f9ff32b`，stronger=`run_58526011782848ecb34a408b4538e5a9`；洪量 0.014893 / 728.764885m3，两者 120 report frames。新创建 storm 的参数会进入新 run，旧 run input hash 保持不变，结果与 native T1 一致。完整证明见 `data/validation/t2/summary.json`。这些不是默认开发数据库的预置 run IDs。
 
 ## 最近实现记录
+
+### 2026-10-19 — T3 push 与 main PR #3
+
+- 用户明确要求 push 后向 main 开 PR；核心提交 `961cb95` 已推送 origin/tay，不直接合并 main。Git 工作目录保持 tay，只提交 Tay 范围。
+- 从核心提交建立独立临时 worktree 验证：**88 passed**（20.02s，1 条既有依赖弃用警告）；export_contracts --check 通过；SWMM 5.2.4 available / execution_verified=true；保留 T1/T2/T3 字节 hash 与完整契约验证通过；与原 main 比较无前端 / Jiajie 进度改动。
+- 配置的 Git credential helper 提供 Tay25006739 GitHub API 登录。直接原仓库 head=tay 开 PR 返回 422 must be a collaborator；公开仓库允许 fork，已创建用户 fork，令 tay-t3 镜像同一已推送提交，并创建正常 open PR [#3](https://github.com/zerngx/sdphack/pull/3)，base=zerngx:main。没有更改账号权限或暴露凭据。
+- PR 创建时最新 main / JJ_Branch=`a79131b`，为 Jiajie 的 J3 commit；与本 PR 的后端改动无目录重叠。已读取其交接，不修改对方文件。main 中 T3 仍待 PR review / merge，J3 中的 v1.2 数值 / 证据链仍需联调验收。
 
 ### 2026-10-19 — T3 DONE（本地待提交 / 推送）
 
