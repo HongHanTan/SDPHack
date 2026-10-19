@@ -4,12 +4,12 @@ Owner：Tay。只有 Tay 身份的 agent 更新本文件；Jiajie 读取交接�
 
 ## 当前状态
 
-- 最近更新：2026-10-19（T2 本地完成，49 项测试与实际 HTTP / API 进程重启验证通过）。
-- 当前任务：T2 DONE，按用户要求发布及交接中；下一项 T3：inspection / media / provenance、debris 质量守恒及真实入口限制。
+- 最近更新：2026-10-19（T2 已共享；与最新 J1/J2 合并后的独立 checkout 通过 49 项测试、真实 HTTP / API 重启验证）。
+- 当前任务：T2 DONE；下一项 T3：inspection / media / provenance、debris 质量守恒及真实入口限制。G1 浏览器闭环等待 Jiajie 完成在线接线。
 - 当前接口版本：`1.1.0`，保留原资产 / request / frames / metrics 核心字段，新增 storm 创建与查询、持久化异步 run / history、结果 / artifact 查询。HTTP 模拟已实现，非零 restriction / high tailwater 明确拒绝。
 - 仓库基线：开始时 Git 工作区干净、只有规划资料；现已新增后端基础代码、seed、契约和测试。当前在 `tay` 分支，未修改 Jiajie 文件。
 - Git 共享：T0 / T1 核心提交 `1703f75` 已推送 `origin/tay`。独立临时 worktree 已从 `origin/main` fast-forward 合并并通过 22 项测试、契约与 native 证据检查；本条交接随 main 发布。`gh` 与可用浏览器均缺失，采用 Git 合并 / push，不创建 PR。主工作目录保持 `tay`，不合并或修改 `JJ_Branch`。
-- 最新共享基线：发布前 fetch 确认 `origin/main=97b2394`（合入 Jiajie PR #2 / `1860feb` 的 J1/J2）；T2 从本地 tay 发布，使用独立 worktree 合并和验证最新 main。没有修改 Jiajie 前端或进度文件。
+- 最新共享基线：发布前 main=`97b2394`（合入 Jiajie PR #2 / `1860feb` 的 J1/J2）；T2 核心 `594f846` 已推送 origin/tay，并在独立 worktree 合并为 `a78242f`，验证通过。本条最终记录随合并版本发布 main，再将 tay fast-forward 同步；Jiajie 前端与进度文件与 `97b2394` 完全一致。
 
 ## 任务队列
 
@@ -17,14 +17,14 @@ Owner：Tay。只有 Tay 身份的 agent 更新本文件；Jiajie 读取交接�
 |---|---|---|
 | T0 | DONE | FastAPI、health / CORS、基础 OpenAPI / examples、9 nodes / 8 conduits / 4 inlets 的 synthetic assets、启动说明；实际 HTTP 启动检查通过 |
 | T1 | DONE | SWMM 5.2.4 实际执行 80 / 120 mm/h；两者各自重复及半步长验证，共 6 次；保留 .inp / .rpt / .out / logs / hash / QA，解析真实 frames / metrics，实体 ID 对齐 |
-| T2 | DONE | POST storm / async run -> SQLite 状态 / 不可变快照 / hash -> 真实 frames / metrics；历史 / 日志、重启读取、失败 / 超时 / 排队 / 中断恢复；49 tests + 实际 TCP / restart 通过，正在发布及交接 |
+| T2 | DONE | POST storm / async run -> SQLite 状态 / 不可变快照 / hash -> 真实 frames / metrics；历史 / 日志、重启读取、失败 / 超时 / 排队 / 中断恢复；与最新 J1/J2 合并后 49 tests + 实际 TCP / restart 通过，已共享 |
 | T3 | TODO | inspection / media、debris mass balance、inlet restriction 实际接入 |
 | T4 | TODO | clean / upsize 比较、storage、统一 replay 执行链 |
 | T5 | TODO | Docker / 复现、数值与 API 检查、假设说明、联调修复 |
 
 ## 下一次直接执行
 
-读取 `AGENTS.md` 与 `md/TEAM_WORKFLOW.md`，检查工作区 / 远端及双方交接。用户已要求共享 T2，当前执行提交 / push / 最新 main 合并验证；完成发布后开发下一项 T3，可先拆成 inspection / media 的可验证单元，再做 debris 与 SWMM inlet restriction。
+读取 `AGENTS.md` 与 `md/TEAM_WORKFLOW.md`，检查工作区 / 远端及双方交接。T2 已共享，下一项 T3，可先拆成 inspection / media 的可验证单元，再做 debris 与 SWMM inlet restriction。无需等待 Jiajie 完成 G1 浏览器接线才开始这项独立后端任务。
 
 复用 `services/api/app/storage.py` 的 SQLite 边界及 `simulation/swmm/runner.py::run_model` 的唯一计算执行链。inspection / media 要追加存储、可重读、带 source_type / timestamp / asset_id / evidence provenance。visible_grate_coverage_fraction 必须独立于 hydraulic_inlet_clogging_fraction；非零 restriction 尚未实现，当前必须继续明确拒绝。
 
@@ -35,7 +35,7 @@ T2 当前支持 constant 0..300 mm/h、duration 300..21600s 且为 300s 倍数�
 ## 交接给 Jiajie
 
 - 职责已确认：Tay 后端，Jiajie 前端。
-- 2026-10-19 发布前确认 main=`97b2394`，包含 Tay T0/T1 与 Jiajie PR #2 的 J1/J2。已按用户要求开始发布 T2；最终共享状态见下方发布记录。
+- 2026-10-19 T2 已按用户要求共享，与 main=`97b2394` 的 J1/J2 无冲突合并并验证；最终共享记录见下方。请同步最新 main，然后先补齐在线 J2 接线。
 - 对照 Jiajie 最新 `1860feb`：资产字段已对齐，无需重做。真实模式仍会因初始化 inspections 404 失败；默认 40% restriction 会收到 422；POST 后立即取结果会收到 409；client 会按 `t1_` / `120mmh` 字符串在 API 模式返回离线 fixture。完整修复范围、请求、轮询和 G1 浏览器验收见 [`contracts/FRONTEND_INTEGRATION.md`](../../contracts/FRONTEND_INTEGRATION.md)。请先补齐这部分 J2 在线接线，再进行 G1 验收；J3 的独立 UI 可并行。
 - Git 同步：在 Jiajie 自己的 checkout、`JJ_Branch` 上，先保存 / 提交已有工作，再执行 `git fetch origin` 和 `git merge origin/main`，然后重新阅读本交接区。T0 / T1 已按 Tay 范围发布，不需要等 J1 全部完成再同步。
 - 本次 T2 契约升级 v1.1.0，消费约定见 `contracts/README.md`。资产 / frames / metrics 核心字段保持兼容，新增可选 run 顶层 storm_id / debris_scenario_id / tailwater_case 和带时区时间戳。
@@ -57,7 +57,7 @@ T2 当前支持 constant 0..300 mm/h、duration 300..21600s 且为 300s 倍数�
 
 ## 阻塞与待确认
 
-- T0 / T1 / T2 后端单元无阻塞。Python 3.12.10、native SWMM 5.2.4、实际 HTTP 执行及进程重启持久化已验证；当前正在发布 T2，G1 浏览器联调待 Jiajie 接线验收。
+- T0 / T1 / T2 后端单元无阻塞。Python 3.12.10、native SWMM 5.2.4、实际 HTTP 执行及进程重启持久化已验证并共享；G1 浏览器联调待 Jiajie 接线验收，尚未宣称完整闭环通过。
 - 首次 sandbox 中 pip 下载遇到 WinError 10013；经授权的依赖安装执行后成功，非当前阻塞。
 - Docker CLI 存在，但 daemon / 容器执行未检查；T0 不依赖 Docker。
 - 测试有 1 条依赖弃用警告：Starlette 0.52.1 引用 AnyIO 4.15.1 的 `anyio.abc.BlockingPortal` alias；当前测试 / HTTP 功能均通过。未屏蔽警告。
@@ -112,6 +112,15 @@ T2 当前支持 constant 0..300 mm/h、duration 300..21600s 且为 300s 倍数�
 实际 HTTP baseline run=`run_683638975fab4bfd9e9cd2ad7f9ff32b`，stronger=`run_58526011782848ecb34a408b4538e5a9`；洪量 0.014893 / 728.764885m3，两者 120 report frames。新创建 storm 的参数会进入新 run，旧 run input hash 保持不变，结果与 native T1 一致。完整证明见 `data/validation/t2/summary.json`。这些不是默认开发数据库的预置 run IDs。
 
 ## 最近实现记录
+
+### 2026-10-19 — T2 Git 发布与 Jiajie 交接
+
+- 用户授权 push 与对接；T2 核心提交 `594f846` 已推送 origin/tay。发布前 fetch 取得 main=`97b2394`、JJ_Branch=`1860feb`；在独立 worktree 从 main 合并 origin/tay，得到 `a78242f`，无冲突。主工作目录保持 tay，不切换分支，不修改 JJ_Branch。
+- 合并后的新 checkout：pytest tests/api tests/simulation **49 passed**（18.11s，1 条既有依赖弃用警告）；export_contracts --check 通过；SWMM 5.2.4 available / execution_verified 均 true；保留 T1/T2 原始证据 hash 校验通过。
+- 合并后的实际 TCP / 新 API 进程重启验证通过：baseline=`run_a548364a407a40beafe483a18e13f801`，stronger=`run_c3ccb18450ae48fc9fd087e756bb28eb`；洪量仍为 0.014893 / 728.764885m3。临时独立服务已停止，临时 runtime 随 worktree 清理，长期证据仍是 data/validation/t2，不覆写。
+- `git diff --exit-code origin/main -- apps/web md/progress/jiajie.md` 通过：Jiajie 最新文件原样保留。当前只做后端发布与仓库交接，没有宣称 Jiajie 已收到私人消息或完成浏览器验收。
+- 新增 `contracts/FRONTEND_INTEGRATION.md`：以最新 J1/J2 代码列出 capability 初始化、clean / normal 默认、flat StormCreate、run 状态轮询、API 与离线 fixture 分离、动态时间轴、失败处理和 G1 验收；contracts/README 与本交接区链接到它。
+- 下一步 Tay 做 T3；Jiajie 同步 main 后按上述说明补齐 J2 在线接线，执行 G1 浏览器验收，在自己的进度中记录 run IDs / 实际结果及后端问题。
 
 ### 2026-10-19 — T2 DONE
 
