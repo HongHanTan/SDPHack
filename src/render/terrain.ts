@@ -4,7 +4,7 @@ import { worldY } from './coords';
 import { createGridGeometry } from './gridGeometry';
 
 // Indexed by LandUse code: ROOF, ROAD, LAWN, PARK, POND, RIVER
-const LAND_COLORS = ['#c9b79c', '#5b6270', '#8fbf6a', '#3f7f3a', '#6e8f5a', '#4f6f5a'].map((c) => new THREE.Color(c));
+const LAND_COLORS = ['#b9ad9b', '#5b6270', '#8fbf6a', '#3f7f3a', '#6e8f5a', '#4f6f5a'].map((c) => new THREE.Color(c));
 
 export function createTerrainMesh(grid: Grid): THREE.Mesh {
   const geom = createGridGeometry(grid);

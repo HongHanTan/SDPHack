@@ -17,7 +17,7 @@ export class WaterSurface {
     this.geom = createGridGeometry(grid);
     this.mesh = new THREE.Mesh(
       this.geom,
-      new THREE.MeshPhongMaterial({ vertexColors: true, transparent: true, opacity: 0.82, shininess: 80 }),
+      new THREE.MeshPhongMaterial({ vertexColors: true, transparent: true, opacity: 0.6, shininess: 80 }),
     );
     this.update(grid.h0);
   }

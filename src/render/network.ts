@@ -27,21 +27,23 @@ export class NetworkView {
       const a = at(byId.get(p.from)!);
       const b = at(byId.get(p.to)!);
       const dir = b.clone().sub(a);
-      const r = Math.max(0.6, p.diameter * 2);
+      const r = Math.max(1.5, p.diameter * 4);
       const mesh = new THREE.Mesh(
         new THREE.CylinderGeometry(r, r, dir.length(), 8),
-        new THREE.MeshBasicMaterial({ color: GREEN.clone(), transparent: true, opacity: 0.85 }),
+        new THREE.MeshBasicMaterial({ color: GREEN.clone(), transparent: true, opacity: 0.95, depthTest: false }),
       );
       mesh.position.copy(a).addScaledVector(dir, 0.5);
       mesh.quaternion.setFromUnitVectors(up, dir.normalize());
+      mesh.renderOrder = 10;
       this.pipeMeshes.push(mesh);
       this.group.add(mesh);
     }
 
     for (const n of net.nodes) {
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(1.8, 12, 8), new THREE.MeshBasicMaterial({ color: NODE_OK.clone() }));
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(3, 12, 8), new THREE.MeshBasicMaterial({ color: NODE_OK.clone(), transparent: true, opacity: 0.95, depthTest: false }));
       mesh.position.copy(at(n));
       mesh.userData.nodeId = n.id;
+      mesh.renderOrder = 10;
       this.nodeMeshes.push(mesh);
       this.group.add(mesh);
     }

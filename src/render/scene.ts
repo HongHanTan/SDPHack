@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Township } from '../scenario/interventions';
 import type { Frame } from '../sim/types';
-import { createBuildings } from './buildings';
 import { NetworkView } from './network';
 import { createTerrainMesh } from './terrain';
 import { WaterSurface } from './water';
@@ -35,7 +34,6 @@ export function createScene(container: HTMLElement): SceneHandle {
 
   let township: Township | null = null;
   let terrain: THREE.Mesh | null = null;
-  let buildings: THREE.InstancedMesh | null = null;
   let water: WaterSurface | null = null;
   let network: NetworkView | null = null;
   let frame: Frame | null = null;
@@ -61,7 +59,7 @@ export function createScene(container: HTMLElement): SceneHandle {
   return {
     canvas: renderer.domElement,
     setTownship(t) {
-      for (const obj of [terrain, buildings]) {
+      for (const obj of [terrain]) {
         if (!obj) continue;
         scene.remove(obj);
         obj.geometry.dispose();
@@ -76,10 +74,9 @@ export function createScene(container: HTMLElement): SceneHandle {
       }
       township = t;
       terrain = createTerrainMesh(t.grid);
-      buildings = createBuildings(t.grid);
       water = new WaterSurface(t.grid);
       network = new NetworkView(t.grid, t.network);
-      scene.add(terrain, buildings, water.mesh, network.group);
+      scene.add(terrain, water.mesh, network.group);
       frame = null;
     },
     showFrame(f) {
