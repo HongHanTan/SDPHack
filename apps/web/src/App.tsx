@@ -25,7 +25,7 @@ export function App() {
   const [conduits, setConduits] = useState<AssetConduit[]>([]);
   const [inspections, setInspections] = useState<InspectionRecord[]>([]);
 
-  // Simulation parameters
+  // Simulation parameters aligned with bootstrap
   const [selectedStormId, setSelectedStormId] = useState<string>('synthetic_80mmh_60min');
   const [selectedDebrisId, setSelectedDebrisId] = useState<string>('demo_inlet_40pct');
   const [selectedTailwater, setSelectedTailwater] = useState<string>('normal');
@@ -33,10 +33,10 @@ export function App() {
   // Simulation execution & playback
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [frames, setFrames] = useState<SimulationFrame[]>([]);
-  const [currentFrameIndex, setCurrentFrameIndex] = useState<number>(0);
+  const [currentFrameIndex, setCurrentFrameIndex] = useState<number>(29); // start near t=1800s (frame 30)
   const [metrics, setMetrics] = useState<SimulationMetricsResponse | null>(null);
 
-  // Asset selection & inspection modal
+  // Asset selection & modal states
   const [selectedAsset, setSelectedAsset] = useState<{
     type: 'node' | 'inlet' | 'conduit';
     id: string;
@@ -49,7 +49,7 @@ export function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Load all foundational data
+  // Load foundational data (assets, bootstrap, health)
   const loadData = useCallback(async () => {
     setLoading(true);
     setApiError(null);
@@ -59,8 +59,12 @@ export function App() {
         apiClient.getBootstrap(),
         apiClient.getTownshipAssets('taman_kyra_demo'),
         apiClient.getInspections(),
-        apiClient.getSimulationFrames('run-mock-baseline-20261019-001'),
-        apiClient.getSimulationMetrics('run-mock-baseline-20261019-001'),
+        apiClient.getSimulationFrames(
+          selectedStormId === 'synthetic_120mmh_60min' ? 't1_stronger' : 't1_baseline'
+        ),
+        apiClient.getSimulationMetrics(
+          selectedStormId === 'synthetic_120mmh_60min' ? 't1_stronger' : 't1_baseline'
+        ),
       ]);
 
       setHealth(h);
@@ -71,14 +75,13 @@ export function App() {
       setInspections(inspRes.items);
       setFrames(framesRes.frames);
       setMetrics(metricsRes);
-      setCurrentFrameIndex(Math.floor(framesRes.frames.length / 2)); // start around peak frame
     } catch (err: unknown) {
       console.error('Failed to load data:', err);
       setApiError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedStormId]);
 
   useEffect(() => {
     loadData();
@@ -87,6 +90,22 @@ export function App() {
   const handleToggleMode = (newMode: DataMode) => {
     apiClient.setDataMode(newMode);
     setMode(newMode);
+  };
+
+  // Switch between verified SWMM runs (Baseline vs Stronger)
+  const handleLoadVerifiedRun = async (stormId: string) => {
+    const isStronger = stormId === 'synthetic_120mmh_60min';
+    const runId = isStronger ? 't1_stronger' : 't1_baseline';
+
+    const [framesRes, metricsRes] = await Promise.all([
+      apiClient.getSimulationFrames(runId),
+      apiClient.getSimulationMetrics(runId),
+    ]);
+
+    setFrames(framesRes.frames);
+    setMetrics(metricsRes);
+    // Move slider to near peak rainfall (frame 30 = t=1800s)
+    setCurrentFrameIndex(29);
   };
 
   const handleRunSimulation = async () => {
@@ -98,10 +117,10 @@ export function App() {
         storm_id: selectedStormId,
         debris_scenario_id: selectedDebrisId,
         tailwater_case: selectedTailwater,
+        intervention: null,
       };
 
       const res = await apiClient.createSimulation(simReq);
-      // Wait for or poll frames
       const [newFrames, newMetrics] = await Promise.all([
         apiClient.getSimulationFrames(res.run_id),
         apiClient.getSimulationMetrics(res.run_id),
@@ -109,9 +128,10 @@ export function App() {
 
       setFrames(newFrames.frames);
       setMetrics(newMetrics);
-      setCurrentFrameIndex(0); // reset playback to start
+      setCurrentFrameIndex(0);
     } catch (err: unknown) {
       console.error('Simulation execution failed:', err);
+      // Per Team Workflow rules: display real error, do not silently fallback
       setApiError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsRunning(false);
@@ -135,7 +155,7 @@ export function App() {
         apiError={apiError}
       />
 
-      {/* Main 3D WebGL Canvas */}
+      {/* Main 3D WebGL Digital Twin Canvas */}
       <SceneViewer
         nodes={nodes}
         inlets={inlets}
@@ -152,6 +172,7 @@ export function App() {
         onClose={() => setSelectedAsset(null)}
         inspections={inspections}
         onOpenInspect={(assetId) => setInspectingAssetId(assetId)}
+        currentFrame={frames[currentFrameIndex] || null}
       />
 
       {/* Simulation HUD (Timeline, Storm/Debris Selectors, Metrics, Legend) */}
@@ -167,6 +188,7 @@ export function App() {
           selectedTailwater={selectedTailwater}
           onSelectTailwater={(id) => setSelectedTailwater(id)}
           onRunSimulation={handleRunSimulation}
+          onLoadVerifiedRun={handleLoadVerifiedRun}
           isRunning={isRunning}
           frames={frames}
           currentFrameIndex={currentFrameIndex}

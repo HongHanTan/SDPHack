@@ -1,5 +1,5 @@
-// Township FloodOps — Contract Types v1
-// Based on md/TEAM_WORKFLOW.md Section 6
+// Township FloodOps — Contract Types v1.0.0
+// Strictly aligned with contracts/openapi.json and md/TEAM_WORKFLOW.md Section 6
 
 export interface Position3D {
   x: number; // East in meters
@@ -15,19 +15,25 @@ export type RunStatus = 'queued' | 'running' | 'succeeded' | 'failed';
 
 export interface AssetNode {
   node_id: string;
-  type: 'junction' | 'outfall' | 'intake';
-  position_m: Position3D;
+  node_type: 'junction' | 'outfall' | 'storage';
+  position_m: Position3D; // pipe invert position
   invert_elevation_m: number;
+  ground_elevation_m: number;
   max_depth_m: number;
-  surface_elevation_m?: number;
+  source_type: SourceType;
   description?: string;
+  // Aliases for UI flexibility
+  type?: string;
+  surface_elevation_m?: number;
 }
 
 export interface AssetInlet {
   inlet_id: string;
   node_id: string;
-  inlet_type: 'curb_opening' | 'grate' | 'combination';
-  position_m: Position3D;
+  position_m: Position3D; // surface grate position
+  grate_area_m2: number;
+  source_type: SourceType;
+  inlet_type?: 'curb_opening' | 'grate' | 'combination';
   dimensions_m?: {
     width: number;
     length: number;
@@ -39,77 +45,113 @@ export interface AssetInlet {
 
 export interface AssetConduit {
   conduit_id: string;
-  from_node: string;
-  to_node: string;
+  from_node_id: string;
+  to_node_id: string;
+  diameter_m: number;
   length_m: number;
-  roughness: number;
-  shape: 'circular' | 'rectangular' | 'trapezoidal';
-  diameter_m?: number;
+  manning_n: number;
+  source_type: SourceType;
+  shape?: 'circular' | 'rectangular' | 'trapezoidal';
   width_m?: number;
   height_m?: number;
+  roughness?: number;
   slope_fraction?: number;
   description?: string;
+  // Backward compat alias
+  from_node?: string;
+  to_node?: string;
 }
 
 export interface TownshipAssetsResponse {
   township_id: string;
   model_version_id: string;
+  source_type: SourceType;
+  is_verified_site_model: boolean;
+  coordinate_system: string;
   nodes: AssetNode[];
   inlets: AssetInlet[];
   conduits: AssetConduit[];
   assumptions: string[];
 }
 
-export interface StormItem {
+export interface StormPreset {
   storm_id: string;
   name: string;
-  intensity_mmh: number;
-  duration_s: number;
   source_type: SourceType;
-  return_period_years?: number;
-  description?: string;
+  parameters: {
+    intensity_mmh: number;
+    duration_s: number;
+    pattern: string;
+  };
 }
 
-export interface DebrisScenarioItem {
+export interface DebrisPreset {
   debris_scenario_id: string;
   name: string;
-  inlet_id: string;
-  hydraulic_inlet_clogging_fraction: number; // 0.0 to 1.0
-  parameter_status: 'assumed_not_calibrated' | 'calibrated' | 'literature_derived';
   source_type: SourceType;
-  notes?: string;
+  parameters: {
+    inlet_id: string;
+    hydraulic_inlet_clogging_fraction: number;
+    parameter_status: 'assumed_not_calibrated' | string;
+  };
+  swmm_supported?: boolean;
 }
 
-export interface TailwaterCaseItem {
-  case_id: string;
+export interface TailwaterPreset {
+  tailwater_case: string;
   name: string;
-  outfall_stage_m: number;
-  description?: string;
+  source_type: SourceType;
+  parameters: {
+    depth_above_outfall_invert_m: number;
+  };
+}
+
+export interface Capabilities {
+  assets: boolean;
+  storm_creation: boolean;
+  simulations: boolean;
+  inspections: boolean;
+  debris: boolean;
+  comparisons: boolean;
 }
 
 export interface ModelVersionItem {
   model_version_id: string;
   name: string;
-  is_synthetic: boolean;
+  source_type: SourceType;
+  is_verified_site_model: boolean;
+  readiness: string;
+  parameters?: Record<string, unknown>;
   notes?: string;
 }
 
 export interface BootstrapResponse {
+  api_version: string;
   township_id: string;
   model_versions: ModelVersionItem[];
-  storms: StormItem[];
-  debris_scenarios: DebrisScenarioItem[];
-  tailwater_cases: TailwaterCaseItem[];
+  storms: StormPreset[];
+  debris_scenarios: DebrisPreset[];
+  tailwater_cases: TailwaterPreset[];
+  capabilities: Capabilities;
+  assumptions: string[];
+}
+
+export interface EngineHealth {
+  available: boolean;
+  engine: string;
+  engine_version: string;
+  execution_verified: boolean;
+  message: string;
 }
 
 export interface HealthResponse {
   status: string;
-  engine_available: boolean;
-  engine_version?: string;
-  is_verified_site_model: boolean;
+  api_version: string;
+  swmm: EngineHealth;
+  capabilities: Capabilities;
 }
 
-export interface ConduitState {
+export interface PipeState {
   conduit_id: string;
   flow_m3s: number;
   depth_m: number;
@@ -129,12 +171,11 @@ export interface InletState {
   inlet_id: string;
   hydraulic_inlet_clogging_fraction: number;
   parameter_status: string;
-  inflow_m3s?: number;
 }
 
 export interface SimulationFrame {
   timestamp_s: number;
-  pipe_states: ConduitState[];
+  pipe_states: PipeState[];
   node_states: NodeState[];
   inlet_states: InletState[];
 }
@@ -142,6 +183,13 @@ export interface SimulationFrame {
 export interface SimulationFramesResponse {
   run_id: string;
   model_version_id: string;
+  result_type: 'simulated';
+  engine: string;
+  engine_version: string;
+  is_verified_site_model: boolean;
+  assumptions: string[];
+  warnings: string[];
+  status_definitions: Record<string, string>;
   frames: SimulationFrame[];
 }
 
@@ -149,18 +197,17 @@ export interface SimulationMetricsResponse {
   run_id: string;
   model_version_id: string;
   result_type: 'simulated';
+  engine: string;
+  engine_version: string;
+  is_verified_site_model: boolean;
+  assumptions: string[];
+  warnings: string[];
+  status_definitions: Record<string, string>;
   total_flooding_volume_m3: number;
   flooded_node_count: number;
   surcharge_duration_s: number;
+  metric_definitions: Record<string, string>;
   peak_flow_m3s?: number;
-  definitions?: Record<string, string>;
-  warnings?: string[];
-}
-
-export interface InterventionInput {
-  type: 'clean_inlet' | 'upsize_conduit' | 'add_storage';
-  target_asset_id: string;
-  changes: Record<string, unknown>;
 }
 
 export interface SimulationCreateRequest {
@@ -168,20 +215,15 @@ export interface SimulationCreateRequest {
   storm_id: string;
   debris_scenario_id?: string | null;
   tailwater_case: string;
-  intervention?: InterventionInput | null;
+  intervention?: null;
 }
 
 export interface SimulationRun {
   run_id: string;
   status: RunStatus;
   model_version_id: string;
-  storm_id: string;
-  debris_scenario_id?: string | null;
-  tailwater_case: string;
-  created_at: string;
-  completed_at?: string;
-  engine?: string;
-  engine_version?: string;
+  engine: string;
+  engine_version: string;
   is_verified_site_model: boolean;
   input_hash?: string;
   assumptions?: string[];

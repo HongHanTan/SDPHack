@@ -76,16 +76,23 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
 
         <div className="flex items-center gap-3 text-xs">
           {/* Engine health */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300">
-            {health?.engine_available ? (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-slate-300">
+            {health?.swmm?.available ? (
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             ) : (
               <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
             )}
             <span className="text-slate-400">Engine:</span>
             <span className="font-mono text-slate-200">
-              {health?.engine_version || 'Checking...'}
+              {health?.swmm
+                ? `${health.swmm.engine} ${health.swmm.engine_version}`
+                : 'Checking...'}
             </span>
+            {health?.swmm?.execution_verified && (
+              <span className="ml-1 text-[10px] text-emerald-400 font-mono px-1 rounded bg-emerald-500/10">
+                VERIFIED
+              </span>
+            )}
           </div>
 
           {/* Mode Switcher */}

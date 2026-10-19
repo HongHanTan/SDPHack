@@ -1,29 +1,31 @@
 import {
   ApiErrorResponse,
   BootstrapResponse,
-  DebrisScenarioItem,
+  DebrisPreset,
   HealthResponse,
   InspectionRecord,
   SimulationCreateRequest,
   SimulationFramesResponse,
   SimulationMetricsResponse,
   SimulationRun,
-  StormItem,
+  StormPreset,
   TownshipAssetsResponse,
 } from '../types';
 import {
   MOCK_ASSETS,
   MOCK_BOOTSTRAP,
-  MOCK_FRAMES,
+  MOCK_FRAMES_BASELINE,
+  MOCK_FRAMES_STRONGER,
   MOCK_HEALTH,
   MOCK_INSPECTIONS,
-  MOCK_METRICS,
-  MOCK_RUN,
+  MOCK_METRICS_BASELINE,
+  MOCK_METRICS_STRONGER,
+  MOCK_RUN_BASELINE,
+  MOCK_RUN_STRONGER,
 } from '../mocks/fixtures';
 
 export type DataMode = 'mock' | 'api';
 
-// Configurable state with localStorage persistence for developer convenience
 const STORAGE_KEY_MODE = 'floodops_data_mode';
 const STORAGE_KEY_BASE_URL = 'floodops_api_base_url';
 
@@ -75,7 +77,6 @@ export class ApiClient {
         },
       });
     } catch (networkError: unknown) {
-      // Per Team Workflow rules: Real API failure must NOT fall back to mock.
       throw new Error(
         `[Network Error] Failed to connect to FloodOps API at ${url}. ${
           networkError instanceof Error ? networkError.message : String(networkError)
@@ -88,11 +89,11 @@ export class ApiClient {
       try {
         errorData = (await res.json()) as ApiErrorResponse;
       } catch {
-        // Fall back to HTTP status text
+        // Ignored
       }
       const message = errorData?.error?.message || `HTTP ${res.status}: ${res.statusText}`;
       const code = errorData?.error?.code || `HTTP_${res.status}`;
-      const err = new Error(`[API Error ${code}] ${message}`);
+      const err = new Error(`[${code}] ${message}`);
       (err as unknown as { code: string; details: unknown }).code = code;
       (err as unknown as { code: string; details: unknown }).details = errorData?.error?.details;
       throw err;
@@ -124,20 +125,20 @@ export class ApiClient {
     return this.request<TownshipAssetsResponse>(`/api/townships/${townshipId}/assets`);
   }
 
-  public async createStorm(storm: Partial<StormItem>): Promise<StormItem> {
+  public async createStorm(storm: Partial<StormPreset>): Promise<StormPreset> {
     if (this.mode === 'mock') {
-      const newStorm: StormItem = {
+      return {
         storm_id: `mock-storm-${Date.now()}`,
         name: storm.name || 'Custom Mock Storm',
-        intensity_mmh: storm.intensity_mmh || 80,
-        duration_s: storm.duration_s || 3600,
         source_type: 'synthetic',
-        return_period_years: storm.return_period_years || 10,
-        description: storm.description || 'User-defined mock storm',
+        parameters: {
+          intensity_mmh: storm.parameters?.intensity_mmh || 80,
+          duration_s: storm.parameters?.duration_s || 3600,
+          pattern: 'constant',
+        },
       };
-      return newStorm;
     }
-    return this.request<StormItem>('/api/storms', {
+    return this.request<StormPreset>('/api/storms', {
       method: 'POST',
       body: JSON.stringify(storm),
     });
@@ -175,20 +176,21 @@ export class ApiClient {
     });
   }
 
-  public async createDebrisScenario(data: Partial<DebrisScenarioItem>): Promise<DebrisScenarioItem> {
+  public async createDebrisScenario(data: Partial<DebrisPreset>): Promise<DebrisPreset> {
     if (this.mode === 'mock') {
-      const scenario: DebrisScenarioItem = {
+      return {
         debris_scenario_id: `mock-debris-${Date.now()}`,
         name: data.name || 'Custom Debris Hypothesis',
-        inlet_id: data.inlet_id || 'INLET-D07',
-        hydraulic_inlet_clogging_fraction: data.hydraulic_inlet_clogging_fraction ?? 0.4,
-        parameter_status: 'assumed_not_calibrated',
         source_type: 'assumed',
-        notes: data.notes || 'User defined mock restriction hypothesis',
+        parameters: {
+          inlet_id: data.parameters?.inlet_id || 'INLET-D07',
+          hydraulic_inlet_clogging_fraction: data.parameters?.hydraulic_inlet_clogging_fraction ?? 0.4,
+          parameter_status: 'assumed_not_calibrated',
+        },
+        swmm_supported: false,
       };
-      return scenario;
     }
-    return this.request<DebrisScenarioItem>('/api/debris/scenarios', {
+    return this.request<DebrisPreset>('/api/debris/scenarios', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -196,9 +198,10 @@ export class ApiClient {
 
   public async createSimulation(req: SimulationCreateRequest): Promise<{ run_id: string; status: string }> {
     if (this.mode === 'mock') {
+      const isStronger = req.storm_id === 'synthetic_120mmh_60min';
       return {
-        run_id: `run-mock-${Date.now()}`,
-        status: 'queued',
+        run_id: isStronger ? 't1_stronger' : 't1_baseline',
+        status: 'succeeded',
       };
     }
     return this.request<{ run_id: string; status: string }>('/api/simulations', {
@@ -208,31 +211,26 @@ export class ApiClient {
   }
 
   public async getSimulation(runId: string): Promise<SimulationRun> {
-    if (this.mode === 'mock') {
-      return {
-        ...MOCK_RUN,
-        run_id: runId,
-      };
+    if (this.mode === 'mock' || runId.startsWith('t1_')) {
+      return runId === 't1_stronger' ? MOCK_RUN_STRONGER : MOCK_RUN_BASELINE;
     }
     return this.request<SimulationRun>(`/api/simulations/${runId}`);
   }
 
   public async getSimulationFrames(runId: string): Promise<SimulationFramesResponse> {
-    if (this.mode === 'mock') {
-      return {
-        ...MOCK_FRAMES,
-        run_id: runId,
-      };
+    if (this.mode === 'mock' || runId.startsWith('t1_') || runId.includes('120mmh')) {
+      return runId.includes('stronger') || runId.includes('120mmh')
+        ? MOCK_FRAMES_STRONGER
+        : MOCK_FRAMES_BASELINE;
     }
     return this.request<SimulationFramesResponse>(`/api/simulations/${runId}/frames`);
   }
 
   public async getSimulationMetrics(runId: string): Promise<SimulationMetricsResponse> {
-    if (this.mode === 'mock') {
-      return {
-        ...MOCK_METRICS,
-        run_id: runId,
-      };
+    if (this.mode === 'mock' || runId.startsWith('t1_') || runId.includes('120mmh')) {
+      return runId.includes('stronger') || runId.includes('120mmh')
+        ? MOCK_METRICS_STRONGER
+        : MOCK_METRICS_BASELINE;
     }
     return this.request<SimulationMetricsResponse>(`/api/simulations/${runId}/metrics`);
   }
