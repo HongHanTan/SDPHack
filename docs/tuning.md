@@ -1,6 +1,6 @@
 # Township tuning log (Task 10)
 
-Date: 2026-10-20. Tuned config commit: see "Commit" at the bottom.
+Date: 2026-10-20. Tuned config commit: `7bba4fa`.
 Storm: 100-yr ARI, 2 h alternating block (136 mm total, peak 316 mm/hr block), + 1 h recession.
 
 ## Final `npm run tune` table
@@ -63,4 +63,4 @@ No expectation in `tests/scenario/township.test.ts` needed updating.
 ## Commit
 
 Tuned config committed in `chore: tune synthetic township so the demo story emerges from the model`
-(hash recorded in the follow-up commit below).
+= `7bba4fa`.
