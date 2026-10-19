@@ -15,6 +15,7 @@ export interface WorkerLike {
   postMessage(m: RunRequest): void;
   onmessage: ((e: MessageEvent<WorkerMessage>) => void) | null;
   onerror: ((e: ErrorEvent) => void) | null;
+  onmessageerror?: ((e: MessageEvent) => void) | null;
   terminate(): void;
 }
 
@@ -73,11 +74,13 @@ export class SimRunner {
           reject(new SimRunError(m.message, m.step));
         }
       };
-      this.worker.onerror = (e) => {
+      const replaceWorker = (message: string) => {
         this.worker.terminate();
         this.worker = this.createWorker();
-        reject(new SimRunError(e.message || 'Simulation worker crashed', -1));
+        reject(new SimRunError(message, -1));
       };
+      this.worker.onerror = (e) => replaceWorker(e.message || 'Simulation worker crashed');
+      this.worker.onmessageerror = () => replaceWorker('Simulation worker sent an unreadable message');
       this.worker.postMessage({ type: 'run', key, interventions: [...ids].sort(), stormId, custom });
     });
   }

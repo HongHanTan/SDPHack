@@ -11,12 +11,14 @@ class FakeWorker implements WorkerLike {
   terminated = false;
   onmessage: ((e: MessageEvent<WorkerMessage>) => void) | null = null;
   onerror: ((e: ErrorEvent) => void) | null = null;
-  constructor(private mode: 'ok' | 'simerror' | 'crash' = 'ok') {}
+  onmessageerror: ((e: MessageEvent) => void) | null = null;
+  constructor(private mode: 'ok' | 'simerror' | 'crash' | 'badmsg' = 'ok') {}
   postMessage(m: RunRequest) {
     this.posted.push(m);
     queueMicrotask(() => {
       const send = (data: WorkerMessage) => this.onmessage?.({ data } as MessageEvent<WorkerMessage>);
       if (this.mode === 'crash') return this.onerror?.({ message: 'boom' } as ErrorEvent);
+      if (this.mode === 'badmsg') return this.onmessageerror?.({} as MessageEvent);
       if (this.mode === 'simerror') return send({ type: 'error', key: m.key, message: 'NaN', step: 42 });
       send({ type: 'frame', key: m.key, frame });
       send({ type: 'done', key: m.key, metrics });
@@ -56,6 +58,18 @@ describe('SimRunner', () => {
     const workers: FakeWorker[] = [];
     const runner = new SimRunner(() => {
       const w = new FakeWorker(workers.length === 0 ? 'crash' : 'ok');
+      workers.push(w);
+      return w;
+    });
+    await expect(runner.run([], '10yr')).rejects.toBeInstanceOf(SimRunError);
+    expect(workers[0].terminated).toBe(true);
+    await expect(runner.run([], '10yr')).resolves.toBeDefined();
+  });
+
+  it('replaces the worker on a message deserialisation error', async () => {
+    const workers: FakeWorker[] = [];
+    const runner = new SimRunner(() => {
+      const w = new FakeWorker(workers.length === 0 ? 'badmsg' : 'ok');
       workers.push(w);
       return w;
     });

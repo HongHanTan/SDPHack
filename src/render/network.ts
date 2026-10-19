@@ -50,6 +50,7 @@ export class NetworkView {
   }
 
   update(frame: Frame | null, time: number): void {
+    if (frame && (frame.pipeLoad.length !== this.pipeMeshes.length || frame.nodeFill.length !== this.nodeMeshes.length)) frame = null;
     this.pipeMeshes.forEach((m, p) => loadColor(frame ? frame.pipeLoad[p] : 0, (m.material as THREE.MeshBasicMaterial).color));
     this.nodeMeshes.forEach((m, k) => {
       const surcharged = frame !== null && frame.nodeFill[k] >= 0.999;

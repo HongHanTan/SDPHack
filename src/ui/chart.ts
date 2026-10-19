@@ -4,6 +4,11 @@ import type { Metrics } from '../sim/types';
 
 let plot: uPlot | null = null;
 
+export function clearSagChart(): void {
+  plot?.destroy();
+  plot = null;
+}
+
 export function renderSagChart(el: HTMLElement, base: Metrics, cur: Metrics): void {
   plot?.destroy();
   plot = new uPlot(

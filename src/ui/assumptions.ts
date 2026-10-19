@@ -14,6 +14,7 @@ export function renderAssumptions(el: HTMLElement): void {
     ['Storm pattern', `Alternating block, ${BLOCK_S / 60}-min blocks, ${STORM_DURATION_S / 3600} h, then ${SIM.recessionS / 60} min recession`],
     ['Infiltration (mm/hr)', Object.entries(INFILTRATION_MMHR).map(([k, v]) => `${k.toLowerCase()} ${v}`).join(', ')],
     ['Pipes', `Manning n = ${MANNING_N}; minimum grade ${MIN_SLOPE}`],
+    ['Custom pipes', 'Routed by capacity only; uphill pipes are rejected.'],
     ['Inlets', `Weir C = ${WEIR_C}; perimeter ${MANHOLE.inletPerimeter} m per manhole`],
     ['Outfall', `Orifice Cd = ${ORIFICE_CD}`],
     ['River stage', RIVER_STAGE.times.map((t, k) => `${t / 60} min: ${RIVER_STAGE.levels[k]} m`).join(' · ')],

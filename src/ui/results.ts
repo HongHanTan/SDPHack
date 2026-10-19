@@ -1,4 +1,4 @@
-import { SIM } from '../scenario/config';
+import { SIM, THRESHOLDS } from '../scenario/config';
 import type { Metrics } from '../sim/types';
 import { describeChange, formatRM, type Tone } from './format';
 
@@ -23,10 +23,10 @@ function delta(r: Row): { text: string; tone: Tone } {
 export function renderResults(el: HTMLElement, base: Metrics, cur: Metrics, costRM: number): void {
   const rows: Row[] = [
     { label: 'Peak depth at the sag', base: base.peakSagDepth, cur: cur.peakSagDepth, digits: 2, unit: 'm', lowerIsBetter: true },
-    { label: 'Homes flooded (> 0.30 m)', base: base.homesFlooded, cur: cur.homesFlooded, digits: 0, unit: '', lowerIsBetter: true },
-    { label: 'Flooded road area (> 0.15 m)', base: base.floodedRoadArea, cur: cur.floodedRoadArea, digits: 0, unit: 'm²', lowerIsBetter: true },
+    { label: `Homes flooded (≥ ${THRESHOLDS.home.toFixed(2)} m)`, base: base.homesFlooded, cur: cur.homesFlooded, digits: 0, unit: '', lowerIsBetter: true },
+    { label: `Flooded road area (≥ ${THRESHOLDS.road.toFixed(2)} m)`, base: base.floodedRoadArea, cur: cur.floodedRoadArea, digits: 0, unit: 'm²', lowerIsBetter: true },
     { label: 'Minutes until roads passable', base: base.minutesToPassable, cur: cur.minutesToPassable, digits: 0, unit: 'min', lowerIsBetter: true },
-    { label: 'Peak outfall flow', base: base.peakOutfallFlow, cur: cur.peakOutfallFlow, digits: 2, unit: 'm³/s', lowerIsBetter: false },
+    { label: 'Peak gravity outfall flow (excl. pump)', base: base.peakOutfallFlow, cur: cur.peakOutfallFlow, digits: 2, unit: 'm³/s', lowerIsBetter: false },
   ];
   el.innerHTML =
     rows
@@ -42,8 +42,15 @@ export function renderResults(el: HTMLElement, base: Metrics, cur: Metrics, cost
       <div class="delta same">placeholder rates</div></div>`;
 }
 
-export function renderBalance(el: HTMLElement, error: number): void {
-  const ok = error < 0.01;
+export function renderBalance(el: HTMLElement, baseError: number, curError: number): void {
+  const ok = baseError < 0.01 && curError < 0.01;
+  const pct = (e: number) => `${(e * 100).toFixed(3)}%`;
   el.className = `badge ${ok ? 'ok' : 'warn'}`;
-  el.textContent = `Water balance ${ok ? '✓' : '⚠'} (${(error * 100).toFixed(3)}% error)`;
+  el.textContent = `Water balance ${ok ? '✓' : '⚠'} baseline ${pct(baseError)} · scenario ${pct(curError)}`;
+}
+
+export function clearResults(cards: HTMLElement, balance: HTMLElement, text = 'Running…'): void {
+  cards.innerHTML = `<p class="note">${text}</p>`;
+  balance.textContent = '';
+  balance.className = '';
 }
