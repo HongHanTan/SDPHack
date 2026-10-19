@@ -1,0 +1,25 @@
+INFO:     Started server process [25140]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:56257 (Press CTRL+C to quit)
+INFO:     127.0.0.1:56258 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/inspections/inspection_4b33550573794f59ab007fee79a7cd35 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/inspections/inspection_4b33550573794f59ab007fee79a7cd35/media/media_534c53655fcb4365a90426d1c81e47f0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/inspections?asset_id=INLET-D07 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/debris/scenarios/debris_497be43b3e0c40dfb6f5e190ce3e8cd3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_d212a2b2cba5441c87a461d8e4ad5541 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_d212a2b2cba5441c87a461d8e4ad5541/frames HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_d212a2b2cba5441c87a461d8e4ad5541/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/debris/scenarios/debris_6015cce6279d4cb6bed566d9edb69ab2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_72d4259734994ea79feba2345c50a6f5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_72d4259734994ea79feba2345c50a6f5/frames HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_72d4259734994ea79feba2345c50a6f5/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/debris/scenarios/debris_2a2d230c70ce48918459c675f37c8d38 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_ca69e2f6f7ce49a0a781faed9e198991 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_ca69e2f6f7ce49a0a781faed9e198991/frames HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_ca69e2f6f7ce49a0a781faed9e198991/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/debris/scenarios/debris_2daa3742ee1148099577728af58c2ab7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_15d2ab8dcd1644e6bf0356dec80c43c5 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_15d2ab8dcd1644e6bf0356dec80c43c5/frames HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_15d2ab8dcd1644e6bf0356dec80c43c5/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56258 - "GET /api/simulations/run_80772b861fe944f4bcd1d579cf9bf5b8 HTTP/1.1" 200 OK

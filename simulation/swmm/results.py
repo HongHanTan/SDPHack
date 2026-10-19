@@ -64,6 +64,7 @@ def check_qa(native: dict, report: str, inputs: dict) -> dict:
 
 def parse_results(directory: Path, inputs: dict, run_id: str) -> tuple[dict, dict, dict]:
     from swmm.toolkit import output, shared_enum as enums
+    from .inlets import expected_ids
 
     native = read_json(directory / "native.json")
     report = (directory / "model.rpt").read_text(encoding="utf-8")
@@ -85,7 +86,8 @@ def parse_results(directory: Path, inputs: dict, run_id: str) -> tuple[dict, dic
         sizes = output.get_proj_size(handle)
         node_indices = {output.get_elem_name(handle, enums.ElementType.NODE, i): i for i in range(sizes[1])}
         pipe_indices = {output.get_elem_name(handle, enums.ElementType.LINK, i): i for i in range(sizes[2])}
-        if set(nodes) != set(node_indices) or set(pipes) != set(pipe_indices):
+        expected_nodes, expected_links = expected_ids(inputs)
+        if expected_nodes != set(node_indices) or expected_links != set(pipe_indices):
             raise NumericalQAError("Output entity IDs differ from the asset registry")
         periods = output.get_times(handle, enums.Time.NUM_PERIODS)
         report_step = output.get_times(handle, enums.Time.REPORT_STEP)
@@ -100,6 +102,9 @@ def parse_results(directory: Path, inputs: dict, run_id: str) -> tuple[dict, dic
         floods = {n: node_series(n, enums.NodeAttribute.FLOODING_LOSSES) for n in nodes}
         flows = {p: output.get_link_series(handle, pipe_indices[p], enums.LinkAttribute.FLOW_RATE, 0, periods - 1) for p in pipes}
         pipe_depths = {p: output.get_link_series(handle, pipe_indices[p], enums.LinkAttribute.FLOW_DEPTH, 0, periods - 1) for p in pipes}
+        inlet_elements = {e["inlet_id"]:e for e in inputs.get("inlet_model",{}).get("elements",[])}
+        capture = {tag:node_series(e["sewer_node_id"],enums.NodeAttribute.LATERAL_INFLOW) for tag,e in inlet_elements.items()}
+        bypass = {tag:node_series(e["outfall_node_id"],enums.NodeAttribute.TOTAL_INFLOW) for tag,e in inlet_elements.items()}
         frames = []
         for index in range(periods):
             node_states = []
@@ -118,10 +123,17 @@ def parse_results(directory: Path, inputs: dict, run_id: str) -> tuple[dict, dic
                 if not math.isfinite(flow):
                     raise NumericalQAError("Nonfinite conduit flow in binary output")
                 pipe_states.append({"conduit_id":pipe_id,"flow_m3s":flow,"depth_m":depth,"status":pipe_status(pipe,depth,current_heads,nodes)})
+            inlet_states = []
+            for inlet in assets["inlets"]:
+                tag = inlet["inlet_id"]
+                state = {"inlet_id":tag,"hydraulic_inlet_clogging_fraction":inlet_elements.get(tag,{}).get("hydraulic_inlet_clogging_fraction",0),"parameter_status":"assumed_not_calibrated","capture_flow_m3s":None,"bypass_flow_m3s":None}
+                if tag in inlet_elements:
+                    state.update(capture_flow_m3s=nonnegative(capture[tag][index]),bypass_flow_m3s=nonnegative(bypass[tag][index]))
+                inlet_states.append(state)
             frames.append({
                 "timestamp_s": (index + 1) * report_step,
                 "pipe_states": pipe_states, "node_states": node_states,
-                "inlet_states": [{"inlet_id": inlet["inlet_id"],"hydraulic_inlet_clogging_fraction":0,"parameter_status":"assumed_not_calibrated"} for inlet in assets["inlets"]],
+                "inlet_states": inlet_states,
             })
     finally:
         output.close(handle)
@@ -133,6 +145,7 @@ def parse_results(directory: Path, inputs: dict, run_id: str) -> tuple[dict, dic
     }
     metrics = {
         **provenance,
+        "inlet_volumes":None,
         "total_flooding_volume_m3":sum(stats["flooding_volume_m3"] for stats in native["node_statistics"].values()),
         "flooded_node_count":sum(stats["flooding_volume_m3"] > 1e-6 for stats in native["node_statistics"].values()),
         "surcharge_duration_s":native["surcharge_duration_s"],
@@ -143,4 +156,16 @@ def parse_results(directory: Path, inputs: dict, run_id: str) -> tuple[dict, dic
             "frames":"Actual binary output samples at 60,120,...,7200 s. No fabricated t=0 frame or visual interpolation. A 60 s report sample can miss a routing-step peak.",
         },
     }
+    if inlet_elements:
+        statistics = native.get("inlet_statistics",[])
+        if {x["inlet_id"] for x in statistics} != set(inlet_elements):
+            raise NumericalQAError("Missing native inlet statistics")
+        for item in statistics:
+            for key in ("captured_volume_m3","backflow_volume_m3","bypass_volume_m3"):
+                nonnegative(item[key])
+        metrics["inlet_volumes"] = statistics
+        metrics["metric_definitions"]["inlet_volumes"] = "Integral of native toolkit CMS inlet capture/backflow and each separate surface outfall inflow at routing-step endpoints, using actual step seconds. Bypass includes sewer backflow returned to the surface. It is not a calibrated street-flood volume or depth."
+        metrics["metric_definitions"]["flooded_node_count"] += " Native runs with inlet capture also include explicitly mapped auxiliary surface nodes; these are not extra surveyed assets."
+        warning = "Finite uncalibrated inlet capture: compare with finite 0% using identical storm/boundary. Reduced sewer flooding can accompany increased surface bypass; display inlet_volumes separately."
+        provenance["warnings"].append(warning)
     return {**provenance,"frames":frames}, metrics, qa

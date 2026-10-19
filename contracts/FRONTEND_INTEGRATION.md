@@ -1,6 +1,6 @@
-# T2 → Jiajie：真实 API 接线与 G1 验收
+# T2 / T3 → Jiajie：真实 API 接线与 G1 验收
 
-2026-10-19，接口 v1.1.0。对照 `origin/main=97b2394` / Jiajie `1860feb` 检查；J1 的资产字段与 T1 离线结果已经对齐，以下是 T2 到位后的接线工作。后端 HTTP / SWMM / 重启持久化已验证；浏览器中的 G1 闭环仍待前端接线验收。
+2026-10-19，当前接口 v1.2.0。对照 Jiajie `1860feb` 检查；J1 的资产字段与 T1 离线结果已经对齐，以下为在线接线要求。T3 已新增 inspections / media / debris 与 finite inlet capture，详情及请求见 [T3_INTEGRATION.md](T3_INTEGRATION.md)。后端 HTTP / SWMM / 重启持久化已验证；浏览器中的 G1/G2 闭环仍待前端接线验收。
 
 ## 同步与启动
 
@@ -23,8 +23,8 @@ git merge origin/main
 
 | 位置 | 当前行为（1860feb） | T2 接线要求 |
 |---|---|---|
-| `App.tsx::loadData` | `Promise.all` 总是调用 inspections，API 返回 404 会使整个初始化失败 | 先加载 health / bootstrap / assets；按 capabilities 决定附加接口。T2 不调用 inspections |
-| `App.tsx` 默认参数 / HUD | 默认 `demo_inlet_40pct`，后端明确拒绝 | 默认 `demo_inlet_clean` + `normal`；禁用 `swmm_supported=false` 的场景和未实现功能 |
+| `App.tsx::loadData` | `Promise.all` 总是调用 inspections 和固定离线 run | 先加载 health / bootstrap / assets；按 capabilities 决定附加接口。T3 inspections 已实现；固定离线 run 不能充当 API 结果 |
+| `App.tsx` 默认参数 / HUD | 默认 `demo_inlet_40pct` | 该 ID 现在是 finite 40%；finite 对比默认选 `demo_inlet_capture_0pct` + normal。保留 direct-node `demo_inlet_clean` 为单独来源组，禁用不支持边界 |
 | `App.tsx::handleRunSimulation` | POST 后立即读取 frames / metrics | 保存 POST 返回的 run_id，轮询状态到终态，成功后才加载结果 |
 | `api/client.ts::createStorm` | 发送 `Partial<StormPreset>`，参数通常嵌套 | 新建独立 StormCreate 请求类型，发送下面的扁平 body；响应仍是嵌套 parameters |
 | `api/client.ts::getSimulation*` | API 模式也按 `t1_` / `120mmh` 字符串返回本地 fixture | API 模式全部真实请求；离线真实 T1 回放通过独立、明确标识的入口读取 fixture，显示离线来源 |
@@ -60,15 +60,15 @@ git merge origin/main
 | 409 `RESULTS_NOT_READY` | run 尚未成功，继续查询状态 |
 | 409 `SIMULATION_FAILED` | 展示持久化失败原因 |
 | 404 `NOT_FOUND` | ID 不属于当前数据库，显示错误 |
-| 422 `VALIDATION_ERROR` / `UNSUPPORTED_SCENARIO` | 展示输入 / 能力错误，不启动假结果 |
+| 422 `VALIDATION_ERROR` / `UNSUPPORTED_SCENARIO` / `SCENARIO_STORM_MISMATCH` | 展示输入 / 能力错误；跨 storm 时新建 debris 场景，不启动假结果 |
 | 429 `QUEUE_FULL` | 显示繁忙，允许稍后重试 |
 | 500 `RESULT_ARTIFACT_INVALID` | 证据文件缺失或损坏，显示错误 |
 
-`capabilities.simulations=true` 表示路由已实现；引擎缺失仍可能产生 failed / ENGINE_UNAVAILABLE。T2 inspections / debris / comparisons 为 false，非零限制和 high tailwater 留待后续实现。
+`capabilities.simulations=true` 表示路由已实现；引擎缺失仍可能产生 failed / ENGINE_UNAVAILABLE。T3 inspections / debris 为 true；comparisons 为 false，high tailwater 留待后续实现。非零限制必须走明确的 native finite capture 场景，不能通过改变 UI 数字冒充输入变化。
 
 ## Jiajie 的浏览器验收（待执行）
 
-- API 模式首次打开无需本地 fixture 或预设 run，9 nodes / 8 conduits / 4 inlets 正常显示，无 inspections 404。
+- API 模式首次打开无需本地 fixture 或预设 run，9 nodes / 8 conduits / 4 inlets 正常显示；T3 的 inspections 按 capability 加载。
 - clean / normal 下分别提交 80 与 120 mm/h，记录两个新 run_id；经历状态轮询后同一资产上的时间轴 / KPI 改变。60 分钟雨量各有 120 帧，t=60..7200s。
 - 自定义 storm 创建后使用新 ID 提交；重启后端，history / storm / 结果仍可读取；旧 baseline 的 input_hash / 指标不变。
 - 参考结果：80 mm/h 洪量约 0.014893m3，120 mm/h 约 728.764885m3。baseline 微小瞬态对步长敏感，展示返回的警告；全部为 synthetic network 上的 simulated，并非现场校准预测。

@@ -4,12 +4,13 @@ Owner：Tay。只有 Tay 身份的 agent 更新本文件；Jiajie 读取交接�
 
 ## 当前状态
 
-- 最近更新：2026-10-19（T2 已共享；与最新 J1/J2 合并后的独立 checkout 通过 49 项测试、真实 HTTP / API 重启验证）。
-- 当前任务：T2 DONE；下一项 T3：inspection / media / provenance、debris 质量守恒及真实入口限制。G1 浏览器闭环等待 Jiajie 完成在线接线。
-- 当前接口版本：`1.1.0`，保留原资产 / request / frames / metrics 核心字段，新增 storm 创建与查询、持久化异步 run / history、结果 / artifact 查询。HTTP 模拟已实现，非零 restriction / high tailwater 明确拒绝。
+- 最近更新：2026-10-19（T3 本地完成，88 项测试及实际 TCP / 新 API 进程重启、原生入口 0/20/40/60%、独立重复与半步长验证通过）。
+- 当前任务：T3 DONE，按用户要求提交 / push 并创建 tay → main PR 中；下一项 T4：同条件 clean / upsize 比较，再做 storage / replay。G1/G2 浏览器闭环仍待 Jiajie 接线验收。
+- 当前接口版本：`1.2.0`。新增 append-only inspection / media / provenance、独立 debris mass balance、原生 CUSTOM DIVERSION / INLET_USAGE 有限入口限制及 capture/backflow/bypass 结果；保留 T1/T2 direct-node 基线和核心字段。high tailwater / interventions 仍拒绝。
 - 仓库基线：开始时 Git 工作区干净、只有规划资料；现已新增后端基础代码、seed、契约和测试。当前在 `tay` 分支，未修改 Jiajie 文件。
 - Git 共享：T0 / T1 核心提交 `1703f75` 已推送 `origin/tay`。独立临时 worktree 已从 `origin/main` fast-forward 合并并通过 22 项测试、契约与 native 证据检查；本条交接随 main 发布。`gh` 与可用浏览器均缺失，采用 Git 合并 / push，不创建 PR。主工作目录保持 `tay`，不合并或修改 `JJ_Branch`。
 - 最新共享基线：发布前 main=`97b2394`（合入 Jiajie PR #2 / `1860feb` 的 J1/J2）；T2 核心 `594f846` 已推送 origin/tay，并在独立 worktree 合并为 `a78242f`，验证通过。本条最终记录随合并版本发布 main，再将 tay fast-forward 同步；Jiajie 前端与进度文件与 `97b2394` 完全一致。
+- T3 开发起点：tay / origin/main / origin/JJ_Branch 均为 `c6c847b`，工作区干净。发布前 fetch 确认远端仍在该提交；用户要求 push 并开 PR，本次只发布 tay 与创建目标 main 的 PR，不直接合并 main。未修改前端、Jiajie 进度或分支。
 
 ## 任务队列
 
@@ -18,21 +19,33 @@ Owner：Tay。只有 Tay 身份的 agent 更新本文件；Jiajie 读取交接�
 | T0 | DONE | FastAPI、health / CORS、基础 OpenAPI / examples、9 nodes / 8 conduits / 4 inlets 的 synthetic assets、启动说明；实际 HTTP 启动检查通过 |
 | T1 | DONE | SWMM 5.2.4 实际执行 80 / 120 mm/h；两者各自重复及半步长验证，共 6 次；保留 .inp / .rpt / .out / logs / hash / QA，解析真实 frames / metrics，实体 ID 对齐 |
 | T2 | DONE | POST storm / async run -> SQLite 状态 / 不可变快照 / hash -> 真实 frames / metrics；历史 / 日志、重启读取、失败 / 超时 / 排队 / 中断恢复；与最新 J1/J2 合并后 49 tests + 实际 TCP / restart 通过，已共享 |
-| T3 | TODO | inspection / media、debris mass balance、inlet restriction 实际接入 |
+| T3 | DONE | append-only inspection / media / provenance、storm-bound debris kg 时间序列、原生有限入口 0/20/40/60% 与独立 capture/bypass；88 tests、实际 TCP / restart / repeat / half-step 通过，提交及 PR 发布中 |
 | T4 | TODO | clean / upsize 比较、storage、统一 replay 执行链 |
 | T5 | TODO | Docker / 复现、数值与 API 检查、假设说明、联调修复 |
 
 ## 下一次直接执行
 
-读取 `AGENTS.md` 与 `md/TEAM_WORKFLOW.md`，检查工作区 / 远端及双方交接。T2 已共享，下一项 T3，可先拆成 inspection / media 的可验证单元，再做 debris 与 SWMM inlet restriction。无需等待 Jiajie 完成 G1 浏览器接线才开始这项独立后端任务。
+读取 AGENTS.md、TEAM_WORKFLOW、双方交接，检查工作区与远端。T3 已本地完成；如用户要求共享，只提交 Tay 文件并验证后发布。开发下一项为 T4，同条件 clean / upsize 比较先做可验证单元，storage 随后补齐。
 
-复用 `services/api/app/storage.py` 的 SQLite 边界及 `simulation/swmm/runner.py::run_model` 的唯一计算执行链。inspection / media 要追加存储、可重读、带 source_type / timestamp / asset_id / evidence provenance。visible_grate_coverage_fraction 必须独立于 hydraulic_inlet_clogging_fraction；非零 restriction 尚未实现，当前必须继续明确拒绝。
+复用现有 SQLite、不可变 scenario / run 快照及 simulation/swmm 唯一执行链。比较 baseline 与 candidate 必须保持相同 storm / tailwater、相同有限入口模型和全部其余参数；原 baseline 不得修改。finite 0% 是有限入口清理基线，旧 demo_inlet_clean 是不同的 unlimited direct-node 模型，不能混为清理效果。upsize 只改目标管径，记录每个候选 run_id / 输入差异 / 成功失败 / 实际 metrics / delta，失败不给改善分数。
 
-随后在 simulation/debris 内实现带单位、假设版本和质量守恒的 buildup / wash-off / capture / removal 时序，以及 0 / 20 / 40 / 60% 假设；验证 SWMM 5.2 当前支持的真实入口建模方式。不得缩小整段 pipe 冒充入口堵塞。若需辅助 surface/inlet 节点，明确它们与已发布资产的映射，并更新 parser 的受控映射 / 契约，不把内部辅助节点直接当作现场资产。保留 T1 及 T2 原始证据，不覆写已存在 run。
-
-T2 当前支持 constant 0..300 mm/h、duration 300..21600s 且为 300s 倍数，额外 3600s drain-down、demo_inlet_clean、normal tailwater。T3 的新参数必须继续完整进入不可变 input_snapshot / input_hash，并让同条件真实输出发生可验证变化。项目虚拟环境与 SWMM 5.2.4 已可用，启动 / 测试命令见 md/BACKEND_SETUP.md。
+T3 mass cleaning events 只更新质量库存；hydraulic loss 仍是独立常量假设。未来清理候选要显式克隆为 0% hydraulic loss，并保留 inspection / media / mass provenance。比较与 replay 不另造 Python 水力算法，不覆盖 T1/T2/T3 原始证据。high tailwater、现场校准、Docker 与前端 G1/G2 尚未完成。
 
 ## 交接给 Jiajie
+
+### 当前 T3 交接（优先于下方 T2 历史记录）
+
+- T3 DONE，API v1.2.0；完整请求、状态、限制、前端字段适配和验收见 [`contracts/T3_INTEGRATION.md`](../../contracts/T3_INTEGRATION.md)。按用户要求发布 tay → main PR 中；main 合并前可在独立 checkout 显式同步 origin/tay，不能把远端 main 当成已有 T3。
+- 新增 POST/GET inspections、GET 单条；POST inspections/{id}/media multipart file、GET 附件；POST/GET debris/scenarios。inspections / debris capabilities=true，comparisons=false。依赖新增 python-multipart==0.0.32，安装 updated requirements 后重启后端。
+- Inspection 必须显式提交带时区 timestamp / source_type，3D 虚拟巡检填 synthetic；保留独立 created_at / asset/model/source_reference / visible coverage。GET 历史按采集时间降序；媒体追加、不覆盖，保留大小 / hash / 类型和 URL。FormData 上传不得使用现有 JSON Content-Type。文件错误 413 / 415 / MEDIA_ARTIFACT_INVALID 明确显示。
+- Debris 请求扁平化：name / inlet_id / storm_id / optional inspection_id / 独立 hydraulic_inlet_clogging_fraction / debris_parameters；响应兼容原 DebrisPreset.parameters，并附完整 inspection/media/storm 快照、质量守恒 time_series。质量 kg 与照片覆盖率不会自动映射水力损失。场景固定关联 storm；跨 storm 返回 SCENARIO_STORM_MISMATCH，需新建场景。
+- Native finite presets：demo_inlet_capture_0pct、demo_inlet_capture_20pct、demo_inlet_40pct、demo_inlet_capture_60pct。与 finite 0% 比较并保持雨量 / 边界一致；旧 demo_inlet_clean 保留 direct-node 假设，属于不同 capture_model，不能当成有限入口清理候选。preset 无巡检/质量时间序列，需证据链时 POST 新场景。
+- 新 frame inlet capture_flow_m3s / bypass_flow_m3s 是实际报告样本；metrics.inlet_volumes 是 native routing-step 积分的 capture/backflow/bypass m3，direct 模式为 null。限制增强可能降低 sewer flooding 并提高 bypass；必须一起展示，不画成校准二维淹水深度。
+- 资产公开仍是 9 nodes / 8 pipes / 4 inlets；12 个辅助节点和 8 个辅助 links 仅存于 input_snapshot.inlet_model.elements 的受控映射。不要把它们当新现场资产。原 pipe geometry 未改，完整假设 / native 曲线 / loss 全部进入 input_hash。
+- 真实证据在 data/validation/t3/，契约样例为 contracts/examples/{inspection-*,media-created,debris-*,native-inlet-*}.json。UUID 只属于保留 runtime；新开发数据库应重新 POST。synthetic-pixel.png 仅为字节上传测试，不是现场照片。CLI python -m services.api.check_t3 可在新目录独立复现并停止自己的服务。
+- Jiajie 下一步：先补齐 J2 轮询 / API 与 offline fixture 分离，再实现 J3 表单 / multipart / 证据回放 / mass 曲线与 native finite 场景，执行 G1/G2 浏览器验收，记录真实 run IDs。Tay 不修改你的进度或前端，发现后端问题请附请求 / 状态码 / run_id。
+
+### T2 历史交接（v1.1.0，以下未实现限制已由上述 T3 更新）
 
 - 职责已确认：Tay 后端，Jiajie 前端。
 - 2026-10-19 T2 已按用户要求共享，与 main=`97b2394` 的 J1/J2 无冲突合并并验证；最终共享记录见下方。请同步最新 main，然后先补齐在线 J2 接线。
@@ -57,12 +70,12 @@ T2 当前支持 constant 0..300 mm/h、duration 300..21600s 且为 300s 倍数�
 
 ## 阻塞与待确认
 
-- T0 / T1 / T2 后端单元无阻塞。Python 3.12.10、native SWMM 5.2.4、实际 HTTP 执行及进程重启持久化已验证并共享；G1 浏览器联调待 Jiajie 接线验收，尚未宣称完整闭环通过。
+- T0–T3 后端单元无阻塞；T0–T2 已共享，T3 本地待发布。Python 3.12.10、SWMM 5.2.4、实际 HTTP 与重启持久化已验证。G1/G2 浏览器联调待 Jiajie 接线验收，未宣称联合闭环通过。
 - 首次 sandbox 中 pip 下载遇到 WinError 10013；经授权的依赖安装执行后成功，非当前阻塞。
 - Docker CLI 存在，但 daemon / 容器执行未检查；T0 不依赖 Docker。
 - 测试有 1 条依赖弃用警告：Starlette 0.52.1 引用 AnyIO 4.15.1 的 `anyio.abc.BlockingPortal` alias；当前测试 / HTTP 功能均通过。未屏蔽警告。
 - Windows 系统临时目录 `.../Temp/pytest-of-Tay` 无读权限；测试改用仓库内唯一 `--basetemp` 后通过，命令见下方及 `md/BACKEND_SETUP.md`。
-- 微小瞬态溢流的节点计数对步长敏感，已保留原值并发出 trace warning；完整说明见 `md/MODEL_ASSUMPTIONS.md`。尚未验证现场校准、入口限制、高 tailwater 完整对比、Docker 或前端联调。
+- 微小瞬态溢流的节点计数对步长敏感，已保留原值并发出 trace warning；完整说明见 `md/MODEL_ASSUMPTIONS.md`。T3 已验证原生有限入口及控制场景；尚未验证现场校准、高 tailwater 完整对比、Docker 或前端联调。
 
 ## 验证记录
 
@@ -112,6 +125,29 @@ T2 当前支持 constant 0..300 mm/h、duration 300..21600s 且为 300s 倍数�
 实际 HTTP baseline run=`run_683638975fab4bfd9e9cd2ad7f9ff32b`，stronger=`run_58526011782848ecb34a408b4538e5a9`；洪量 0.014893 / 728.764885m3，两者 120 report frames。新创建 storm 的参数会进入新 run，旧 run input hash 保持不变，结果与 native T1 一致。完整证明见 `data/validation/t2/summary.json`。这些不是默认开发数据库的预置 run IDs。
 
 ## 最近实现记录
+
+### 2026-10-19 — T3 DONE（本地待提交 / 推送）
+
+- `services/api/app/{schemas,storage,evidence,errors,main,service,catalog}.py`：v1.2.0，已有 SQLite 上追加 inspection/media/debris 表与 append-only triggers；采集时间 / 来源 / per-asset history、multipart 媒体与大小/SHA-256、完整场景 / 证据 / storm 快照和明确错误。运行状态 / worker / 输入 hash 仍复用 T2，不创建第二套水力计算。
+- `simulation/debris/{__init__,mass_balance}.py`：60s buildup / rain wash-off / capture / export / cleaning removal kg 时间序列，逐步质量守恒；独立常量 hydraulic loss，不从 coverage / retained mass 自动转换。
+- `models/illustrative_taman_kyra/inlet_capture.json`、`simulation/swmm/{inlets,model,worker,results}.py`：SWMM 5.2.4 原生 CUSTOM DIVERSION / INLET_USAGE，完整辅助元素映射、实际 capture/backflow/bypass、原始 native QA。未改变任何原管径 / roughness，旧 direct-node 输入生成和 T1/T2 证据保留。
+- `data/synthetic/bootstrap.json`、`contracts/**`：native 0/20/40/60% preset 与 v1.2 capability / OpenAPI；导出真实 inspection/media/debris/native HTTP examples，完整前端接线文档 T3_INTEGRATION.md。保留有限 0% 与 legacy direct-node 两种假设组，要求同条件比较。
+- `services/api/check_t3.py`、`data/validation/t3/**`：实际 TCP inspection → media → debris → SWMM → 新 API 进程重启，保留 5 个 HTTP runs（旧 direct baseline + 四个 native）、独立 40% 重复和半步长、完整 SQLite / 原字节 / .inp / .rpt / .out / logs / manifest。synthetic pixel 明确不是现场照片；没有覆写 T1/T2。
+- `tests/api/{test_inspections,test_debris_scenarios,test_foundation,test_simulations}.py`、`tests/simulation/{test_debris,test_swmm_execution}.py`：校验来源 / 时区 / 资产、append-only、重启 / hash / 上传错误、scene join / storm 绑定、冻结快照、kg 守恒、零雨 / 最大支持暴雨、原生输出变化与重复 / 步长。为超限上传参数明确短 test ID，避免 pytest 将 10 MiB 测试字节变成 Windows 目录名；修正后完整通过。
+- `services/api/requirements{,-tested}.txt` 新增 python-multipart==0.0.32；项目虚拟环境已安装；`md/BACKEND_SETUP.md` / `MODEL_ASSUMPTIONS.md` / 本进度更新边界与复现。没有修改 apps/web、tests/e2e、README.md 或 Jiajie 进度。
+
+| T3 验证命令 / 检查 | 实际结果 |
+|---|---|
+| `python -m pytest tests/api tests/simulation -q --tb=short --basetemp=<唯一仓库 runtime 目录>`（项目 .venv） | **88 passed**，19.82s，1 条既有 Starlette/AnyIO 弃用警告；无跳过 |
+| `python -m services.api.check_t3 --output data/validation/t3` | exit 0；实际 TCP、新 API 进程重启、旧 baseline 不变、inspection/media 快照不变、四个真实 native inlet runs、独立重复与半步长全部通过；服务已停止 |
+| 独立 native 40% repeat / half routing step | binary output 完全相同；半步长 D07 capture / bypass 绝对差 0.010534 / 0.010474m3，低于 0.5% 验收阈值 |
+| 0/20/40/60% native 120mm/h cases | D07 capture 741.777064 / 593.429322 / 445.071560 / 296.698003m3；bypass 389.679076 / 537.984428 / 686.348132 / 834.683663m3；routing continuity 约 -0.024%..-0.016%，均低于 1% |
+| Debris mass balance / zero & maximum native rainfall controls | 最大质量误差 8.88e-16kg；zero rain 与 300mm/h、21600s 原生 HTTP 执行通过；时间轴按真实长度返回 |
+| `python -m pip check` / `python -m simulation.swmm.engine` | exit 0；无损坏依赖；SWMM 5.2.4 available=true，T1 execution_verified=true |
+| 最终 `python -m services.api.export_contracts` / `--check`，随后 `pytest tests/api/test_foundation.py` | exit 0；最终 OpenAPI / T0–T3 examples 与实际应用一致，schema / CORS / catalog 等 **10 passed**（2.57s，既有警告） |
+| `git diff --check`；`git diff --exit-code -- apps/web tests/e2e README.md md/progress/jiajie.md`；T3 evidence attributes | exit 0；无 whitespace 错误（仅 LF/CRLF 提示），未修改另一方文件；129 个 T3 文件可由 Git 跟踪，原字节 text / whitespace 属性 unset |
+
+下一项 T4；T3 后端完成不代表 Jiajie 的 J3 或联合 G2 浏览器闭环完成。发布前按用户授权提交 Tay 范围、更新远端状态并交接，不覆盖另一方文件。
 
 ### 2026-10-19 — T2 Git 发布与 Jiajie 交接
 

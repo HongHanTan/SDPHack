@@ -45,8 +45,11 @@ def build_inp(inputs: dict) -> str:
     duration = storm["duration_s"]
     if duration <= 0 or duration % 300 or duration + options["drain_down_s"] >= 86400:
         raise ValueError("T1 constant storm must use positive 5-minute duration increments within one day")
-    if inputs["debris_scenario"]["hydraulic_inlet_clogging_fraction"] != 0 or inputs["intervention"] is not None:
-        raise ValueError("T1 supports only direct-node clean baseline; restriction/interventions are not implemented")
+    inlet_model = inputs.get("inlet_model")
+    if inputs["intervention"] is not None:
+        raise ValueError("Interventions are not implemented")
+    if inputs["debris_scenario"]["hydraulic_inlet_clogging_fraction"] != 0 and not inlet_model:
+        raise ValueError("Restriction requires an explicit native inlet model")
     if storm["pattern"] != "constant" or storm["intensity_mmh"] < 0:
         raise ValueError("Only non-negative constant storms are supported")
     lines = ["[TITLE]", "; FloodOps synthetic 1D network; not a verified Taman Kyra model.", "", "[OPTIONS]"]
@@ -71,7 +74,8 @@ def build_inp(inputs: dict) -> str:
 
     section("EVAPORATION", [["CONSTANT", 0]])
     section("RAINGAGES", [["RAIN-G01", "INTENSITY", "0:05", 1, "TIMESERIES", "RAIN-TS"]])
-    section("SUBCATCHMENTS", [[s["subcatchment_id"], "RAIN-G01", s["outlet_node_id"], s["area_ha"], s["impervious_percent"], s["width_m"], s["slope_percent"], 0] for s in hydrology["subcatchments"]])
+    outlets = {catchment:e["upstream_node_id"] for e in (inlet_model or {}).get("elements",[]) for catchment in e["catchment_ids"]}
+    section("SUBCATCHMENTS", [[s["subcatchment_id"], "RAIN-G01", outlets.get(s["subcatchment_id"],s["outlet_node_id"]), s["area_ha"], s["impervious_percent"], s["width_m"], s["slope_percent"], 0] for s in hydrology["subcatchments"]])
     surface = hydrology["surface_parameters"]
     section("SUBAREAS", [[s["subcatchment_id"], surface["n_impervious"], surface["n_pervious"], surface["storage_impervious_mm"], surface["storage_pervious_mm"], surface["zero_storage_impervious_percent"], "OUTLET", 100] for s in hydrology["subcatchments"]])
     soil = hydrology["horton_parameters"]
@@ -84,4 +88,22 @@ def build_inp(inputs: dict) -> str:
     section("TIMESERIES", [["RAIN-TS", options["start_date"], clock(t), storm["intensity_mmh"] if t < duration else 0] for t in range(0, duration + options["drain_down_s"] + 1, 300)])
     section("REPORT", [["INPUT", "NO"], ["CONTINUITY", "YES"], ["FLOWSTATS", "YES"], ["SUBCATCHMENTS", "ALL"], ["NODES", "ALL"], ["LINKS", "ALL"]])
     section("COORDINATES", [[n["node_id"], n["position_m"]["x"], n["position_m"]["y"]] for n in assets["nodes"]])
+    if inlet_model:
+        junctions, outfalls, conduits, sections, usages = [], [], [], [], []
+        for e in inlet_model["elements"]:
+            z = e["surface_elevation_m"]
+            junctions += [[e["upstream_node_id"],z+inlet_model["upstream_offset_m"],inlet_model["channel_max_depth_m"],0,0,0],
+                          [e["bypass_node_id"],z+inlet_model["bypass_offset_m"],inlet_model["channel_max_depth_m"],0,0,0]]
+            outfalls.append([e["outfall_node_id"],z+inlet_model["outfall_offset_m"],"FREE","NO"])
+            for key, start, end in (("approach_link_id","upstream_node_id","bypass_node_id"),("exit_link_id","bypass_node_id","outfall_node_id")):
+                conduits.append([e[key],e[start],e[end],inlet_model["channel_length_m"],inlet_model["channel_manning_n"],0,0,0,0])
+                sections.append([e[key],"RECT_OPEN",inlet_model["channel_max_depth_m"],inlet_model["channel_width_m"],0,0,1])
+            usages.append([e["approach_link_id"],"ASSUMED-CAP",e["sewer_node_id"],1,e["hydraulic_inlet_clogging_fraction"]*100,0,0,0,"ON_GRADE"])
+        section("JUNCTIONS",junctions)
+        section("OUTFALLS",outfalls)
+        section("CONDUITS",conduits)
+        section("XSECTIONS",sections)
+        section("INLETS",[["ASSUMED-CAP","CUSTOM","ASSUMED-CURVE"]])
+        section("CURVES",[["ASSUMED-CURVE",*( ["DIVERSION"] if index==0 else []),*point] for index,point in enumerate(inlet_model["capture_curve_m3s"])])
+        section("INLET_USAGE",usages)
     return "\n".join(lines) + "\n"

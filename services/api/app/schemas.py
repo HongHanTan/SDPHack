@@ -1,4 +1,4 @@
-"""v1 wire models. Planned simulation shapes are contracts, not computed results."""
+"""Versioned wire models for catalog, evidence, scenarios and real native results."""
 
 from typing import Annotated, Any, Literal
 
@@ -38,8 +38,8 @@ class Capabilities(WireModel):
     assets: bool = True
     storm_creation: bool = True
     simulations: bool = True
-    inspections: bool = False
-    debris: bool = False
+    inspections: bool = True
+    debris: bool = True
     comparisons: bool = False
 
 
@@ -149,7 +149,8 @@ class DebrisPreset(WireModel):
     name: str
     source_type: SourceType
     parameters: DebrisParameters
-    swmm_supported: bool = Field(description="Only the zero-restriction direct-node entry baseline is executable in T2; finite inlet capture/restriction arrives in T3.")
+    swmm_supported: bool
+    capture_model: Literal["unlimited_direct_node_inflow_T1", "swmm_native_custom_diversion_v1"] = "unlimited_direct_node_inflow_T1"
 
 
 class TailwaterParameters(WireModel):
@@ -232,6 +233,8 @@ class InletState(WireModel):
     inlet_id: Identifier
     hydraulic_inlet_clogging_fraction: Fraction
     parameter_status: Literal["assumed_not_calibrated"]
+    capture_flow_m3s: NonNegative | None = None
+    bypass_flow_m3s: NonNegative | None = None
 
 
 class Frame(WireModel):
@@ -262,3 +265,114 @@ class MetricsResponse(ResultProvenance):
     flooded_node_count: Annotated[int, Field(ge=0)]
     surcharge_duration_s: NonNegative = Field(description="Elapsed time during which at least one node is surcharged; overlapping nodes count once.")
     metric_definitions: dict[str, str]
+    inlet_volumes: list["InletVolumes"] | None = None
+
+
+class InletVolumes(WireModel):
+    inlet_id: Identifier
+    captured_volume_m3: NonNegative
+    backflow_volume_m3: NonNegative
+    bypass_volume_m3: NonNegative
+
+
+class InspectionCreate(WireModel):
+    asset_id: Identifier
+    timestamp: AwareDatetime
+    inspector: Annotated[str, Field(min_length=1,max_length=160)]
+    method: Literal["visual", "cctv", "drone", "sensor"]
+    source_type: SourceType
+    visible_grate_coverage_fraction: Fraction | None = None
+    debris_category: Literal["leaf_litter", "sediment", "plastic", "mixed", "none"]
+    notes: Annotated[str, Field(max_length=4000)] = ""
+    source_reference: Annotated[str, Field(max_length=1000)] = ""
+
+    @model_validator(mode="after")
+    def nonblank_inspector(self):
+        if not self.inspector.strip():
+            raise ValueError("Inspector must not be blank")
+        return self
+
+
+class MediaRecord(WireModel):
+    media_id: Identifier
+    inspection_id: Identifier
+    filename: str
+    content_type: str
+    size_bytes: Annotated[int, Field(gt=0,le=10485760)]
+    sha256: Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
+    created_at: AwareDatetime
+    source_type: SourceType
+    url: str
+
+
+class InspectionRecord(InspectionCreate):
+    inspection_id: Identifier
+    created_at: AwareDatetime
+    model_version_id: Identifier
+    is_verified_site_model: Literal[False] = False
+    media: list[MediaRecord] = Field(default_factory=list)
+    media_urls: list[str] = Field(default_factory=list)
+
+
+class InspectionList(WireModel):
+    items: list[InspectionRecord]
+
+
+class CleaningEvent(WireModel):
+    timestamp_s: Annotated[int, Field(strict=True,gt=0,le=25200,multiple_of=60)]
+    surface_removal_fraction: Fraction = 0
+    inlet_removal_fraction: Fraction = 0
+
+
+class DebrisMassParameters(WireModel):
+    initial_surface_kg: Annotated[float, Field(ge=0,le=1000)] = 2
+    initial_retained_kg: Annotated[float, Field(ge=0,le=1000)] = 0
+    loading_kg_per_day: Annotated[float, Field(ge=0,le=100)] = 0.2
+    wash_off_per_mm: Annotated[float, Field(ge=0,le=10)] = 0.03
+    capture_fraction: Fraction = 0.6
+    cleaning_events: Annotated[list[CleaningEvent], Field(max_length=100)] = Field(default_factory=list)
+
+
+class DebrisCreate(WireModel):
+    name: Annotated[str, Field(min_length=1,max_length=160)]
+    inlet_id: Identifier
+    storm_id: Identifier
+    inspection_id: Identifier | None = None
+    source_type: Literal["assumed"] = "assumed"
+    hydraulic_inlet_clogging_fraction: Annotated[float, Field(ge=0,le=0.6)]
+    debris_parameters: DebrisMassParameters = Field(default_factory=DebrisMassParameters)
+
+    @model_validator(mode="after")
+    def nonblank_name(self):
+        if not self.name.strip():
+            raise ValueError("Scenario name must not be blank")
+        return self
+
+
+class DebrisMassFrame(WireModel):
+    timestamp_s: NonNegative
+    surface_mass_kg: NonNegative
+    retained_mass_kg: NonNegative
+    cumulative_added_kg: NonNegative
+    cumulative_washed_kg: NonNegative
+    cumulative_exported_kg: NonNegative
+    cumulative_removed_kg: NonNegative
+    balance_error_kg: float
+
+
+class DebrisMassResult(WireModel):
+    model_assumptions_version: Literal["debris-mass-v1"]
+    hydraulic_parameter_mode: Literal["independent_constant_hypothesis"]
+    parameters: DebrisMassParameters
+    max_abs_balance_error_kg: NonNegative
+    time_series: list[DebrisMassFrame]
+    assumptions: list[str]
+
+
+class DebrisScenario(DebrisPreset):
+    created_at: AwareDatetime
+    storm_id: Identifier
+    storm_snapshot: StormRecord
+    inspection_id: Identifier | None
+    inspection_snapshot: InspectionRecord | None
+    mass_balance: DebrisMassResult

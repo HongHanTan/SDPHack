@@ -122,8 +122,8 @@ def test_engine_verification_requires_matching_retained_evidence(monkeypatch,tmp
     assert verified_execution("5.2.4") is False
 
 
-def test_unsupported_inlet_restriction_is_rejected():
+def test_nonzero_loss_without_native_capture_model_is_rejected():
     inputs = resolve_inputs("synthetic_80mmh_60min")
     inputs["debris_scenario"]["hydraulic_inlet_clogging_fraction"] = 0.4
-    with pytest.raises(ValueError,match="restriction/interventions"):
+    with pytest.raises(ValueError,match="Restriction requires"):
         build_inp(inputs)

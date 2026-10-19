@@ -7,6 +7,7 @@ import traceback
 from pathlib import Path
 
 from .status import crown_depths, is_surcharged
+from .inlets import expected_ids
 
 
 def execute(directory: Path):
@@ -22,10 +23,12 @@ def execute(directory: Path):
     try:
         solver.swmm_open(str(directory / "model.inp"), str(directory / "model.rpt"), str(directory / "model.out"))
         node_indices = {solver.project_get_id(enums.ObjectType.NODE, i): i for i in range(solver.project_get_count(enums.ObjectType.NODE))}
-        link_ids = {solver.project_get_id(enums.ObjectType.LINK, i) for i in range(solver.project_get_count(enums.ObjectType.LINK))}
-        if set(node_indices) != {n["node_id"] for n in assets["nodes"]} or link_ids != {p["conduit_id"] for p in assets["conduits"]}:
+        link_indices = {solver.project_get_id(enums.ObjectType.LINK, i): i for i in range(solver.project_get_count(enums.ObjectType.LINK))}
+        expected_nodes, expected_links = expected_ids(inputs)
+        if set(node_indices) != expected_nodes or set(link_indices) != expected_links:
             raise ValueError("SWMM entity IDs differ from the asset registry")
         solver.swmm_start(True)
+        inlet_stats = {e["inlet_id"]:{"inlet_id":e["inlet_id"],"captured_volume_m3":0.0,"backflow_volume_m3":0.0,"bypass_volume_m3":0.0} for e in inputs.get("inlet_model",{}).get("elements",[])}
         while True:
             elapsed_days = solver.swmm_step()
             # The actual SWMM API returns elapsed DAYS (verified against the 2h model),
@@ -36,6 +39,17 @@ def execute(directory: Path):
             surcharge = any(is_surcharged(node, solver.node_get_result(node_indices[node["node_id"]], enums.NodeResult.DEPTH), crowns) for node in assets["nodes"])
             if surcharge:
                 surcharge_duration_s += current_s - previous_s
+            for element in inputs.get("inlet_model",{}).get("elements",[]):
+                stats = inlet_stats[element["inlet_id"]]
+                for key, result_type in (("captured_volume_m3",enums.InletResult.FLOW_CAPTURE),("backflow_volume_m3",enums.InletResult.BACK_FLOW)):
+                    flow = solver.inlet_get_result(link_indices[element["approach_link_id"]],result_type)
+                    if not math.isfinite(flow) or flow < -1e-9:
+                        raise ValueError("Invalid native inlet flow")
+                    stats[key] += max(0,flow) * (current_s - previous_s)
+                bypass = solver.node_get_result(node_indices[element["outfall_node_id"]],enums.NodeResult.TOTAL_INFLOW)
+                if not math.isfinite(bypass) or bypass < -1e-9:
+                    raise ValueError("Invalid native surface outfall flow")
+                stats["bypass_volume_m3"] += max(0,bypass) * (current_s - previous_s)
             previous_s = current_s
             steps += 1
             if elapsed_days <= 0:
@@ -43,9 +57,9 @@ def execute(directory: Path):
             if steps > total_s / inputs["hydrology"]["simulation_parameters"]["minimum_step_s"] + 100:
                 raise RuntimeError("Native simulation exceeded expected routing-step bound")
         node_stats = {}
-        for node in assets["nodes"]:
-            stats = solver.node_get_stats(node_indices[node["node_id"]])
-            node_stats[node["node_id"]] = {
+        for node_id in sorted(node_indices):
+            stats = solver.node_get_stats(node_indices[node_id])
+            node_stats[node_id] = {
                 "flooding_volume_m3": stats.volFlooded,
                 "flooding_duration_s": stats.timeFlooded * 3600,
                 "surcharge_duration_s": stats.timeSurcharged * 3600,
@@ -68,6 +82,8 @@ def execute(directory: Path):
             "simulation_duration_s": total_s,
             "water_balance": water,
         }
+        if inlet_stats:
+            data["inlet_statistics"] = list(inlet_stats.values())
         (directory / "native.json").write_text(json.dumps(data, indent=2, allow_nan=False) + "\n", encoding="utf-8")
         print(json.dumps({"status": "succeeded", "engine_version": data["engine_version"], "routing_steps": steps}))
     finally:

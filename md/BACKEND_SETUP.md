@@ -93,7 +93,7 @@ if ($run.status -eq 'succeeded') {
 }
 ```
 
-Custom storms support constant intensity 0..300 mm/h, duration 300..21600 s in 300 s increments, and 3600 s drain-down. Hyetographs, nonzero inlet restriction, interventions and high tailwater are explicitly rejected in this release. `GET /api/simulations?limit=20` discovers saved IDs, including after restart; do not request mock IDs against the API. Raw artifacts are downloadable through the allowlisted `evidence_references` URLs. Frames/metrics downloads verify their saved SHA-256 before serving.
+Custom storms support constant intensity 0..300 mm/h, duration 300..21600 s in 300 s increments, and 3600 s drain-down. Hyetographs, interventions and high tailwater remain rejected. T3 adds explicit native finite inlet capture; it does not change the retained direct-node baseline. `GET /api/simulations?limit=20` discovers saved IDs, including after restart; do not request mock IDs against the API. Raw artifacts are downloadable through the allowlisted `evidence_references` URLs. Frames/metrics downloads verify their saved SHA-256 before serving.
 
 To verify actual TCP HTTP and a full API process restart, using its own fresh runtime/ephemeral loopback ports:
 
@@ -103,10 +103,26 @@ To verify actual TCP HTTP and a full API process restart, using its own fresh ru
 
 It creates a fresh `data/runtime/t2-http-...` directory, runs 80 mm/h and newly created 120 mm/h storms, checks artifacts and baseline immutability, restarts the process and checks that storms/runs/frames/metrics are unchanged. Curated evidence is `data/validation/t2/`; its run IDs belong to that evidence runtime, not a fresh developer database. `--output` must name a new directory. The CLI stops only its own subprocesses.
 
+## T3: inspections, media and native inlet capture
+
+Install the updated requirements to include `python-multipart==0.0.32`. API v1.2.0 adds append-only inspection/media and debris records in the existing SQLite runtime; startup creates missing tables/indexes/triggers without replacing T2 storms or runs. Local media files live under `media/{media_id}.blob`, identified by immutable metadata/hash rather than a user-supplied path. Back up the database and its media/run directories together.
+
+Read [`contracts/T3_INTEGRATION.md`](../contracts/T3_INTEGRATION.md) for complete requests and Jiajie wiring. Inspection timestamp must be timezone-aware, source_type explicit; a virtual inspection must not silently be labelled observed. Upload multipart `file`, PNG/JPEG/WebP/PDF up to 10 MiB. Downloads verify size/hash and report missing/corrupt files. Existing records are never edited; append another inspection or media item.
+
+Debris creation freezes the selected storm and optional same-inlet inspection/media snapshot. It calculates a transparent 60s mass balance in kg and independently records a constant 0..0.6 hydraulic capture-loss assumption. Use its new ID with the same storm when starting a run. A different storm needs a new debris scenario. Cleaning mass events do not automatically change hydraulic loss; create a separate 0% scenario for a clean hydraulic hypothesis.
+
+Native presets are `demo_inlet_capture_0pct`, `demo_inlet_capture_20pct`, `demo_inlet_40pct`, `demo_inlet_capture_60pct`. Compare this group against finite 0% using the same rain/boundary; `demo_inlet_clean` remains the different, unlimited T1/T2 baseline. Native CUSTOM capture curves and auxiliary surface channels are synthetic assumptions, not surveyed terrain or a calibrated inlet design. Show returned inlet capture/backflow/bypass volumes alongside sewer flooding.
+
+```powershell
+.\services\api\.venv\Scripts\python.exe -m services.api.check_t3
+```
+
+The CLI uses a fresh runtime and temporary loopback ports. It tests actual inspection → media → debris → real native run → API process restart, four sensitivity cases, a fixed baseline, exact repeat and half routing step. It stops its own processes. Curated evidence and manifest are in `data/validation/t3/`. Use a new output directory for verification; never run a developer API against a curated evidence database. `/api/health.execution_verified` continues to describe matching retained T1 execution evidence; T3 evidence is independently checked by this CLI and the evidence tests.
+
 ## Current boundaries and troubleshooting
 
-- T2 HTTP execution is implemented; inspections/media/debris creation and comparison endpoints remain absent (404). The bootstrap restriction/high boundary presets are disabled by `swmm_supported=false`, and attempted unsupported runs return 422.
-- Jiajie's J1 types/client must adapt to the published nested parameter/health structures and canonical asset field names, and poll run status rather than fetching a mock ID or requesting results immediately. Detailed handoff is in `md/progress/tay.md`. Frontend UI changes and end-to-end browser validation remain Jiajie's work.
+- T2/T3 HTTP execution, inspection/media and debris creation are implemented. Comparison endpoints remain absent (404); high tailwater is disabled and returns 422. Hydraulic loss is independent of visible coverage and retained debris mass, not a calibrated conversion.
+- Jiajie's J1 geometry/types are aligned. Online polling, removing API-mode fixture shortcuts, flat creation payloads, multipart upload and G1/G2 browser validation remain frontend work. Detailed handoff is in `contracts/T3_INTEGRATION.md` and `md/progress/tay.md`.
 - Run module commands from the repository root, not `services/api`; this keeps the HTTP and simulation packages importable. Seed loading itself resolves paths relative to the source files, not the current directory.
 - If port 8000 is occupied, stop the server you own or choose another port and update the frontend base URL. Do not terminate an unknown process.
 - For dependency download/socket errors, check network access to the package index; keep T0 usable with the base dependencies and record the actual SWMM error. No fallback results are generated.

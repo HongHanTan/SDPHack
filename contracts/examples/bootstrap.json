@@ -1,5 +1,5 @@
 {
-  "api_version": "1.1.0",
+  "api_version": "1.2.0",
   "township_id": "taman_kyra_demo",
   "model_versions": [
     {
@@ -45,14 +45,15 @@
   "debris_scenarios": [
     {
       "debris_scenario_id": "demo_inlet_clean",
-      "name": "Assumed clean D07",
+      "name": "Retained T1/T2 unlimited direct-node clean baseline",
       "source_type": "assumed",
       "parameters": {
         "inlet_id": "INLET-D07",
         "hydraulic_inlet_clogging_fraction": 0.0,
         "parameter_status": "assumed_not_calibrated"
       },
-      "swmm_supported": true
+      "swmm_supported": true,
+      "capture_model": "unlimited_direct_node_inflow_T1"
     },
     {
       "debris_scenario_id": "demo_inlet_40pct",
@@ -63,7 +64,44 @@
         "hydraulic_inlet_clogging_fraction": 0.4,
         "parameter_status": "assumed_not_calibrated"
       },
-      "swmm_supported": false
+      "swmm_supported": true,
+      "capture_model": "swmm_native_custom_diversion_v1"
+    },
+    {
+      "debris_scenario_id": "demo_inlet_capture_0pct",
+      "name": "Assumed finite D07 capture: 0% capacity loss",
+      "source_type": "assumed",
+      "parameters": {
+        "inlet_id": "INLET-D07",
+        "hydraulic_inlet_clogging_fraction": 0.0,
+        "parameter_status": "assumed_not_calibrated"
+      },
+      "swmm_supported": true,
+      "capture_model": "swmm_native_custom_diversion_v1"
+    },
+    {
+      "debris_scenario_id": "demo_inlet_capture_20pct",
+      "name": "Assumed finite D07 capture: 20% capacity loss",
+      "source_type": "assumed",
+      "parameters": {
+        "inlet_id": "INLET-D07",
+        "hydraulic_inlet_clogging_fraction": 0.2,
+        "parameter_status": "assumed_not_calibrated"
+      },
+      "swmm_supported": true,
+      "capture_model": "swmm_native_custom_diversion_v1"
+    },
+    {
+      "debris_scenario_id": "demo_inlet_capture_60pct",
+      "name": "Assumed finite D07 capture: 60% capacity loss",
+      "source_type": "assumed",
+      "parameters": {
+        "inlet_id": "INLET-D07",
+        "hydraulic_inlet_clogging_fraction": 0.6,
+        "parameter_status": "assumed_not_calibrated"
+      },
+      "swmm_supported": true,
+      "capture_model": "swmm_native_custom_diversion_v1"
     }
   ],
   "tailwater_cases": [
@@ -90,14 +128,14 @@
     "assets": true,
     "storm_creation": true,
     "simulations": true,
-    "inspections": false,
-    "debris": false,
+    "inspections": true,
+    "debris": true,
     "comparisons": false
   },
   "assumptions": [
     "Illustrative synthetic geography and uncalibrated hydrology; no verified site forecast or historical cause.",
-    "T2 executes real SWMM asynchronously; query the returned run_id until succeeded or failed before fetching results.",
-    "Only clean direct-node entry and normal tailwater are enabled. Finite inlet restriction remains T3; photo coverage is independent of hydraulic loss.",
+    "Real SWMM executes asynchronously; query the returned run_id until succeeded or failed before fetching results.",
+    "T3 supports native finite inlet capture scenarios and append-only inspection/media evidence. Photo coverage and debris mass are independent of the constant hydraulic loss hypothesis. High tailwater remains unsupported.",
     "Custom storms support constant 0..300 mm/h, 300..21600 seconds in 300-second increments, followed by 3600 seconds dry drainage."
   ]
 }

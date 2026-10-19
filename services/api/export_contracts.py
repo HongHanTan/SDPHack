@@ -1,4 +1,4 @@
-"""Export the live schema, catalog/error examples and retained real T1/T2 results.
+"""Export the live schema, catalog/error examples and retained real T1/T2/T3 results.
 
 Run from repository root: python -m services.api.export_contracts
 Use --check in validation/CI to detect stale handoff artifacts.
@@ -41,7 +41,7 @@ def artifacts() -> dict[Path, str]:
                 directory / "examples/bootstrap.json":client.get("/api/bootstrap").json(),
                 directory / "examples/assets.json":client.get("/api/townships/taman_kyra_demo/assets").json(),
                 directory / "examples/simulation-request.json":request,
-                directory / "examples/simulation-unsupported.json":client.post("/api/simulations",json={**request,"debris_scenario_id":"demo_inlet_40pct"}).json(),
+                directory / "examples/simulation-unsupported.json":client.post("/api/simulations",json={**request,"tailwater_case":"high"}).json(),
                 directory / "examples/validation-error.json":client.post("/api/simulations",json={}).json(),
                 directory / "examples/storm-create-request.json":StormCreate(name="Assumed custom 120 mm/h",intensity_mmh=120,duration_s=3600).model_dump(),
             }
@@ -54,6 +54,16 @@ def artifacts() -> dict[Path, str]:
             for kind in ("accepted","run","frames","metrics"):
                 values[directory / "examples" / f"http-{kind}-{label}.json"] = read_json(http_evidence / label / f"{kind}.json")
         values[directory / "examples/storm-created.json"] = read_json(http_evidence / "storm-created.json")
+    t3 = REPO_ROOT / "data/validation/t3"
+    if t3.exists():
+        for name,source in (
+            ("inspection-request","inspection-request"),("inspection-created","inspection-with-media"),
+            ("media-created","media-created"),("debris-request","debris-40-request"),
+            ("debris-created","debris-40-created"),
+        ):
+            values[directory / "examples" / f"{name}.json"] = read_json(t3 / f"{source}.json")
+        for kind in ("accepted","run","frames","metrics"):
+            values[directory / "examples" / f"native-inlet-{kind}.json"] = read_json(t3 / "native-40" / f"{kind}.json")
     # Engine health is machine-specific, so it is read from /api/health, never frozen here.
     return {path: dumps(value) for path, value in values.items()}
 
@@ -72,7 +82,7 @@ def main():
             path.write_text(content, encoding="utf-8")
     if stale:
         raise SystemExit("Stale contract artifacts: " + ", ".join(stale))
-    print("Contract artifacts match the application." if args.check else "Exported OpenAPI and T0/T1/T2 examples.")
+    print("Contract artifacts match the application." if args.check else "Exported OpenAPI and T0/T1/T2/T3 examples.")
 
 
 if __name__ == "__main__":
