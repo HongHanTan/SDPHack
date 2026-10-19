@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "RESULTS_NOT_READY",
+    "message": "Simulation results are not ready.",
+    "details": {
+      "run_id": "run_58526011782848ecb34a408b4538e5a9",
+      "status": "running"
+    }
+  }
+}

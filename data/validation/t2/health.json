@@ -1,0 +1,19 @@
+{
+  "status": "ok",
+  "api_version": "1.1.0",
+  "swmm": {
+    "available": true,
+    "engine": "EPA SWMM",
+    "engine_version": "5.2.4",
+    "execution_verified": true,
+    "message": "Native library loaded; retained T1 baseline/stronger-rain evidence matches this engine/toolkit and current model inputs. Check API capabilities for available HTTP workflows."
+  },
+  "capabilities": {
+    "assets": true,
+    "storm_creation": true,
+    "simulations": true,
+    "inspections": false,
+    "debris": false,
+    "comparisons": false
+  }
+}

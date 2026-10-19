@@ -1,4 +1,4 @@
-"""Export the live app's schema and genuine T0 example responses.
+"""Export the live schema, catalog/error examples and retained real T1/T2 results.
 
 Run from repository root: python -m services.api.export_contracts
 Use --check in validation/CI to detect stale handoff artifacts.
@@ -7,12 +7,13 @@ Use --check in validation/CI to detect stale handoff artifacts.
 import argparse
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from fastapi.testclient import TestClient
 
 from .app.catalog import REPO_ROOT
-from .app.main import app
-from .app.schemas import SimulationRequest
+from .app.main import app, create_app
+from .app.schemas import SimulationRequest, StormCreate
 from simulation.swmm.model import read_json
 from simulation.swmm.demo import VALIDATION_DIR
 
@@ -23,24 +24,36 @@ def dumps(value) -> str:
 
 def artifacts() -> dict[Path, str]:
     directory = REPO_ROOT / "contracts"
-    client = TestClient(app)
     request = SimulationRequest(
         model_version_id="taman_kyra_synthetic_v1",
         storm_id="synthetic_80mmh_60min",
-        debris_scenario_id="demo_inlet_40pct",
+        debris_scenario_id="demo_inlet_clean",
         tailwater_case="normal",
     ).model_dump()
-    values = {
-        directory / "openapi.json": app.openapi(),
-        directory / "examples" / "bootstrap.json": client.get("/api/bootstrap").json(),
-        directory / "examples" / "assets.json": client.get("/api/townships/taman_kyra_demo/assets").json(),
-        directory / "examples" / "simulation-request.json": request,
-        directory / "examples" / "simulation-not-implemented.json": client.post("/api/simulations", json=request).json(),
-        directory / "examples" / "validation-error.json": client.post("/api/simulations", json={}).json(),
-    }
+    # Export uses its own fresh database and never launches jobs or mutates a
+    # developer's runtime. Successful T2 examples come from retained HTTP evidence.
+    runtime = REPO_ROOT / "data/runtime"
+    runtime.mkdir(parents=True,exist_ok=True)
+    with TemporaryDirectory(prefix="contract-export-",dir=runtime) as temporary:
+        with TestClient(create_app(Path(temporary))) as client:
+            values = {
+                directory / "openapi.json":app.openapi(),
+                directory / "examples/bootstrap.json":client.get("/api/bootstrap").json(),
+                directory / "examples/assets.json":client.get("/api/townships/taman_kyra_demo/assets").json(),
+                directory / "examples/simulation-request.json":request,
+                directory / "examples/simulation-unsupported.json":client.post("/api/simulations",json={**request,"debris_scenario_id":"demo_inlet_40pct"}).json(),
+                directory / "examples/validation-error.json":client.post("/api/simulations",json={}).json(),
+                directory / "examples/storm-create-request.json":StormCreate(name="Assumed custom 120 mm/h",intensity_mmh=120,duration_s=3600).model_dump(),
+            }
     for label in ("baseline", "stronger"):
         for kind in ("run", "frames", "metrics"):
             values[directory / "examples" / f"{kind}-{label}.json"] = read_json(VALIDATION_DIR / label / f"{kind}.json")
+    http_evidence = REPO_ROOT / "data/validation/t2"
+    if http_evidence.exists():
+        for label in ("baseline","stronger"):
+            for kind in ("accepted","run","frames","metrics"):
+                values[directory / "examples" / f"http-{kind}-{label}.json"] = read_json(http_evidence / label / f"{kind}.json")
+        values[directory / "examples/storm-created.json"] = read_json(http_evidence / "storm-created.json")
     # Engine health is machine-specific, so it is read from /api/health, never frozen here.
     return {path: dumps(value) for path, value in values.items()}
 
@@ -59,7 +72,7 @@ def main():
             path.write_text(content, encoding="utf-8")
     if stale:
         raise SystemExit("Stale contract artifacts: " + ", ".join(stale))
-    print("Contract artifacts match the application." if args.check else "Exported OpenAPI and T0 examples.")
+    print("Contract artifacts match the application." if args.check else "Exported OpenAPI and T0/T1/T2 examples.")
 
 
 if __name__ == "__main__":

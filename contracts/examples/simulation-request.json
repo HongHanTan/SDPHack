@@ -1,7 +1,7 @@
 {
   "model_version_id": "taman_kyra_synthetic_v1",
   "storm_id": "synthetic_80mmh_60min",
-  "debris_scenario_id": "demo_inlet_40pct",
+  "debris_scenario_id": "demo_inlet_clean",
   "tailwater_case": "normal",
   "intervention": null
 }

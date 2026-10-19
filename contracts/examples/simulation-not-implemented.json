@@ -1,9 +1,0 @@
-{
-  "error": {
-    "code": "NOT_IMPLEMENTED",
-    "message": "HTTP simulation execution and persistence are not implemented (T2). Offline T1 validation is available.",
-    "details": {
-      "available": false
-    }
-  }
-}

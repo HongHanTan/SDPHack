@@ -1,0 +1,46 @@
+INFO:     Started server process [6732]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:54675 (Press CTRL+C to quit)
+INFO:     127.0.0.1:54678 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/bootstrap HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "POST /api/simulations HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b/frames HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b/frames HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b/artifacts/model.inp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b/artifacts/model.rpt HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b/artifacts/model.out HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b/artifacts/qa.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b/artifacts/worker.log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "POST /api/storms HTTP/1.1" 201 Created
+INFO:     127.0.0.1:54678 - "POST /api/simulations HTTP/1.1" 202 Accepted
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9/frames HTTP/1.1" 409 Conflict
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9/frames HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9/metrics HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9/artifacts/model.inp HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9/artifacts/model.rpt HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9/artifacts/model.out HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9/artifacts/qa.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_58526011782848ecb34a408b4538e5a9/artifacts/worker.log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "GET /api/simulations/run_683638975fab4bfd9e9cd2ad7f9ff32b HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54678 - "POST /api/simulations HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:54678 - "GET /api/simulations/missing HTTP/1.1" 404 Not Found

@@ -41,7 +41,7 @@ def probe_engine() -> dict:
             "engine": "EPA SWMM",
             "engine_version": version,
             "execution_verified": verified,
-            "message": "Native library loaded; retained T1 baseline/stronger-rain evidence matches this engine/toolkit and current model inputs. HTTP simulation execution remains unavailable until T2." if verified else "Native library loaded; matching complete project validation evidence is unavailable or stale.",
+            "message": "Native library loaded; retained T1 baseline/stronger-rain evidence matches this engine/toolkit and current model inputs. Check API capabilities for available HTTP workflows." if verified else "Native library loaded; matching complete project validation evidence is unavailable or stale.",
         }
     except Exception as exc:
         # Native library loading can fail independently of the package import.
