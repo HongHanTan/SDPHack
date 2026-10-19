@@ -100,7 +100,7 @@ All thresholds are configurable and listed in the assumptions drawer.
 - **North:** forested hill (steep, pervious but fast runoff).
 - **Centre:** terrace-housing rows on a street grid sloping south (high imperviousness).
 - **South-west "the sag":** low commercial/residential pocket beside the river — flood hotspot.
-- **East:** existing retention pond in a park.
+- **South-east:** existing retention pond in a park, set lower than the sag so a relief pipe can run downhill to it.
 - **South edge:** river with rising stage.
 - **Baseline network:** ~25 manholes, one trunk drain to a single outfall; trunk sized for older, less-urbanised conditions.
 
@@ -120,7 +120,7 @@ Each preset carries an **indicative cost (RM)** and **disruption level**, clearl
 ### 5.3 Demo story (must emerge from the physics, not be scripted)
 1. Baseline 100-yr storm → sag floods, homes-flooded counter rises.
 2. Upsize trunk (#1) → only modest improvement because high river backflows into the network.
-3. Flap gate (#5) + detention tank (#3) → sag stays passable at lower cost than #1.
+3. Flap gate (#5) + detention tank (#3) → lower sag peak depth and fewer homes flooded than #1, at lower cost (required); sag stays passable (target).
 4. Message: the tool reveals that the cheapest effective fix is not the obvious one.
 
 Terrain, river stage and pipe sizes are tuned so the model genuinely produces this; the tuned parameters are committed and documented.
@@ -146,7 +146,7 @@ Click two manholes, choose a diameter → custom link added to the scenario and 
 
 - Single-pipe Manning capacity matches hand calculation within 1%.
 - Lake-at-rest: still water on flat terrain stays still; depth never negative.
-- Water balance within 1% for every preset combination.
+- Water balance within 1% for each intervention alone and all combined (short storm, for test speed); every live run also reports its balance in the UI.
 - Monotonicity: increasing a pipe diameter never increases peak depth at nodes upstream of that pipe (downstream areas may legitimately worsen).
 - Flap gate: zero reverse flow at the outfall.
 - Determinism: identical inputs → identical outputs.
