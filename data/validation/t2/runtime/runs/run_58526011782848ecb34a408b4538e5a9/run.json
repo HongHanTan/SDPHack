@@ -1,0 +1,401 @@
+{
+  "run_id": "run_58526011782848ecb34a408b4538e5a9",
+  "status": "succeeded",
+  "model_version_id": "taman_kyra_synthetic_v1",
+  "input_snapshot": {
+    "assets": {
+      "township_id": "taman_kyra_demo",
+      "model_version_id": "taman_kyra_synthetic_v1",
+      "source_type": "synthetic",
+      "is_verified_site_model": false,
+      "coordinate_system": "local_metres_east_north_elevation",
+      "nodes": [
+        {
+          "node_id": "NODE-J01",
+          "node_type": "junction",
+          "position_m": {
+            "x": 0,
+            "y": 120,
+            "z": 10.2
+          },
+          "invert_elevation_m": 10.2,
+          "ground_elevation_m": 12.2,
+          "max_depth_m": 2,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "NODE-J02",
+          "node_type": "junction",
+          "position_m": {
+            "x": 80,
+            "y": 120,
+            "z": 10.1
+          },
+          "invert_elevation_m": 10.1,
+          "ground_elevation_m": 12.1,
+          "max_depth_m": 2,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "NODE-J03",
+          "node_type": "junction",
+          "position_m": {
+            "x": 40,
+            "y": 80,
+            "z": 9.8
+          },
+          "invert_elevation_m": 9.8,
+          "ground_elevation_m": 11.8,
+          "max_depth_m": 2,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "NODE-J04",
+          "node_type": "junction",
+          "position_m": {
+            "x": 120,
+            "y": 80,
+            "z": 10
+          },
+          "invert_elevation_m": 10,
+          "ground_elevation_m": 12,
+          "max_depth_m": 2,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "NODE-J05",
+          "node_type": "junction",
+          "position_m": {
+            "x": 80,
+            "y": 40,
+            "z": 9.4
+          },
+          "invert_elevation_m": 9.4,
+          "ground_elevation_m": 11.4,
+          "max_depth_m": 2,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "NODE-J06",
+          "node_type": "junction",
+          "position_m": {
+            "x": 0,
+            "y": 0,
+            "z": 9.5
+          },
+          "invert_elevation_m": 9.5,
+          "ground_elevation_m": 11.5,
+          "max_depth_m": 2,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "NODE-J07",
+          "node_type": "junction",
+          "position_m": {
+            "x": 40,
+            "y": 0,
+            "z": 9
+          },
+          "invert_elevation_m": 9,
+          "ground_elevation_m": 11,
+          "max_depth_m": 2,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "NODE-J08",
+          "node_type": "junction",
+          "position_m": {
+            "x": 40,
+            "y": -50,
+            "z": 8.6
+          },
+          "invert_elevation_m": 8.6,
+          "ground_elevation_m": 10.6,
+          "max_depth_m": 2,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "NODE-OUT01",
+          "node_type": "outfall",
+          "position_m": {
+            "x": 40,
+            "y": -100,
+            "z": 8.2
+          },
+          "invert_elevation_m": 8.2,
+          "ground_elevation_m": 10.2,
+          "max_depth_m": 2,
+          "source_type": "synthetic"
+        }
+      ],
+      "inlets": [
+        {
+          "inlet_id": "INLET-D01",
+          "node_id": "NODE-J01",
+          "position_m": {
+            "x": 0,
+            "y": 120,
+            "z": 12.2
+          },
+          "grate_area_m2": 0.6,
+          "source_type": "synthetic"
+        },
+        {
+          "inlet_id": "INLET-D02",
+          "node_id": "NODE-J02",
+          "position_m": {
+            "x": 80,
+            "y": 120,
+            "z": 12.1
+          },
+          "grate_area_m2": 0.6,
+          "source_type": "synthetic"
+        },
+        {
+          "inlet_id": "INLET-D04",
+          "node_id": "NODE-J04",
+          "position_m": {
+            "x": 120,
+            "y": 80,
+            "z": 12
+          },
+          "grate_area_m2": 0.6,
+          "source_type": "synthetic"
+        },
+        {
+          "inlet_id": "INLET-D07",
+          "node_id": "NODE-J07",
+          "position_m": {
+            "x": 40,
+            "y": 0,
+            "z": 11
+          },
+          "grate_area_m2": 0.6,
+          "source_type": "synthetic"
+        }
+      ],
+      "conduits": [
+        {
+          "conduit_id": "PIPE-P01",
+          "from_node_id": "NODE-J01",
+          "to_node_id": "NODE-J03",
+          "diameter_m": 0.45,
+          "length_m": 56.568542,
+          "manning_n": 0.013,
+          "source_type": "synthetic"
+        },
+        {
+          "conduit_id": "PIPE-P02",
+          "from_node_id": "NODE-J02",
+          "to_node_id": "NODE-J03",
+          "diameter_m": 0.45,
+          "length_m": 56.568542,
+          "manning_n": 0.013,
+          "source_type": "synthetic"
+        },
+        {
+          "conduit_id": "PIPE-P03",
+          "from_node_id": "NODE-J03",
+          "to_node_id": "NODE-J05",
+          "diameter_m": 0.6,
+          "length_m": 56.568542,
+          "manning_n": 0.013,
+          "source_type": "synthetic"
+        },
+        {
+          "conduit_id": "PIPE-P04",
+          "from_node_id": "NODE-J04",
+          "to_node_id": "NODE-J05",
+          "diameter_m": 0.45,
+          "length_m": 56.568542,
+          "manning_n": 0.013,
+          "source_type": "synthetic"
+        },
+        {
+          "conduit_id": "PIPE-P05",
+          "from_node_id": "NODE-J05",
+          "to_node_id": "NODE-J07",
+          "diameter_m": 0.6,
+          "length_m": 56.568542,
+          "manning_n": 0.013,
+          "source_type": "synthetic"
+        },
+        {
+          "conduit_id": "PIPE-P06",
+          "from_node_id": "NODE-J06",
+          "to_node_id": "NODE-J07",
+          "diameter_m": 0.45,
+          "length_m": 40,
+          "manning_n": 0.013,
+          "source_type": "synthetic"
+        },
+        {
+          "conduit_id": "PIPE-P07",
+          "from_node_id": "NODE-J07",
+          "to_node_id": "NODE-J08",
+          "diameter_m": 0.6,
+          "length_m": 50,
+          "manning_n": 0.013,
+          "source_type": "synthetic"
+        },
+        {
+          "conduit_id": "PIPE-P08",
+          "from_node_id": "NODE-J08",
+          "to_node_id": "NODE-OUT01",
+          "diameter_m": 0.75,
+          "length_m": 50,
+          "manning_n": 0.013,
+          "source_type": "synthetic"
+        }
+      ],
+      "assumptions": [
+        "Illustrative synthetic layout; not surveyed Taman Kyra underground assets.",
+        "Coordinates use an arbitrary local metric datum; they are not latitude/longitude.",
+        "Node positions are pipe inverts; inlet positions are surface grate elevations.",
+        "Diameters, roughness, elevations and grate areas are synthetic demonstration inputs, not verified site design values.",
+        "Independent inlet capture and obstruction modelling are not yet implemented; the T1 clean baseline routes runoff directly to sewer nodes.",
+        "No surface terrain coupling or validated street flood depths are available."
+      ]
+    },
+    "hydrology": {
+      "model_version_id": "taman_kyra_synthetic_v1",
+      "source_type": "synthetic",
+      "assumptions_version": "hydrology-v1",
+      "subcatchments": [
+        {
+          "subcatchment_id": "CATCH-D01",
+          "outlet_node_id": "NODE-J01",
+          "area_ha": 1.0,
+          "impervious_percent": 80,
+          "width_m": 100,
+          "slope_percent": 1
+        },
+        {
+          "subcatchment_id": "CATCH-D02",
+          "outlet_node_id": "NODE-J02",
+          "area_ha": 1.0,
+          "impervious_percent": 80,
+          "width_m": 100,
+          "slope_percent": 1
+        },
+        {
+          "subcatchment_id": "CATCH-D04",
+          "outlet_node_id": "NODE-J04",
+          "area_ha": 1.0,
+          "impervious_percent": 80,
+          "width_m": 100,
+          "slope_percent": 1
+        },
+        {
+          "subcatchment_id": "CATCH-D07",
+          "outlet_node_id": "NODE-J07",
+          "area_ha": 1.0,
+          "impervious_percent": 80,
+          "width_m": 100,
+          "slope_percent": 1
+        }
+      ],
+      "surface_parameters": {
+        "n_impervious": 0.015,
+        "n_pervious": 0.15,
+        "storage_impervious_mm": 1,
+        "storage_pervious_mm": 4,
+        "zero_storage_impervious_percent": 25
+      },
+      "horton_parameters": {
+        "max_infiltration_mmh": 75,
+        "min_infiltration_mmh": 5,
+        "decay_per_hour": 4,
+        "drying_time_days": 7,
+        "max_infiltration_mm": 0
+      },
+      "simulation_parameters": {
+        "start_date": "01/01/2026",
+        "report_step_s": 60,
+        "wet_step_s": 10,
+        "routing_step_s": 1,
+        "variable_step_factor": 0.75,
+        "minimum_step_s": 0.1,
+        "max_trials": 40,
+        "head_tolerance_m": 0.0005,
+        "drain_down_s": 3600
+      },
+      "assumptions": [
+        "Four synthetic 1 ha catchments, each 80% impervious; areas do not imply surveyed catchment boundaries.",
+        "Surface routing uses the SWMM nonlinear reservoir with synthetic width, slope, roughness and depression storage; infiltration uses assumed Horton parameters.",
+        "T1 clean scenario routes all catchment runoff directly to its associated sewer node, with no independent inlet capture limit. Finite inlet restriction is not yet implemented (T3).",
+        "Flooding is lost from the 1D network (ALLOW_PONDING=NO); no surface flood depth, extent, return flow or 2D coupling is computed.",
+        "Outfall stage is fixed at invert plus the selected assumed tailwater depth; no observed river hydrograph is available.",
+        "One-hour rain is followed by one-hour dry drainage; the full simulation window is included in metrics."
+      ]
+    },
+    "storm": {
+      "storm_id": "storm_c457ffedc65a4fd3ab2e81a1494dee74",
+      "name": "Assumed custom 120 mm/h",
+      "source_type": "assumed",
+      "parameters": {
+        "intensity_mmh": 120.0,
+        "duration_s": 3600,
+        "pattern": "constant"
+      },
+      "created_at": "2026-10-19T06:02:50.029928+00:00",
+      "notes": "Synthetic demonstration rainfall; not a measured site event."
+    },
+    "tailwater": {
+      "tailwater_case": "normal",
+      "name": "Assumed normal outfall level",
+      "source_type": "assumed",
+      "parameters": {
+        "depth_above_outfall_invert_m": 0
+      }
+    },
+    "debris_scenario": {
+      "debris_scenario_id": "demo_inlet_clean",
+      "source_type": "assumed",
+      "hydraulic_inlet_clogging_fraction": 0,
+      "capture_model": "unlimited_direct_node_inflow_T1"
+    },
+    "intervention": null,
+    "request": {
+      "model_version_id": "taman_kyra_synthetic_v1",
+      "storm_id": "storm_c457ffedc65a4fd3ab2e81a1494dee74",
+      "debris_scenario_id": "demo_inlet_clean",
+      "tailwater_case": "normal",
+      "intervention": null
+    },
+    "swmm_input": "[TITLE]\n; FloodOps synthetic 1D network; not a verified Taman Kyra model.\n\n[OPTIONS]\nFLOW_UNITS CMS\nINFILTRATION HORTON\nFLOW_ROUTING DYNWAVE\nSTART_DATE 01/01/2026\nSTART_TIME 00:00:00\nREPORT_START_DATE 01/01/2026\nREPORT_START_TIME 00:00:00\nEND_DATE 01/01/2026\nEND_TIME 02:00:00\nSWEEP_START 01/01\nSWEEP_END 12/31\nDRY_DAYS 0\nREPORT_STEP 00:01:00\nWET_STEP 00:00:10\nDRY_STEP 00:01:00\nROUTING_STEP 1\nALLOW_PONDING NO\nVARIABLE_STEP 0.75\nMINIMUM_STEP 0.1\nLENGTHENING_STEP 0\nSURCHARGE_METHOD EXTRAN\nNORMAL_FLOW_LIMITED BOTH\nTHREADS 1\nMAX_TRIALS 40\nHEAD_TOLERANCE 0.0005\n\n[EVAPORATION]\nCONSTANT 0\n\n[RAINGAGES]\nRAIN-G01 INTENSITY 0:05 1 TIMESERIES RAIN-TS\n\n[SUBCATCHMENTS]\nCATCH-D01 RAIN-G01 NODE-J01 1.0 80 100 1 0\nCATCH-D02 RAIN-G01 NODE-J02 1.0 80 100 1 0\nCATCH-D04 RAIN-G01 NODE-J04 1.0 80 100 1 0\nCATCH-D07 RAIN-G01 NODE-J07 1.0 80 100 1 0\n\n[SUBAREAS]\nCATCH-D01 0.015 0.15 1 4 25 OUTLET 100\nCATCH-D02 0.015 0.15 1 4 25 OUTLET 100\nCATCH-D04 0.015 0.15 1 4 25 OUTLET 100\nCATCH-D07 0.015 0.15 1 4 25 OUTLET 100\n\n[INFILTRATION]\nCATCH-D01 75 5 4 7 0\nCATCH-D02 75 5 4 7 0\nCATCH-D04 75 5 4 7 0\nCATCH-D07 75 5 4 7 0\n\n[JUNCTIONS]\nNODE-J01 10.2 2 0 0 0\nNODE-J02 10.1 2 0 0 0\nNODE-J03 9.8 2 0 0 0\nNODE-J04 10 2 0 0 0\nNODE-J05 9.4 2 0 0 0\nNODE-J06 9.5 2 0 0 0\nNODE-J07 9 2 0 0 0\nNODE-J08 8.6 2 0 0 0\n\n[OUTFALLS]\nNODE-OUT01 8.2 FIXED 8.2 NO\n\n[CONDUITS]\nPIPE-P01 NODE-J01 NODE-J03 56.568542 0.013 0 0 0 0\nPIPE-P02 NODE-J02 NODE-J03 56.568542 0.013 0 0 0 0\nPIPE-P03 NODE-J03 NODE-J05 56.568542 0.013 0 0 0 0\nPIPE-P04 NODE-J04 NODE-J05 56.568542 0.013 0 0 0 0\nPIPE-P05 NODE-J05 NODE-J07 56.568542 0.013 0 0 0 0\nPIPE-P06 NODE-J06 NODE-J07 40 0.013 0 0 0 0\nPIPE-P07 NODE-J07 NODE-J08 50 0.013 0 0 0 0\nPIPE-P08 NODE-J08 NODE-OUT01 50 0.013 0 0 0 0\n\n[XSECTIONS]\nPIPE-P01 CIRCULAR 0.45 0 0 0 1\nPIPE-P02 CIRCULAR 0.45 0 0 0 1\nPIPE-P03 CIRCULAR 0.6 0 0 0 1\nPIPE-P04 CIRCULAR 0.45 0 0 0 1\nPIPE-P05 CIRCULAR 0.6 0 0 0 1\nPIPE-P06 CIRCULAR 0.45 0 0 0 1\nPIPE-P07 CIRCULAR 0.6 0 0 0 1\nPIPE-P08 CIRCULAR 0.75 0 0 0 1\n\n[TIMESERIES]\nRAIN-TS 01/01/2026 00:00:00 120.0\nRAIN-TS 01/01/2026 00:05:00 120.0\nRAIN-TS 01/01/2026 00:10:00 120.0\nRAIN-TS 01/01/2026 00:15:00 120.0\nRAIN-TS 01/01/2026 00:20:00 120.0\nRAIN-TS 01/01/2026 00:25:00 120.0\nRAIN-TS 01/01/2026 00:30:00 120.0\nRAIN-TS 01/01/2026 00:35:00 120.0\nRAIN-TS 01/01/2026 00:40:00 120.0\nRAIN-TS 01/01/2026 00:45:00 120.0\nRAIN-TS 01/01/2026 00:50:00 120.0\nRAIN-TS 01/01/2026 00:55:00 120.0\nRAIN-TS 01/01/2026 01:00:00 0\nRAIN-TS 01/01/2026 01:05:00 0\nRAIN-TS 01/01/2026 01:10:00 0\nRAIN-TS 01/01/2026 01:15:00 0\nRAIN-TS 01/01/2026 01:20:00 0\nRAIN-TS 01/01/2026 01:25:00 0\nRAIN-TS 01/01/2026 01:30:00 0\nRAIN-TS 01/01/2026 01:35:00 0\nRAIN-TS 01/01/2026 01:40:00 0\nRAIN-TS 01/01/2026 01:45:00 0\nRAIN-TS 01/01/2026 01:50:00 0\nRAIN-TS 01/01/2026 01:55:00 0\nRAIN-TS 01/01/2026 02:00:00 0\n\n[REPORT]\nINPUT NO\nCONTINUITY YES\nFLOWSTATS YES\nSUBCATCHMENTS ALL\nNODES ALL\nLINKS ALL\n\n[COORDINATES]\nNODE-J01 0 120\nNODE-J02 80 120\nNODE-J03 40 80\nNODE-J04 120 80\nNODE-J05 80 40\nNODE-J06 0 0\nNODE-J07 40 0\nNODE-J08 40 -50\nNODE-OUT01 40 -100\n"
+  },
+  "input_hash": "8d546f10a406ea1dd453915e2cad7a0eeaa290d47d045ab5f2d80164d9641d77",
+  "engine": "EPA SWMM",
+  "engine_version": "5.2.4",
+  "is_verified_site_model": false,
+  "assumptions": [
+    "Illustrative synthetic layout; not surveyed Taman Kyra underground assets.",
+    "Coordinates use an arbitrary local metric datum; they are not latitude/longitude.",
+    "Node positions are pipe inverts; inlet positions are surface grate elevations.",
+    "Diameters, roughness, elevations and grate areas are synthetic demonstration inputs, not verified site design values.",
+    "Independent inlet capture and obstruction modelling are not yet implemented; the T1 clean baseline routes runoff directly to sewer nodes.",
+    "No surface terrain coupling or validated street flood depths are available.",
+    "Four synthetic 1 ha catchments, each 80% impervious; areas do not imply surveyed catchment boundaries.",
+    "Surface routing uses the SWMM nonlinear reservoir with synthetic width, slope, roughness and depression storage; infiltration uses assumed Horton parameters.",
+    "T1 clean scenario routes all catchment runoff directly to its associated sewer node, with no independent inlet capture limit. Finite inlet restriction is not yet implemented (T3).",
+    "Flooding is lost from the 1D network (ALLOW_PONDING=NO); no surface flood depth, extent, return flow or 2D coupling is computed.",
+    "Outfall stage is fixed at invert plus the selected assumed tailwater depth; no observed river hydrograph is available.",
+    "One-hour rain is followed by one-hour dry drainage; the full simulation window is included in metrics."
+  ],
+  "warnings": [
+    "Trace native flooding <0.1 m3 at NODE-J06; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering."
+  ],
+  "error": null,
+  "evidence_references": [
+    "data/validation/t2/runtime/runs/run_58526011782848ecb34a408b4538e5a9/frames.json",
+    "data/validation/t2/runtime/runs/run_58526011782848ecb34a408b4538e5a9/inputs.json",
+    "data/validation/t2/runtime/runs/run_58526011782848ecb34a408b4538e5a9/metrics.json",
+    "data/validation/t2/runtime/runs/run_58526011782848ecb34a408b4538e5a9/model.inp",
+    "data/validation/t2/runtime/runs/run_58526011782848ecb34a408b4538e5a9/model.out",
+    "data/validation/t2/runtime/runs/run_58526011782848ecb34a408b4538e5a9/model.rpt",
+    "data/validation/t2/runtime/runs/run_58526011782848ecb34a408b4538e5a9/native.json",
+    "data/validation/t2/runtime/runs/run_58526011782848ecb34a408b4538e5a9/qa.json",
+    "data/validation/t2/runtime/runs/run_58526011782848ecb34a408b4538e5a9/worker.log"
+  ]
+}

@@ -6,13 +6,13 @@ from fastapi.testclient import TestClient
 from jsonschema import Draft202012Validator
 
 from services.api.app.catalog import REPO_ROOT, load_assets, load_bootstrap
-from services.api.app.main import app
+from services.api.app.main import app, create_app
 from services.api.export_contracts import artifacts
 
 
 @pytest.fixture
-def client():
-    with TestClient(app) as client:
+def client(tmp_path):
+    with TestClient(create_app(tmp_path / "api")) as client:
         yield client
 
 
@@ -29,7 +29,7 @@ def test_health_separates_library_from_execution(client, monkeypatch):
     assert health["status"] == "ok"
     assert health["swmm"]["available"] is False
     assert health["swmm"]["execution_verified"] is False
-    assert health["capabilities"]["simulations"] is False
+    assert health["capabilities"]["simulations"] is True
 
 
 def test_catalog_identity_geometry_and_outfall_connectivity(client):
@@ -69,7 +69,7 @@ def test_catalog_identity_geometry_and_outfall_connectivity(client):
         assert node_id == "NODE-OUT01"
     for preset in bootstrap["debris_scenarios"]:
         assert preset["parameters"]["inlet_id"] in inlets
-        assert preset["swmm_supported"] is False
+        assert preset["swmm_supported"] is (preset["parameters"]["hydraulic_inlet_clogging_fraction"] == 0)
     assert load_assets().township_id == load_bootstrap().township_id
 
 
@@ -97,20 +97,23 @@ def test_unknown_resources_have_uniform_error(client, path):
     assert "detail" not in response.json()
 
 
-def test_planned_routes_never_return_fake_runs_or_results(client):
+def test_unknown_runs_and_unsupported_scenarios_never_return_fake_results(client):
     request = json.loads((REPO_ROOT / "contracts/examples/simulation-request.json").read_text(encoding="utf-8"))
-    responses = [client.post("/api/simulations", json=request)]
+    unsupported = client.post("/api/simulations",json={**request,"debris_scenario_id":"demo_inlet_40pct"})
+    assert unsupported.status_code == 422
+    assert unsupported.json()["error"]["code"] == "UNSUPPORTED_SCENARIO"
+    responses = []
     responses += [client.get(f"/api/simulations/example{suffix}") for suffix in ("", "/frames", "/metrics")]
     for response in responses:
-        assert response.status_code == 501
-        assert response.json()["error"]["code"] == "NOT_IMPLEMENTED"
+        assert response.status_code == 404
+        assert response.json()["error"]["code"] == "NOT_FOUND"
         assert not any(key in response.json() for key in ("run_id", "frames", "total_flooding_volume_m3"))
     schema = app.openapi()
     for path, methods in schema["paths"].items():
         if path.startswith("/api/simulations"):
             for method in methods.values():
-                assert method["x-implementation-status"] == "planned"
-                assert "501" in method["responses"]
+                assert method.get("x-implementation-status") != "planned"
+                assert "501" not in method["responses"]
 
 
 def test_input_validation_error_shape(client):
@@ -131,10 +134,16 @@ def test_exported_contracts_match_app_and_validate_examples(client):
     examples = REPO_ROOT / "contracts/examples"
     for name, model_name in (
         ("bootstrap", "BootstrapResponse"), ("assets", "AssetsResponse"),
-        ("simulation-request", "SimulationRequest"), ("simulation-not-implemented", "ErrorResponse"),
+        ("simulation-request", "SimulationRequest"), ("simulation-unsupported", "ErrorResponse"),
         ("validation-error", "ErrorResponse"),
         ("run-baseline", "RunResponse"), ("frames-baseline", "FramesResponse"), ("metrics-baseline", "MetricsResponse"),
         ("run-stronger", "RunResponse"), ("frames-stronger", "FramesResponse"), ("metrics-stronger", "MetricsResponse"),
+        ("storm-create-request", "StormCreate"),
+        ("storm-created", "StormRecord"),
+        ("http-accepted-baseline", "SimulationAccepted"), ("http-accepted-stronger", "SimulationAccepted"),
+        ("http-run-baseline", "RunResponse"), ("http-run-stronger", "RunResponse"),
+        ("http-frames-baseline", "FramesResponse"), ("http-frames-stronger", "FramesResponse"),
+        ("http-metrics-baseline", "MetricsResponse"), ("http-metrics-stronger", "MetricsResponse"),
     ):
         validator_schema = {"$ref": f"#/components/schemas/{model_name}", "components": schema["components"]}
         value = json.loads((examples / f"{name}.json").read_text(encoding="utf-8"))

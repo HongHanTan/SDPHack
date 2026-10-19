@@ -2,7 +2,7 @@
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 Identifier = Annotated[str, Field(min_length=1, max_length=128)]
 NonNegative = Annotated[float, Field(ge=0)]
@@ -36,8 +36,8 @@ class EngineHealth(WireModel):
 
 class Capabilities(WireModel):
     assets: bool = True
-    storm_creation: bool = False
-    simulations: bool = False
+    storm_creation: bool = True
+    simulations: bool = True
     inspections: bool = False
     debris: bool = False
     comparisons: bool = False
@@ -118,6 +118,26 @@ class StormPreset(WireModel):
     parameters: StormParameters
 
 
+class StormCreate(WireModel):
+    name: Annotated[str, Field(min_length=1, max_length=160)]
+    intensity_mmh: Annotated[float, Field(ge=0, le=300)]
+    duration_s: Annotated[int, Field(strict=True, ge=300, le=21600, multiple_of=300)]
+    source_type: SourceType = "assumed"
+    pattern: Literal["constant"] = "constant"
+    notes: Annotated[str, Field(max_length=2000)] = ""
+
+    @model_validator(mode="after")
+    def nonblank_name(self):
+        if not self.name.strip():
+            raise ValueError("Storm name must not be blank")
+        return self
+
+
+class StormRecord(StormPreset):
+    created_at: AwareDatetime | None = None
+    notes: str = ""
+
+
 class DebrisParameters(WireModel):
     inlet_id: Identifier
     hydraulic_inlet_clogging_fraction: Fraction
@@ -129,7 +149,7 @@ class DebrisPreset(WireModel):
     name: str
     source_type: SourceType
     parameters: DebrisParameters
-    swmm_supported: bool = Field(description="False until restriction integration is verified in T3.")
+    swmm_supported: bool = Field(description="Only the zero-restriction direct-node entry baseline is executable in T2; finite inlet capture/restriction arrives in T3.")
 
 
 class TailwaterParameters(WireModel):
@@ -141,13 +161,14 @@ class TailwaterPreset(WireModel):
     name: str
     source_type: SourceType
     parameters: TailwaterParameters
+    swmm_supported: bool = Field(default=False, description="Only normal is enabled in T2; the high boundary remains an unvalidated input preset.")
 
 
 class BootstrapResponse(WireModel):
     api_version: str
     township_id: Identifier
     model_versions: list[ModelVersion]
-    storms: list[StormPreset]
+    storms: list[StormRecord]
     debris_scenarios: list[DebrisPreset]
     tailwater_cases: list[TailwaterPreset]
     capabilities: Capabilities
@@ -159,7 +180,7 @@ class SimulationRequest(WireModel):
     storm_id: Identifier
     debris_scenario_id: Identifier
     tailwater_case: Identifier
-    intervention: None = Field(default=None, description="Reserved for T4; only null is supported in v1.0.0.")
+    intervention: None = Field(default=None, description="Reserved for T4; only null is currently supported.")
 
 
 class SimulationAccepted(WireModel):
@@ -180,6 +201,16 @@ class RunResponse(WireModel):
     warnings: list[str]
     error: ErrorDetail | None
     evidence_references: list[str]
+    storm_id: Identifier | None = None
+    debris_scenario_id: Identifier | None = None
+    tailwater_case: Identifier | None = None
+    created_at: AwareDatetime | None = None
+    started_at: AwareDatetime | None = None
+    completed_at: AwareDatetime | None = None
+
+
+class RunListResponse(WireModel):
+    items: list[RunResponse]
 
 
 class PipeState(WireModel):

@@ -1,0 +1,12 @@
+{
+  "storm_id": "storm_c457ffedc65a4fd3ab2e81a1494dee74",
+  "name": "Assumed custom 120 mm/h",
+  "source_type": "assumed",
+  "parameters": {
+    "intensity_mmh": 120.0,
+    "duration_s": 3600,
+    "pattern": "constant"
+  },
+  "created_at": "2026-10-19T06:02:50.029928Z",
+  "notes": "Synthetic demonstration rainfall; not a measured site event."
+}

@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "UNSUPPORTED_SCENARIO",
+    "message": "Finite inlet restriction is not implemented; select demo_inlet_clean until T3.",
+    "details": {
+      "debris_scenario_id": "demo_inlet_40pct"
+    }
+  }
+}

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Township FloodOps API",
-    "description": "Synthetic demonstration network. Health/bootstrap/assets are implemented. Real offline SWMM validation results are retained under data/validation/t1. HTTP simulation routes remain planned contracts and return 501 NOT_IMPLEMENTED until T2.",
-    "version": "1.0.0"
+    "description": "Synthetic uncalibrated network. Storm creation and asynchronous real SWMM runs are persisted in SQLite. Poll run status before fetching results. Only clean direct-node entry and normal tailwater are supported; inspection/restriction/comparison remain T3/T4. One API worker per runtime directory.",
+    "version": "1.1.0"
   },
   "paths": {
     "/api/health": {
@@ -25,7 +25,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND: unknown township or resource.",
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
             "content": {
               "application/json": {
                 "schema": {
@@ -35,7 +35,7 @@
             }
           },
           "422": {
-            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
             "content": {
               "application/json": {
                 "schema": {
@@ -45,7 +45,7 @@
             }
           },
           "500": {
-            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
             "content": {
               "application/json": {
                 "schema": {
@@ -76,7 +76,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND: unknown township or resource.",
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
             "content": {
               "application/json": {
                 "schema": {
@@ -86,7 +86,7 @@
             }
           },
           "422": {
-            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
             "content": {
               "application/json": {
                 "schema": {
@@ -96,7 +96,7 @@
             }
           },
           "500": {
-            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
             "content": {
               "application/json": {
                 "schema": {
@@ -138,7 +138,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND: unknown township or resource.",
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
             "content": {
               "application/json": {
                 "schema": {
@@ -148,7 +148,7 @@
             }
           },
           "422": {
-            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
             "content": {
               "application/json": {
                 "schema": {
@@ -158,7 +158,131 @@
             }
           },
           "500": {
-            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storms": {
+      "post": {
+        "tags": [
+          "storms"
+        ],
+        "summary": "Create Storm",
+        "description": "Save a new immutable constant storm; send the new storm_id when starting a run.",
+        "operationId": "create_storm_api_storms_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StormCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StormRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storms/{storm_id}": {
+      "get": {
+        "tags": [
+          "storms"
+        ],
+        "summary": "Get Storm",
+        "operationId": "get_storm_api_storms__storm_id__get",
+        "parameters": [
+          {
+            "name": "storm_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Storm Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StormRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
             "content": {
               "application/json": {
                 "schema": {
@@ -173,20 +297,20 @@
     "/api/simulations": {
       "post": {
         "tags": [
-          "simulations (planned)"
+          "simulations"
         ],
         "summary": "Create Simulation",
-        "description": "Planned shape only. Never returns a fabricated run ID or success.",
+        "description": "Persist queued inputs and return immediately; native execution may later succeed or fail.",
         "operationId": "create_simulation_api_simulations_post",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SimulationRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -200,7 +324,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND: unknown township or resource.",
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
             "content": {
               "application/json": {
                 "schema": {
@@ -210,7 +334,7 @@
             }
           },
           "422": {
-            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
             "content": {
               "application/json": {
                 "schema": {
@@ -220,7 +344,7 @@
             }
           },
           "500": {
-            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
             "content": {
               "application/json": {
                 "schema": {
@@ -229,8 +353,18 @@
               }
             }
           },
-          "501": {
-            "description": "NOT_IMPLEMENTED: HTTP simulation execution and persistence arrive in T2; offline T1 validation exists.",
+          "429": {
+            "description": "QUEUE_FULL: at most 8 queued/running jobs by default.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_STOPPING or SCHEDULING_FAILED; a scheduling failure includes the saved run_id.",
             "content": {
               "application/json": {
                 "schema": {
@@ -239,14 +373,76 @@
               }
             }
           }
-        },
-        "x-implementation-status": "planned"
+        }
+      },
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "List Simulations",
+        "operationId": "list_simulations_api_simulations_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/simulations/{run_id}": {
       "get": {
         "tags": [
-          "simulations (planned)"
+          "simulations"
         ],
         "summary": "Get Simulation",
         "operationId": "get_simulation_api_simulations__run_id__get",
@@ -273,7 +469,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND: unknown township or resource.",
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
             "content": {
               "application/json": {
                 "schema": {
@@ -283,7 +479,7 @@
             }
           },
           "422": {
-            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
             "content": {
               "application/json": {
                 "schema": {
@@ -293,17 +489,7 @@
             }
           },
           "500": {
-            "description": "INTERNAL_ERROR: unexpected server failure.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "NOT_IMPLEMENTED: HTTP simulation execution and persistence arrive in T2; offline T1 validation exists.",
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
             "content": {
               "application/json": {
                 "schema": {
@@ -312,14 +498,13 @@
               }
             }
           }
-        },
-        "x-implementation-status": "planned"
+        }
       }
     },
     "/api/simulations/{run_id}/frames": {
       "get": {
         "tags": [
-          "simulations (planned)"
+          "simulations"
         ],
         "summary": "Get Frames",
         "operationId": "get_frames_api_simulations__run_id__frames_get",
@@ -346,7 +531,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND: unknown township or resource.",
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
             "content": {
               "application/json": {
                 "schema": {
@@ -356,7 +541,7 @@
             }
           },
           "422": {
-            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
             "content": {
               "application/json": {
                 "schema": {
@@ -366,7 +551,7 @@
             }
           },
           "500": {
-            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
             "content": {
               "application/json": {
                 "schema": {
@@ -375,8 +560,8 @@
               }
             }
           },
-          "501": {
-            "description": "NOT_IMPLEMENTED: HTTP simulation execution and persistence arrive in T2; offline T1 validation exists.",
+          "409": {
+            "description": "RESULTS_NOT_READY for queued/running, SIMULATION_FAILED for failed runs. Query run status; failed runs have persisted error/log references.",
             "content": {
               "application/json": {
                 "schema": {
@@ -385,14 +570,13 @@
               }
             }
           }
-        },
-        "x-implementation-status": "planned"
+        }
       }
     },
     "/api/simulations/{run_id}/metrics": {
       "get": {
         "tags": [
-          "simulations (planned)"
+          "simulations"
         ],
         "summary": "Get Metrics",
         "operationId": "get_metrics_api_simulations__run_id__metrics_get",
@@ -419,7 +603,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND: unknown township or resource.",
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
             "content": {
               "application/json": {
                 "schema": {
@@ -429,7 +613,7 @@
             }
           },
           "422": {
-            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
             "content": {
               "application/json": {
                 "schema": {
@@ -439,7 +623,7 @@
             }
           },
           "500": {
-            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
             "content": {
               "application/json": {
                 "schema": {
@@ -448,8 +632,8 @@
               }
             }
           },
-          "501": {
-            "description": "NOT_IMPLEMENTED: HTTP simulation execution and persistence arrive in T2; offline T1 validation exists.",
+          "409": {
+            "description": "RESULTS_NOT_READY for queued/running, SIMULATION_FAILED for failed runs. Query run status; failed runs have persisted error/log references.",
             "content": {
               "application/json": {
                 "schema": {
@@ -458,8 +642,74 @@
               }
             }
           }
-        },
-        "x-implementation-status": "planned"
+        }
+      }
+    },
+    "/api/simulations/{run_id}/artifacts/{artifact_name}": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Get Artifact",
+        "operationId": "get_artifact_api_simulations__run_id__artifacts__artifact_name__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "artifact_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Artifact Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Allowlisted raw SWMM artifact or API event log.",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -562,7 +812,7 @@
           },
           "storms": {
             "items": {
-              "$ref": "#/components/schemas/StormPreset"
+              "$ref": "#/components/schemas/StormRecord"
             },
             "type": "array",
             "title": "Storms"
@@ -616,12 +866,12 @@
           "storm_creation": {
             "type": "boolean",
             "title": "Storm Creation",
-            "default": false
+            "default": true
           },
           "simulations": {
             "type": "boolean",
             "title": "Simulations",
-            "default": false
+            "default": true
           },
           "inspections": {
             "type": "boolean",
@@ -759,7 +1009,7 @@
           "swmm_supported": {
             "type": "boolean",
             "title": "Swmm Supported",
-            "description": "False until restriction integration is verified in T3."
+            "description": "Only the zero-restriction direct-node entry baseline is executable in T2; finite inlet capture/restriction arrives in T3."
           }
         },
         "additionalProperties": false,
@@ -1390,6 +1640,23 @@
         ],
         "title": "Position"
       },
+      "RunListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RunResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "RunListResponse"
+      },
       "RunResponse": {
         "properties": {
           "run_id": {
@@ -1478,6 +1745,81 @@
             },
             "type": "array",
             "title": "Evidence References"
+          },
+          "storm_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storm Id"
+          },
+          "debris_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debris Scenario Id"
+          },
+          "tailwater_case": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tailwater Case"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
           }
         },
         "additionalProperties": false,
@@ -1553,7 +1895,7 @@
           "intervention": {
             "type": "null",
             "title": "Intervention",
-            "description": "Reserved for T4; only null is supported in v1.0.0."
+            "description": "Reserved for T4; only null is currently supported."
           }
         },
         "additionalProperties": false,
@@ -1565,6 +1907,60 @@
           "tailwater_case"
         ],
         "title": "SimulationRequest"
+      },
+      "StormCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "intensity_mmh": {
+            "type": "number",
+            "maximum": 300.0,
+            "minimum": 0.0,
+            "title": "Intensity Mmh"
+          },
+          "duration_s": {
+            "type": "integer",
+            "multipleOf": 300.0,
+            "maximum": 21600.0,
+            "minimum": 300.0,
+            "title": "Duration S"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type",
+            "default": "assumed"
+          },
+          "pattern": {
+            "type": "string",
+            "const": "constant",
+            "title": "Pattern",
+            "default": "constant"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "intensity_mmh",
+          "duration_s"
+        ],
+        "title": "StormCreate"
       },
       "StormParameters": {
         "properties": {
@@ -1593,7 +1989,7 @@
         ],
         "title": "StormParameters"
       },
-      "StormPreset": {
+      "StormRecord": {
         "properties": {
           "storm_id": {
             "type": "string",
@@ -1617,6 +2013,23 @@
           },
           "parameters": {
             "$ref": "#/components/schemas/StormParameters"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes",
+            "default": ""
           }
         },
         "additionalProperties": false,
@@ -1627,7 +2040,7 @@
           "source_type",
           "parameters"
         ],
-        "title": "StormPreset"
+        "title": "StormRecord"
       },
       "TailwaterParameters": {
         "properties": {
@@ -1668,6 +2081,12 @@
           },
           "parameters": {
             "$ref": "#/components/schemas/TailwaterParameters"
+          },
+          "swmm_supported": {
+            "type": "boolean",
+            "title": "Swmm Supported",
+            "description": "Only normal is enabled in T2; the high boundary remains an unvalidated input preset.",
+            "default": false
           }
         },
         "additionalProperties": false,
