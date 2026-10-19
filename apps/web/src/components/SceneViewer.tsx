@@ -10,6 +10,7 @@ import {
   NodeStatus,
   Position3D,
   SimulationFrame,
+  AppMode,
 } from '../types';
 import { InspectorAvatar } from './InspectorAvatar';
 
@@ -29,6 +30,7 @@ interface SceneViewerProps {
   showUndergroundOnly?: boolean;
   onOpenDebrisLab?: () => void;
   isDebrisLabOpen?: boolean;
+  appMode?: AppMode;
 }
 
 // 3D Node Mesh with physical chamber drop from ground down to invert
@@ -163,7 +165,8 @@ const ConduitMesh: React.FC<{
   flowM3s?: number;
   isSelected: boolean;
   onClick: () => void;
-}> = ({ conduit, fromNode, toNode, status, isSelected, onClick }) => {
+  appMode?: AppMode;
+}> = ({ conduit, fromNode, toNode, status, isSelected, onClick, appMode }) => {
   const [hovered, setHovered] = useState(false);
 
   const { midpoint, length, orientation } = useMemo(() => {
@@ -227,6 +230,20 @@ const ConduitMesh: React.FC<{
           emissiveIntensity={isSelected ? 0.6 : hovered ? 0.3 : 0}
         />
       </mesh>
+
+      {/* 3D Label for bottleneck conduit PIPE-P07 */}
+      {conduit.conduit_id === 'PIPE-P07' && (
+        <group position={[0, radius + 1.2, 0]}>
+          <Text
+            fontSize={0.9}
+            color={appMode === 'anticipate' ? '#38bdf8' : '#94a3b8'}
+            anchorX="center"
+            anchorY="bottom"
+          >
+            {appMode === 'anticipate' ? '⚡ PIPE-P07 (预测水力瓶颈 Ø600mm)' : 'PIPE-P07 (Ø600mm)'}
+          </Text>
+        </group>
+      )}
     </group>
   );
 };
@@ -238,7 +255,8 @@ const InletMesh: React.FC<{
   cloggingFraction?: number;
   isSelected: boolean;
   onClick: () => void;
-}> = ({ inlet, associatedNode, cloggingFraction = 0, isSelected, onClick }) => {
+  appMode?: AppMode;
+}> = ({ inlet, associatedNode, cloggingFraction = 0, isSelected, onClick, appMode }) => {
   const [hovered, setHovered] = useState(false);
 
   const position = useMemo(() => {
@@ -281,11 +299,11 @@ const InletMesh: React.FC<{
         <group position={[0, 2.2, 0]}>
           <Text
             fontSize={1.1}
-            color="#fb923c"
+            color={appMode === 'diagnose' ? '#f59e0b' : '#fb923c'}
             anchorX="center"
             anchorY="bottom"
           >
-            ★ INLET-D07 (重点进水口)
+            {appMode === 'diagnose' ? '🔍 INLET-D07 (历史受阻积水点)' : '★ INLET-D07 (重点进水口)'}
           </Text>
           {cloggingFraction > 0 && (
             <Text
@@ -314,6 +332,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   showUndergroundOnly = false,
   onOpenDebrisLab,
   isDebrisLabOpen = false,
+  appMode = 'diagnose',
 }) => {
   const controlsRef = useRef<any>(null);
 
@@ -371,7 +390,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   return (
     <div className="w-full h-full relative bg-slate-950">
       {/* Camera Preset Quick Buttons */}
-      <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 backdrop-blur-md border border-slate-800 text-[11px] text-slate-300">
+      <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 backdrop-blur-md border border-slate-800 text-[11px] text-slate-300">
         <span className="px-2 text-slate-500 font-medium">视角预设:</span>
         <button
           onClick={() => handlePreset('overview')}
@@ -502,6 +521,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
               flowM3s={state?.flow || 0}
               isSelected={selectedAssetId === conduit.conduit_id}
               onClick={() => onSelectAsset({ type: 'conduit', id: conduit.conduit_id, data: conduit })}
+              appMode={appMode}
             />
           );
         })}
@@ -518,6 +538,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
               cloggingFraction={clogging}
               isSelected={selectedAssetId === inlet.inlet_id}
               onClick={() => onSelectAsset({ type: 'inlet', id: inlet.inlet_id, data: inlet })}
+              appMode={appMode}
             />
           );
         })}

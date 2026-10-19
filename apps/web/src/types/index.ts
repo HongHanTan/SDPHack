@@ -255,3 +255,54 @@ export interface ApiErrorResponse {
     details?: unknown;
   };
 }
+
+// J4: Product pillars & Workflow modes
+export type AppMode = 'diagnose' | 'anticipate';
+
+// J4: Intervention Options for counterfactual evaluation
+export interface InterventionOption {
+  id: 'baseline' | 'clean_inlet' | 'upsize_conduit' | 'combined' | 'add_storage';
+  title: string;
+  subtitle: string;
+  type: 'baseline' | 'clean_inlet' | 'upsize_conduit' | 'combined' | 'add_storage';
+  target_asset: string;
+  description: string;
+  tag: string;
+  parameters: {
+    hydraulic_loss_fraction: number;
+    pipe_diameter_mm: number;
+    storm_id: string;
+    tailwater_case: string;
+  };
+  metrics: {
+    total_flooding_volume_m3: number;
+    surcharge_duration_s: number;
+    d07_captured_volume_m3: number;
+    d07_bypass_volume_m3: number;
+    flooded_node_count: number;
+    peak_conduit_utilization_pct: number;
+  };
+  feasibility: {
+    timeframe: string;
+    cost_rating: 'FREE' | 'LOW' | 'MEDIUM' | 'HIGH';
+    lead_time_days: number;
+    crew_type: string;
+  };
+  is_available: boolean;
+  unavailable_reason?: string;
+}
+
+// J4: Traceable Proposed Action Reports
+export interface ProposedAction {
+  id: string;
+  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  category: 'OPERATIONAL_MAINTENANCE' | 'CAPITAL_ENGINEERING';
+  target_asset: string;
+  title: string;
+  justification: string;
+  evidence_reference: string;
+  expected_hydraulic_impact: string;
+  action_steps: string[];
+  responsible_entity: string;
+  estimated_lead_time: string;
+}

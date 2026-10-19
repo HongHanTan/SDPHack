@@ -231,7 +231,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
       </div>
 
       {/* Top-Left Scenario Control Card */}
-      <div className="absolute top-20 left-5 z-20 w-84 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-4 shadow-xl text-xs space-y-3 pointer-events-auto">
+      <div className="absolute top-26 left-5 z-20 w-84 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-4 shadow-xl text-xs space-y-3 pointer-events-auto">
         <div className="flex items-center justify-between pb-2 border-b border-slate-800">
           <span className="font-semibold text-slate-200 flex items-center gap-1.5">
             <Sliders className="w-4 h-4 text-cyan-400" /> 水力工况设定 (Scenario)
@@ -359,7 +359,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
 
       {/* Top-Right Metrics Card */}
       {metrics && (
-        <div className="absolute top-20 right-5 z-10 w-80 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-3.5 shadow-xl text-xs space-y-2.5 pointer-events-auto">
+        <div className="absolute top-26 right-5 z-10 w-80 bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-xl p-3.5 shadow-xl text-xs space-y-2.5 pointer-events-auto">
           <div className="flex items-center justify-between pb-1.5 border-b border-slate-800">
             <div className="flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-cyan-400" />

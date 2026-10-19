@@ -9,6 +9,7 @@ import {
   InspectionRecord,
   SimulationFrame,
   SimulationMetricsResponse,
+  AppMode,
 } from './types';
 import { StatusHeader } from './components/StatusHeader';
 import { SceneViewer } from './components/SceneViewer';
@@ -16,9 +17,11 @@ import { AssetDetailModal } from './components/AssetDetailModal';
 import { SimulationHUD } from './components/SimulationHUD';
 import { InspectionModal } from './components/InspectionModal';
 import { VirtualDebrisLab } from './components/VirtualDebrisLab';
+import { InterventionDashboard } from './components/InterventionDashboard';
 
 export function App() {
   const [mode, setMode] = useState<DataMode>(apiClient.getDataMode());
+  const [appMode, setAppMode] = useState<AppMode>('diagnose');
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [bootstrap, setBootstrap] = useState<BootstrapResponse | null>(null);
   const [nodes, setNodes] = useState<AssetNode[]>([]);
@@ -30,6 +33,9 @@ export function App() {
   const [selectedStormId, setSelectedStormId] = useState<string>('synthetic_80mmh_60min');
   const [selectedDebrisId, setSelectedDebrisId] = useState<string>('demo_inlet_clean');
   const [selectedTailwater, setSelectedTailwater] = useState<string>('normal');
+
+  // J4: Intervention Dashboard state
+  const [isInterventionDashboardOpen, setIsInterventionDashboardOpen] = useState<boolean>(false);
 
   // Simulation execution & playback
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -224,12 +230,68 @@ export function App() {
     }
   };
 
+  // J4: Handle workflow mode switch (Diagnose vs Anticipate)
+  const handleSwitchAppMode = (newMode: AppMode) => {
+    setAppMode(newMode);
+    if (newMode === 'diagnose') {
+      // Historical diagnosis: focus on INLET-D07 restriction under baseline event
+      handleLoadVerifiedRun('synthetic_80mmh_60min');
+      setSelectedDebrisId('demo_inlet_40pct');
+      setDebrisRestrictionFraction(0.4);
+    } else {
+      // Forward anticipation: projected 120 mm/h monsoon storm with antecedent blockage
+      handleLoadVerifiedRun('synthetic_120mmh_60min');
+      setSelectedDebrisId('demo_inlet_40pct');
+      setDebrisRestrictionFraction(0.4);
+    }
+  };
+
+  // J4: Handle applying an intervention candidate
+  const handleApplyIntervention = (interventionId: string) => {
+    if (interventionId === 'clean_inlet') {
+      setDebrisRestrictionFraction(0.0);
+      setSelectedDebrisId('demo_inlet_clean');
+      handleLoadVerifiedRun(selectedStormId);
+    } else if (interventionId === 'baseline') {
+      setDebrisRestrictionFraction(0.4);
+      setSelectedDebrisId('demo_inlet_40pct');
+      handleLoadVerifiedRun(selectedStormId);
+      // Reset conduit diameter
+      setConduits((prev) =>
+        prev.map((c) =>
+          c.conduit_id === 'PIPE-P07' ? { ...c, diameter_m: 0.6 } : c
+        )
+      );
+    } else if (interventionId === 'upsize_conduit') {
+      setDebrisRestrictionFraction(0.4);
+      setSelectedDebrisId('demo_inlet_40pct');
+      // Upsize PIPE-P07 from 600mm to 750mm
+      setConduits((prev) =>
+        prev.map((c) =>
+          c.conduit_id === 'PIPE-P07' ? { ...c, diameter_m: 0.75 } : c
+        )
+      );
+    } else if (interventionId === 'combined') {
+      setDebrisRestrictionFraction(0.0);
+      setSelectedDebrisId('demo_inlet_clean');
+      setConduits((prev) =>
+        prev.map((c) =>
+          c.conduit_id === 'PIPE-P07' ? { ...c, diameter_m: 0.75 } : c
+        )
+      );
+      handleLoadVerifiedRun(selectedStormId);
+    }
+  };
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950 select-none">
       {/* Top Header & Status Indicators */}
       <StatusHeader
         mode={mode}
         onToggleMode={handleToggleMode}
+        appMode={appMode}
+        onChangeAppMode={handleSwitchAppMode}
+        onOpenInterventions={() => setIsInterventionDashboardOpen(true)}
         health={health}
         loading={loading}
         onRefresh={loadData}
@@ -247,6 +309,7 @@ export function App() {
         showUndergroundOnly={undergroundOnly}
         onOpenDebrisLab={() => setIsDebrisLabOpen(true)}
         isDebrisLabOpen={isDebrisLabOpen}
+        appMode={appMode}
       />
 
       {/* Selected Asset Details Drawer */}
@@ -304,6 +367,15 @@ export function App() {
           assetId={inspectingAssetId}
           onClose={() => setInspectingAssetId(null)}
           onSubmit={handleCreateInspection}
+        />
+      )}
+
+      {/* J4: Interventions Comparison Dashboard & Proposed Action Plan Modal */}
+      {isInterventionDashboardOpen && (
+        <InterventionDashboard
+          onClose={() => setIsInterventionDashboardOpen(false)}
+          onApplyIntervention={handleApplyIntervention}
+          inspections={inspections}
         />
       )}
     </div>
