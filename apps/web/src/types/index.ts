@@ -172,6 +172,8 @@ export interface InletState {
   inlet_id: string;
   hydraulic_inlet_clogging_fraction: number;
   parameter_status: string;
+  capture_flow_m3s?: number | null;
+  bypass_flow_m3s?: number | null;
 }
 
 export interface SimulationFrame {
@@ -209,6 +211,14 @@ export interface SimulationMetricsResponse {
   surcharge_duration_s: number;
   metric_definitions: Record<string, string>;
   peak_flow_m3s?: number;
+  inlet_volumes?: Record<
+    string,
+    {
+      captured_m3: number;
+      surface_bypass_m3: number;
+      backflow_m3: number;
+    }
+  > | null;
 }
 
 export interface SimulationCreateRequest {
@@ -236,6 +246,16 @@ export interface SimulationRun {
   } | null;
 }
 
+export interface InspectionMediaItem {
+  media_id: string;
+  filename: string;
+  content_type: string;
+  size_bytes: number;
+  sha256: string;
+  url: string;
+  created_at: string;
+}
+
 export interface InspectionRecord {
   inspection_id: string;
   asset_id: string;
@@ -246,7 +266,29 @@ export interface InspectionRecord {
   visible_grate_coverage_fraction: number; // 0.0 to 1.0 (grate visual coverage)
   debris_category: 'leaf_litter' | 'sediment' | 'plastic' | 'mixed' | 'none';
   notes: string;
+  source_reference?: string;
   media_urls?: string[];
+  media?: InspectionMediaItem[];
+}
+
+export interface DebrisCreateRequest {
+  name: string;
+  inlet_id: string;
+  storm_id: string;
+  inspection_id?: string;
+  hydraulic_inlet_clogging_fraction: number;
+  debris_parameters?: {
+    initial_surface_kg?: number;
+    initial_retained_kg?: number;
+    loading_kg_per_day?: number;
+    wash_off_per_mm?: number;
+    capture_fraction?: number;
+    cleaning_events?: Array<{
+      timestamp_s: number;
+      surface_removal_fraction: number;
+      inlet_removal_fraction: number;
+    }>;
+  };
 }
 
 export interface ApiErrorResponse {
@@ -257,8 +299,40 @@ export interface ApiErrorResponse {
   };
 }
 
-// J4: Product pillars & Workflow modes
-export type AppMode = 'diagnose' | 'anticipate';
+// Product pillars & Workflow modes
+export type AppMode = 'idle' | 'diagnose' | 'anticipate';
+
+export interface FieldInspector {
+  id: string;
+  name: string;
+  unit: string;
+  role: string;
+  assignedAssetId: string;
+  assignedZone: string;
+  position: [number, number, number];
+  status: 'online' | 'transmitting' | 'scanning';
+  batteryPct: number;
+  lastTelemetry: {
+    timestamp: string;
+    metric: string;
+    value: string;
+    status: 'normal' | 'warning' | 'critical';
+  };
+}
+
+export interface SitePhotoData {
+  assetId: string;
+  title: string;
+  locationName: string;
+  captureDate: string;
+  photographer: string;
+  surfacePhotoUrl: string;
+  cctvPhotoUrl?: string;
+  chainageM?: number;
+  observedCondition: string;
+  siltDepthMm?: number;
+  structuralIntegrityPct: number;
+}
 
 // J4: Intervention Options for counterfactual evaluation
 export interface InterventionOption {

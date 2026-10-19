@@ -208,8 +208,8 @@ export const PondingWaterAnimation: React.FC<PondingWaterAnimationProps> = ({
           outlineColor="#020617"
         >
           {isCurbSubmerged
-            ? `🚨 暴雨路面积水超载 | 积水深度: ${depthCm} cm (淹没路牙 +${depthCm - curbHeightCm}cm)`
-            : `⚠ 道路低洼积水监测 | 积水深度: ${depthCm} cm`}
+            ? `🚨 Surface Surcharge Overload | Ponding Depth: ${depthCm} cm (Curb Submerged +${depthCm - curbHeightCm}cm)`
+            : `⚠ Lowland Water Ponding Monitor | Depth: ${depthCm} cm`}
         </Text>
         <Text
           position={[0, -0.65, 0]}
@@ -220,7 +220,7 @@ export const PondingWaterAnimation: React.FC<PondingWaterAnimationProps> = ({
           outlineWidth={0.04}
           outlineColor="#020617"
         >
-          {`滞积水量: ${pondedVolumeM3} m³ | 涌积范围: ${(poolScale * 22).toFixed(1)}m × ${(poolScale * 14).toFixed(1)}m`}
+          {`Ponded Volume: ${pondedVolumeM3} m³ | Surcharge Extent: ${(poolScale * 22).toFixed(1)}m × ${(poolScale * 14).toFixed(1)}m`}
         </Text>
       </group>
     </group>

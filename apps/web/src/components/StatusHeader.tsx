@@ -23,6 +23,8 @@ interface StatusHeaderProps {
   appMode: AppMode;
   onChangeAppMode: (mode: AppMode) => void;
   onOpenInterventions: () => void;
+  onSelectTab?: (tab: 'dashboard' | 'map' | 'assets' | 'analytics' | 'reports') => void;
+  onSearch?: (query: string) => void;
   health: HealthResponse | null;
   loading: boolean;
   onRefresh: () => void;
@@ -35,6 +37,8 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
   appMode,
   onChangeAppMode,
   onOpenInterventions,
+  onSelectTab,
+  onSearch,
   health,
   loading,
   onRefresh,
@@ -93,7 +97,10 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
           {/* Navigation Pill Tabs */}
           <nav className="flex items-center gap-1.5 text-xs">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => {
+                setActiveTab('dashboard');
+                onSelectTab?.('dashboard');
+              }}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === 'dashboard'
                   ? 'bg-gradient-to-r from-red-600 via-rose-600 to-amber-700 text-white shadow-lg shadow-red-900/30'
@@ -105,7 +112,10 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
             </button>
 
             <button
-              onClick={() => setActiveTab('map')}
+              onClick={() => {
+                setActiveTab('map');
+                onSelectTab?.('map');
+              }}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === 'map'
                   ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-900/30'
@@ -117,7 +127,10 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
             </button>
 
             <button
-              onClick={() => setActiveTab('assets')}
+              onClick={() => {
+                setActiveTab('assets');
+                onSelectTab?.('assets');
+              }}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === 'assets'
                   ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-900/30'
@@ -131,6 +144,7 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
             <button
               onClick={() => {
                 setActiveTab('analytics');
+                onSelectTab?.('analytics');
                 onOpenInterventions();
               }}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
@@ -146,6 +160,7 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
             <button
               onClick={() => {
                 setActiveTab('reports');
+                onSelectTab?.('reports');
                 onOpenInterventions();
               }}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
@@ -181,7 +196,15 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
               type="text"
               placeholder="Search location, asset or address..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                onSearch?.(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  onSearch?.(searchQuery);
+                }
+              }}
               className="w-full bg-[#201717]/80 hover:bg-[#281a1a]/80 focus:bg-[#281a1a] text-xs text-stone-200 placeholder-stone-400 pl-9 pr-4 py-2 rounded-xl border border-[#3e2222]/80 focus:border-red-500/60 focus:outline-none transition"
             />
           </div>
@@ -273,26 +296,36 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
           {/* Workflow Mode Switcher */}
           <div>
             <label className="text-stone-400 text-[11px] block mb-1 font-medium">Workflow Phase</label>
-            <div className="grid grid-cols-2 gap-1.5 bg-stone-950/60 p-1 rounded-xl border border-stone-800/80">
+            <div className="grid grid-cols-3 gap-1 bg-stone-950/60 p-1 rounded-xl border border-stone-800/80 text-[11px]">
               <button
-                onClick={() => onChangeAppMode('diagnose')}
-                className={`py-1 rounded-lg text-xs transition cursor-pointer ${
-                  appMode === 'diagnose'
-                    ? 'bg-amber-600/30 text-amber-300 border border-amber-500/40 font-medium'
+                onClick={() => onChangeAppMode('idle')}
+                className={`py-1 rounded-lg transition cursor-pointer text-center font-medium ${
+                  appMode === 'idle'
+                    ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 shadow-sm'
                     : 'text-stone-400 hover:text-stone-200'
                 }`}
               >
-                Diagnose (现状诊断)
+                Idle (Patrol)
+              </button>
+              <button
+                onClick={() => onChangeAppMode('diagnose')}
+                className={`py-1 rounded-lg transition cursor-pointer text-center font-medium ${
+                  appMode === 'diagnose'
+                    ? 'bg-amber-600/30 text-amber-300 border border-amber-500/40 shadow-sm'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                Diagnose
               </button>
               <button
                 onClick={() => onChangeAppMode('anticipate')}
-                className={`py-1 rounded-lg text-xs transition cursor-pointer ${
+                className={`py-1 rounded-lg transition cursor-pointer text-center font-medium ${
                   appMode === 'anticipate'
-                    ? 'bg-red-600/30 text-red-300 border border-red-500/40 font-medium'
+                    ? 'bg-red-600/30 text-red-300 border border-red-500/40 shadow-sm'
                     : 'text-stone-400 hover:text-stone-200'
                 }`}
               >
-                Anticipate (暴雨推演)
+                Anticipate
               </button>
             </div>
           </div>

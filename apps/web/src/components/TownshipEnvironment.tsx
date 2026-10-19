@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { Text } from '@react-three/drei';
-import { SimulationFrame } from '../types';
+import { SimulationFrame, AppMode } from '../types';
 import { PondingWaterAnimation } from './PondingWaterAnimation';
 
 interface TownshipEnvironmentProps {
   showUndergroundOnly?: boolean;
   floodingActive?: boolean;
-  appMode?: 'diagnose' | 'anticipate';
+  appMode?: AppMode;
   currentFrame?: SimulationFrame | null;
 }
 
@@ -576,7 +576,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
             anchorX="center"
             anchorY="bottom"
           >
-            Maple Grove Retention Pond (调蓄水景湖)
+            Maple Grove Retention Pond
           </Text>
         </group>
       </group>
@@ -613,7 +613,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
             anchorX="center"
             anchorY="bottom"
           >
-            East Drain Outfall (NODE-OUT01 汇流出水口)
+            East Drain Outfall (NODE-OUT01)
           </Text>
         </group>
       </group>
@@ -635,7 +635,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
             anchorX="center"
             anchorY="bottom"
           >
-            Pinecrest Residential (住宅区中心)
+            Pinecrest Residential
           </Text>
         </group>
 
@@ -647,7 +647,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
             anchorX="center"
             anchorY="bottom"
           >
-            North Ridge Subdivision (山脊一期)
+            North Ridge Subdivision
           </Text>
         </group>
 
@@ -659,7 +659,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
             anchorX="center"
             anchorY="bottom"
           >
-            Cedar View Estates (雪松林区)
+            Cedar View Estates
           </Text>
         </group>
 
@@ -671,7 +671,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
             anchorX="center"
             anchorY="bottom"
           >
-            Riverside Heights (滨水高地)
+            Riverside Heights
           </Text>
         </group>
 
@@ -679,13 +679,15 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
         <group position={[45, 27.0, -60]}>
           <Text
             fontSize={2.2}
-            color={appMode === 'diagnose' ? '#f59e0b' : '#38bdf8'}
+            color={appMode === 'idle' ? '#10b981' : appMode === 'diagnose' ? '#f59e0b' : '#38bdf8'}
             anchorX="center"
             anchorY="bottom"
           >
-            {appMode === 'diagnose'
-              ? '🔍 历史积水成因诊断复盘区 (Taman Kyra)'
-              : '⚡ 50年一遇极端季风暴雨推演区 (120 mm/h)'}
+            {appMode === 'idle'
+              ? '📡 Active Grid Patrol & Field Telemetry Zone (Taman Kyra)'
+              : appMode === 'diagnose'
+              ? '🔍 Historical Ponding Forensic & Diagnosis Zone (Taman Kyra)'
+              : '⚡ 50-Year Extreme Monsoon Flood Stress Test Zone (120 mm/h)'}
           </Text>
         </group>
       </group>

@@ -126,10 +126,10 @@ export const InspectorAvatar: React.FC<InspectorAvatarProps> = ({
           <UserCheck className="w-4 h-4 text-cyan-400" />
           <div className="text-left">
             <div className="text-[11px] font-bold tracking-wide">
-              现场巡检员 (Azman)
+              Field Inspector (Azman)
             </div>
             <div className="text-[9px] text-amber-300 font-mono">
-              ★ D07 进水口杂物实验室
+              ★ D07 Inlet Debris Lab
             </div>
           </div>
         </div>

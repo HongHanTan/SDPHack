@@ -48,7 +48,13 @@ interface SimulationHUDProps {
   twinViewMode?: TwinViewMode;
   onSelectTwinViewMode?: (mode: TwinViewMode) => void;
   isRainActive?: boolean;
+  rainEnabled?: boolean;
   onToggleRain?: () => void;
+  hasSimulationStarted?: boolean;
+  onStartSimulation?: () => void;
+  isPlaying?: boolean;
+  onTogglePlay?: () => void;
+  onResetSimulation?: () => void;
   onOpenDebrisLab?: () => void;
   onOpenInspect?: () => void;
   appMode?: AppMode;
@@ -77,14 +83,21 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   onToggleUnderground,
   twinViewMode: _twinViewMode,
   onSelectTwinViewMode,
-  isRainActive: _isRainActive,
+  isRainActive = false,
+  rainEnabled = true,
   onToggleRain,
+  hasSimulationStarted = false,
+  onStartSimulation,
+  isPlaying: isPlayingProp,
+  onTogglePlay,
+  onResetSimulation,
   onOpenDebrisLab,
   onOpenInspect,
-  appMode: _appMode,
-  onChangeAppMode: _onChangeAppMode,
+  appMode,
+  onChangeAppMode,
 }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [localIsPlaying, setLocalIsPlaying] = useState(false);
+  const isPlaying = isPlayingProp !== undefined ? isPlayingProp : localIsPlaying;
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [simMode, setSimMode] = useState<'realtime' | 'forecast' | 'historical'>('realtime');
   const [isLayersOpen, setIsLayersOpen] = useState(true);
@@ -128,14 +141,18 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
     const intervalMs = Math.max(800 / playbackSpeed, 100);
     const timer = setInterval(() => {
       if (currentFrameIndex >= frameCount - 1) {
-        setIsPlaying(false);
+        if (onTogglePlay) {
+          onTogglePlay();
+        } else {
+          setLocalIsPlaying(false);
+        }
       } else {
         onSeekFrame(currentFrameIndex + 1);
       }
     }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [isPlaying, frameCount, currentFrameIndex, playbackSpeed, onSeekFrame]);
+  }, [isPlaying, frameCount, currentFrameIndex, playbackSpeed, onSeekFrame, onTogglePlay]);
 
   const currentFrame = frames[currentFrameIndex] || null;
   const currentTimestamp = currentFrame?.timestamp_s ?? 60;
@@ -431,6 +448,43 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                 </div>
               </div>
 
+              {/* Workflow Mode Switcher (Idle, Diagnose, Anticipate) */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-medium text-stone-300 block">Workflow Mode</span>
+                <div className="grid grid-cols-3 gap-1 bg-stone-950/80 p-1 rounded-xl border border-stone-800/80 text-[11px]">
+                  <button
+                    onClick={() => onChangeAppMode?.('idle')}
+                    className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                      appMode === 'idle'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-sm'
+                        : 'text-stone-400 hover:text-stone-200'
+                    }`}
+                  >
+                    Idle Patrol
+                  </button>
+                  <button
+                    onClick={() => onChangeAppMode?.('diagnose')}
+                    className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                      appMode === 'diagnose'
+                        ? 'bg-gradient-to-r from-amber-600 to-orange-700 text-white shadow-sm'
+                        : 'text-stone-400 hover:text-stone-200'
+                    }`}
+                  >
+                    Diagnose
+                  </button>
+                  <button
+                    onClick={() => onChangeAppMode?.('anticipate')}
+                    className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                      appMode === 'anticipate'
+                        ? 'bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-sm'
+                        : 'text-stone-400 hover:text-stone-200'
+                    }`}
+                  >
+                    Anticipate
+                  </button>
+                </div>
+              </div>
+
               {/* Simulation Mode Pill Switcher */}
               <div className="space-y-1.5">
                 <span className="text-[11px] font-medium text-stone-300 block">Simulation Mode</span>
@@ -498,7 +552,12 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                   </button>
 
                   <button
-                    onClick={onRunSimulation}
+                    onClick={() => {
+                      if (!hasSimulationStarted && onStartSimulation) {
+                        onStartSimulation();
+                      }
+                      onRunSimulation();
+                    }}
                     disabled={isRunning}
                     className="w-full mt-2 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-700 hover:from-red-500 hover:to-amber-600 text-white font-medium text-[11px] transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-red-900/40 disabled:opacity-50"
                   >
@@ -510,7 +569,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                     ) : (
                       <>
                         <Play className="w-3 h-3 fill-white" />
-                        <span>Run SWMM Simulation</span>
+                        <span>{hasSimulationStarted ? 'Re-Run SWMM Simulation' : 'Start Simulation'}</span>
                       </>
                     )}
                   </button>
@@ -573,70 +632,146 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
       {/* 3. BOTTOM CENTER: Minimalist Timeline Player Bar         */}
       {/* ======================================================== */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-xl bg-[#181111]/92 backdrop-blur-xl border border-[#3b1818]/70 rounded-2xl px-5 py-3 shadow-2xl flex flex-col gap-2 pointer-events-auto">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-3">
-            {/* Play/Pause Button in Sime Darby Red */}
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="p-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-medium transition cursor-pointer flex items-center justify-center shadow-lg shadow-red-900/40"
-            >
-              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-white" />}
-            </button>
+        {!hasSimulationStarted ? (
+          /* Pre-Start State: Unified Start Button & Armed Rain Toggle */
+          <div className="flex items-center justify-between text-xs py-0.5">
+            <div className="flex items-center gap-3">
+              {/* Unified Start Button */}
+              <button
+                onClick={onStartSimulation}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-700 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs transition cursor-pointer shadow-lg shadow-red-900/40 active:scale-95"
+              >
+                <Play className="w-4 h-4 fill-white" />
+                <span>Start Simulation</span>
+              </button>
 
-            <button
-              onClick={() => {
-                setIsPlaying(false);
-                onSeekFrame(0);
-              }}
-              className="p-2 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-stone-300 transition cursor-pointer"
-              title="Reset"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Speed pills */}
-            <div className="flex items-center rounded-xl bg-stone-950/80 border border-stone-800/80 p-0.5">
-              {[1, 2, 5].map((speed) => (
-                <button
-                  key={speed}
-                  onClick={() => setPlaybackSpeed(speed)}
-                  className={`px-2 py-0.5 rounded-lg text-[10px] font-mono transition cursor-pointer ${
-                    playbackSpeed === speed
-                      ? 'bg-red-600/30 text-red-300 font-bold border border-red-500/40'
-                      : 'text-stone-400 hover:text-stone-200'
-                  }`}
-                >
-                  {speed}x
-                </button>
-              ))}
+              {/* Rain Pre-Start Toggle Button */}
+              <button
+                onClick={onToggleRain}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium border transition cursor-pointer ${
+                  rainEnabled
+                    ? 'bg-cyan-950/70 border-cyan-500/50 text-cyan-300 shadow-sm'
+                    : 'bg-stone-900/80 border-stone-800 text-stone-400 hover:text-stone-200'
+                }`}
+                title={
+                  rainEnabled
+                    ? 'Rain is armed. Precipitation animation will begin when Start Simulation is clicked.'
+                    : 'Rain is disabled. Click to arm rain before starting.'
+                }
+              >
+                <CloudRain
+                  className={`w-3.5 h-3.5 ${rainEnabled ? 'text-cyan-400 animate-pulse' : 'text-stone-500'}`}
+                />
+                <span>{rainEnabled ? 'Rain: Armed (Starts on Run)' : 'Rain: Off'}</span>
+              </button>
             </div>
 
-            {/* Current Timestamp */}
-            <span className="font-mono text-red-400 font-bold text-xs bg-stone-950/60 px-2.5 py-1 rounded-lg border border-stone-800/60">
-              {formatTime(currentTimestamp)}
+            {/* Ready Status Pill */}
+            <span className="px-3 py-1.5 rounded-full bg-stone-900/80 border border-stone-800 text-stone-300 text-[11px] font-medium flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              Simulation Ready (Click Start)
             </span>
           </div>
+        ) : (
+          /* Started / Running State: Full Timeline Player Controls */
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3">
+              {/* Play/Pause Button in Sime Darby Red */}
+              <button
+                onClick={() => (onTogglePlay ? onTogglePlay() : setLocalIsPlaying(!localIsPlaying))}
+                className="p-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-medium transition cursor-pointer flex items-center justify-center shadow-lg shadow-red-900/40"
+                title={isPlaying ? 'Pause Simulation' : 'Resume Simulation'}
+              >
+                {isPlaying ? (
+                  <Pause className="w-3.5 h-3.5" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                )}
+              </button>
 
-          {/* Surcharge Load Pill */}
-          <div>
-            {hasFlooding ? (
-              <span className="px-2.5 py-1 rounded-full bg-red-600/20 border border-red-500/50 text-red-300 text-[11px] font-semibold flex items-center gap-1.5 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-red-500" />
-                Critical / Overflow
+              <button
+                onClick={() => {
+                  if (onResetSimulation) {
+                    onResetSimulation();
+                  } else {
+                    setLocalIsPlaying(false);
+                    onSeekFrame(0);
+                  }
+                }}
+                className="p-2 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-stone-300 transition cursor-pointer"
+                title="Reset Simulation"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Speed pills */}
+              <div className="flex items-center rounded-xl bg-stone-950/80 border border-stone-800/80 p-0.5">
+                {[1, 2, 5].map((speed) => (
+                  <button
+                    key={speed}
+                    onClick={() => setPlaybackSpeed(speed)}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-mono transition cursor-pointer ${
+                      playbackSpeed === speed
+                        ? 'bg-red-600/30 text-red-300 font-bold border border-red-500/40'
+                        : 'text-stone-400 hover:text-stone-200'
+                    }`}
+                  >
+                    {speed}x
+                  </button>
+                ))}
+              </div>
+
+              {/* Current Timestamp */}
+              <span className="font-mono text-red-400 font-bold text-xs bg-stone-950/60 px-2.5 py-1 rounded-lg border border-stone-800/60">
+                {formatTime(currentTimestamp)}
               </span>
-            ) : hasSurcharge ? (
-              <span className="px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-[11px] font-semibold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                High Load (78%)
-              </span>
-            ) : (
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 text-[11px] font-semibold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                Normal Capacity
-              </span>
-            )}
+
+              {/* Rain Indicator Pill */}
+              <button
+                onClick={onToggleRain}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-mono transition cursor-pointer ${
+                  isRainActive
+                    ? 'bg-cyan-950/50 border-cyan-500/40 text-cyan-300'
+                    : rainEnabled
+                    ? 'bg-amber-950/50 border-amber-500/40 text-amber-300'
+                    : 'bg-stone-950/60 border-stone-800 text-stone-500'
+                }`}
+                title="Toggle rain animation"
+              >
+                <CloudRain
+                  className={`w-3 h-3 ${isRainActive ? 'text-cyan-400 animate-pulse' : 'text-stone-500'}`}
+                />
+                <span>
+                  {isRainActive
+                    ? `${currentIntensity} mm/h`
+                    : rainEnabled
+                    ? 'Paused'
+                    : 'Off'}
+                </span>
+              </button>
+            </div>
+
+            {/* Surcharge Load Pill */}
+            <div>
+              {hasFlooding ? (
+                <span className="px-2.5 py-1 rounded-full bg-red-600/20 border border-red-500/50 text-red-300 text-[11px] font-semibold flex items-center gap-1.5 animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  Critical / Overflow
+                </span>
+              ) : hasSurcharge ? (
+                <span className="px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-[11px] font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  High Load (78%)
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 text-[11px] font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  Normal Capacity
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Minimalist Range Slider */}
         <div className="relative pt-0.5">
@@ -647,7 +782,8 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
             step={1}
             value={currentFrameIndex}
             onChange={(e) => {
-              setIsPlaying(false);
+              if (isPlaying && onTogglePlay) onTogglePlay();
+              else setLocalIsPlaying(false);
               onSeekFrame(Number(e.target.value));
             }}
             className="w-full h-1.5 bg-stone-900 rounded-lg appearance-none cursor-pointer accent-red-600"

@@ -9,6 +9,8 @@ import {
   CheckCircle2,
   Sliders,
   FileCheck,
+  TrendingUp,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { InspectionRecord } from '../types';
 
@@ -18,7 +20,7 @@ interface VirtualDebrisLabProps {
   inspections: InspectionRecord[];
   onOpenNewInspection: () => void;
   currentHypothesisFraction: number;
-  onSelectHypothesis: (fraction: number) => void;
+  onSelectHypothesis: (fraction: number, presetId?: string) => void;
 }
 
 export const VirtualDebrisLab: React.FC<VirtualDebrisLabProps> = ({
@@ -32,100 +34,114 @@ export const VirtualDebrisLab: React.FC<VirtualDebrisLabProps> = ({
   const [selectedFraction, setSelectedFraction] = useState<number>(currentHypothesisFraction);
   const [activeTab, setActiveTab] = useState<'lab' | 'evidence'>('lab');
 
-  // Pre-configured debris restriction hypothesis presets
+  // Strictly aligned with Tay's SWMM 5.2.4 native finite inlet presets in contracts/T3_INTEGRATION.md
   const presets = [
     {
       fraction: 0.0,
-      label: '0% 清淤畅通',
-      subtitle: 'Clean Baseline',
-      desc: '标准进水孔口理论过水能力，无杂物阻塞。',
+      presetId: 'demo_inlet_capture_0pct',
+      label: '0% Desilted (Baseline)',
+      subtitle: 'Finite Clean Baseline',
+      desc: 'Finite curb inlet theoretical capture model, free of debris obstructions.',
+      capturedM3: 741.8,
+      bypassM3: 389.7,
       capacityM3s: 0.35,
     },
     {
       fraction: 0.2,
-      label: '20% 季节性微淤',
+      presetId: 'demo_inlet_capture_20pct',
+      label: '20% Seasonal Siltation',
       subtitle: 'Moderate Siltation',
-      desc: '少量落叶与砂砾沉积于进水喉口下沿。',
+      desc: 'Minor leaf litter and silt sediment deposited along the curb opening invert.',
+      capturedM3: 593.4,
+      bypassM3: 538.0,
       capacityM3s: 0.28,
     },
     {
       fraction: 0.4,
-      label: '40% 现场核查折减',
+      presetId: 'demo_inlet_40pct',
+      label: '40% Field Verified Loss (Default)',
       subtitle: 'Reported Condition (Default)',
-      desc: '对应现场 65% 表面落叶枯枝覆盖的折减假说。',
+      desc: 'Calibrated hydraulic restriction hypothesis corresponding to 65% visual grate blockage.',
+      capturedM3: 445.1,
+      bypassM3: 686.3,
       capacityM3s: 0.21,
     },
     {
       fraction: 0.6,
-      label: '60% 极端前蓄阻塞',
+      presetId: 'demo_inlet_capture_60pct',
+      label: '60% Critical Antecedent Choke',
       subtitle: 'Critical Choke',
-      desc: '前期强降雨携带大量冲刷枯枝导致严重卡口。',
+      desc: 'Antecedent runoff wash-off carrying heavy leaf debris, severely constricting inlet throat.',
+      capturedM3: 296.7,
+      bypassM3: 834.7,
       capacityM3s: 0.14,
     },
   ];
 
+  const currentPreset = presets.find((p) => p.fraction === selectedFraction) || presets[2];
+
   const handleApply = () => {
-    onSelectHypothesis(selectedFraction);
+    onSelectHypothesis(selectedFraction, currentPreset.presetId);
     onClose();
   };
 
   const relevantInspections = inspections.filter((i) => i.asset_id === inletId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md pointer-events-auto p-4">
-      <div className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md pointer-events-auto p-4">
+      <div className="w-full max-w-3xl bg-[#181111] border border-[#3e2222] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#301c1c] bg-[#120d0d]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="p-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-slate-100">
-                  进水口虚拟杂物实验室 (Virtual Debris Lab)
+                <h2 className="text-base font-bold text-stone-100">
+                  Curb Inlet Virtual Debris Lab
                 </h2>
-                <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono border border-amber-500/40">
+                <span className="text-xs px-2 py-0.5 rounded-lg bg-red-500/20 text-red-300 font-mono border border-red-500/40">
                   {inletId}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                低洼关键排水节点 · 现场可见证据与水动力学折减假说标定
+              <p className="text-xs text-stone-400">
+                Critical Lowland Asset · Field Visual Evidence & EPA SWMM 5.2.4 Finite Inlet Calibration
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex border-b border-slate-800 bg-slate-950/30 text-xs px-6">
+        <div className="flex border-b border-[#301c1c] bg-[#100a0a] text-xs px-6">
           <button
             onClick={() => setActiveTab('lab')}
             className={`py-2.5 px-4 font-medium border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'lab'
-                ? 'border-cyan-400 text-cyan-300'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-red-500 text-red-300'
+                : 'border-transparent text-stone-400 hover:text-stone-200'
             }`}
           >
             <Sliders className="w-4 h-4" />
-            <span>水力折减假说实验室</span>
+            <span>Hydraulic Loss Hypothesis Lab</span>
           </button>
           <button
             onClick={() => setActiveTab('evidence')}
             className={`py-2.5 px-4 font-medium border-b-2 transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'evidence'
-                ? 'border-cyan-400 text-cyan-300'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-red-500 text-red-300'
+                : 'border-transparent text-stone-400 hover:text-stone-200'
             }`}
           >
             <Camera className="w-4 h-4" />
-            <span>现场照片与巡检证据 ({relevantInspections.length})</span>
+            <span>Field Evidence & CCTV Photos ({relevantInspections.length})</span>
           </button>
         </div>
 
@@ -137,29 +153,29 @@ export const VirtualDebrisLab: React.FC<VirtualDebrisLabProps> = ({
               <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs leading-relaxed space-y-1.5">
                 <div className="flex items-center gap-2 font-semibold text-amber-300 text-xs uppercase tracking-wide">
                   <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>工程底线原则：现场照片覆盖率 ≠ 水动力学折减率</span>
+                  <span>Engineering Principle: Visual Grate Coverage ≠ Hydraulic Restriction Loss</span>
                 </div>
                 <p className="text-[11px] text-amber-200/90">
-                  巡检员目测的<strong>“格栅表面覆盖率 (65%)”</strong>仅反映落叶堆积视觉证据；而在 SWMM 模型中，水流可通过喉口侧向与未完全阻断缝隙进入。在获得实测率定数据前，<strong>“水力折减率 (Hydraulic Clogging Loss)”</strong>需作为独立假设由工程师自主设定，不得强行等值换算。
+                  Field inspector observations of <strong>"Surface Grate Coverage (65%)"</strong> reflect visual leaf accumulation. In SWMM, water continues to enter through lateral curbs and partially open interstitial gaps. Pending physical flow metering, <strong>"Hydraulic Clogging Loss"</strong> must be treated as an independent hypothesis calibrated by the civil engineer.
                 </p>
               </div>
 
               {/* Simulated Throat Graphic Preview */}
-              <div className="bg-slate-950 border border-slate-800 rounded-xl p-5 space-y-3">
+              <div className="bg-[#120d0d] border border-[#301c1c] rounded-xl p-5 space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                    <Layers className="w-4 h-4 text-cyan-400" />
-                    进水喉口过水截面剖面示意 (1.8m × 0.15m)
+                  <span className="font-semibold text-stone-300 flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-red-400" />
+                    Curb Opening Throat Inflow Profile (1.8m × 0.15m)
                   </span>
-                  <span className="font-mono text-cyan-400 font-bold">
-                    有效过水能力: ~{(0.35 * (1 - selectedFraction)).toFixed(2)} m³/s (原标称 0.35 m³/s)
+                  <span className="font-mono text-red-400 font-bold">
+                    Effective Capacity: ~{(0.35 * (1 - selectedFraction)).toFixed(2)} m³/s (Nominal: 0.35 m³/s)
                   </span>
                 </div>
 
                 {/* Visual curb throat representation */}
-                <div className="relative h-20 bg-slate-900 border-2 border-slate-700 rounded-lg overflow-hidden flex flex-col justify-end">
+                <div className="relative h-20 bg-[#0c0808] border-2 border-stone-800 rounded-lg overflow-hidden flex flex-col justify-end">
                   {/* Concrete Curb Top */}
-                  <div className="absolute top-0 left-0 right-0 h-4 bg-slate-800 border-b border-slate-700 flex items-center justify-between px-2 text-[9px] text-slate-400 font-mono">
+                  <div className="absolute top-0 left-0 right-0 h-4 bg-stone-800 border-b border-stone-700 flex items-center justify-between px-2 text-[9px] text-stone-400 font-mono">
                     <span>CURB OPENING THROAT (L=1.8m)</span>
                     <span>H=0.15m</span>
                   </div>
@@ -178,10 +194,10 @@ export const VirtualDebrisLab: React.FC<VirtualDebrisLabProps> = ({
                     >
                       <div className="space-y-0.5 select-none">
                         <span className="text-[10px] font-bold text-amber-300 font-mono block">
-                          截面阻水: {(selectedFraction * 100).toFixed(0)}%
+                          Throat Blockage: {(selectedFraction * 100).toFixed(0)}%
                         </span>
                         <span className="text-[9px] text-amber-200/80">
-                          落叶/泥沙淤塞
+                          Leaf Litter & Silt
                         </span>
                       </div>
                     </div>
@@ -190,26 +206,26 @@ export const VirtualDebrisLab: React.FC<VirtualDebrisLabProps> = ({
                   {/* Grate bars lines */}
                   <div className="absolute inset-0 flex justify-between px-4 pointer-events-none opacity-20">
                     {Array.from({ length: 18 }).map((_, idx) => (
-                      <div key={idx} className="w-0.5 h-full bg-slate-300" />
+                      <div key={idx} className="w-0.5 h-full bg-stone-300" />
                     ))}
                   </div>
                 </div>
 
-                <div className="flex justify-between text-[11px] text-slate-500 font-mono">
-                  <span>畅通口径: {((1 - selectedFraction) * 1.8).toFixed(2)} m</span>
-                  <span>受阻口径: {(selectedFraction * 1.8).toFixed(2)} m</span>
+                <div className="flex justify-between text-[11px] text-stone-500 font-mono">
+                  <span>Clear Throat: {((1 - selectedFraction) * 1.8).toFixed(2)} m</span>
+                  <span>Choked Throat: {(selectedFraction * 1.8).toFixed(2)} m</span>
                 </div>
               </div>
 
-              {/* Hypothesis Preset Selectors */}
+              {/* Hypothesis Preset Selectors (SWMM 5.2.4 Verified Finite Presets) */}
               <div className="space-y-2.5">
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                    <Activity className="w-4 h-4 text-cyan-400" />
-                    选择水动力学折减假说预设 (Restriction Hypothesis)
+                  <span className="font-semibold text-stone-300 flex items-center gap-1.5">
+                    <Activity className="w-4 h-4 text-red-400" />
+                    Select Hydraulic Loss Hypothesis Preset (EPA SWMM 5.2.4 Finite Inlets)
                   </span>
-                  <span className="text-amber-400 font-mono font-bold text-sm">
-                    {(selectedFraction * 100).toFixed(0)}% 折减
+                  <span className="text-red-400 font-mono font-bold text-sm">
+                    {(selectedFraction * 100).toFixed(0)}% Loss ({currentPreset.presetId})
                   </span>
                 </div>
 
@@ -222,58 +238,68 @@ export const VirtualDebrisLab: React.FC<VirtualDebrisLabProps> = ({
                         onClick={() => setSelectedFraction(preset.fraction)}
                         className={`p-3 rounded-xl border text-left transition-all cursor-pointer space-y-1.5 ${
                           isSelected
-                            ? 'bg-amber-500/20 border-amber-400/80 text-amber-200 ring-1 ring-amber-400/50'
-                            : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 text-slate-300'
+                            ? 'bg-red-500/15 border-red-500 text-stone-100 ring-1 ring-red-500/50 shadow-md'
+                            : 'bg-[#120d0d] border-[#301c1c] hover:border-stone-700 text-stone-300'
                         }`}
                       >
                         <div className="flex justify-between items-baseline">
                           <span className="font-bold text-xs">{preset.label}</span>
-                          <span className="text-[10px] text-slate-400 font-mono">
+                          <span className="text-[10px] text-stone-400 font-mono">
                             ~{preset.capacityM3s} m³/s
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                        <p className="text-[11px] text-stone-400 leading-relaxed font-sans">
                           {preset.desc}
                         </p>
+                        <div className="flex items-center justify-between pt-1 border-t border-stone-800/80 text-[10px] font-mono">
+                          <span className="text-emerald-400">Captured: {preset.capturedM3} m³</span>
+                          <span className="text-amber-400">Bypass: {preset.bypassM3} m³</span>
+                        </div>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Debris Composition Profile */}
-              <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-2">
-                <span className="font-semibold text-slate-300 block text-xs">
-                  现场典型杂物成分构成分析 (Debris Composition)
-                </span>
-                <div className="space-y-1.5">
+              {/* Native Inlet Water Balance Card */}
+              <div className="bg-[#120d0d] border border-[#301c1c] rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-stone-300 block text-xs flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                    D07 Water Balance Partitioning at 120 mm/h Storm (SWMM 5.2.4 Verified)
+                  </span>
+                  <span className="text-[10px] text-stone-400 font-mono">Total Inflow: ~1,131.5 m³</span>
+                </div>
+                <div className="space-y-2 pt-1">
                   <div>
-                    <div className="flex justify-between text-[11px] text-slate-400 mb-0.5">
-                      <span>热带阔叶与枯枝 (Leaf Litter & Organic):</span>
-                      <span className="text-amber-300 font-mono">60%</span>
+                    <div className="flex justify-between text-[11px] text-stone-300 mb-1">
+                      <span>Subsurface Captured Volume:</span>
+                      <span className="text-emerald-400 font-mono font-bold">
+                        {currentPreset.capturedM3} m³ (
+                        {((currentPreset.capturedM3 / 1131.5) * 100).toFixed(1)}%)
+                      </span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-full" style={{ width: '60%' }} />
+                    <div className="w-full h-2 bg-stone-900 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-600 to-teal-400 rounded-full transition-all duration-500"
+                        style={{ width: `${(currentPreset.capturedM3 / 1131.5) * 100}%` }}
+                      />
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-[11px] text-slate-400 mb-0.5">
-                      <span>路面细泥沙沉降 (Road Silt & Sediment):</span>
-                      <span className="text-yellow-400 font-mono">25%</span>
+                    <div className="flex justify-between text-[11px] text-stone-300 mb-1">
+                      <span>Surface Bypass Runoff Volume:</span>
+                      <span className="text-amber-400 font-mono font-bold">
+                        {currentPreset.bypassM3} m³ (
+                        {((currentPreset.bypassM3 / 1131.5) * 100).toFixed(1)}%)
+                      </span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-yellow-500 rounded-full" style={{ width: '25%' }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-[11px] text-slate-400 mb-0.5">
-                      <span>塑料袋与城市生活杂物 (Plastic & Wrappers):</span>
-                      <span className="text-cyan-400 font-mono">15%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-cyan-500 rounded-full" style={{ width: '15%' }} />
+                    <div className="w-full h-2 bg-stone-900 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-600 to-rose-500 rounded-full transition-all duration-500"
+                        style={{ width: `${(currentPreset.bypassM3 / 1131.5) * 100}%` }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -283,75 +309,86 @@ export const VirtualDebrisLab: React.FC<VirtualDebrisLabProps> = ({
             /* Field Evidence & Photos Tab */
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="font-semibold text-slate-300">
-                  针对 {inletId} 的现场巡检与证据档案
+                <span className="font-semibold text-stone-300">
+                  Field Inspection Evidence Dossier for {inletId}
                 </span>
                 <button
                   onClick={onOpenNewInspection}
-                  className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-cyan-600/20"
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-medium transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-red-900/30"
                 >
                   <Camera className="w-3.5 h-3.5" />
-                  <span>现场拍照打卡 / 录入新巡检</span>
+                  <span>Log Field Inspection / Upload Photo</span>
                 </button>
               </div>
 
               {relevantInspections.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 bg-slate-950 rounded-xl border border-slate-800 italic">
-                  暂无历史巡检记录，可点击上方按钮录入现场目测报告。
+                <div className="p-8 text-center text-stone-500 bg-[#120d0d] rounded-xl border border-[#301c1c] italic">
+                  No previous inspection logs found. Click above to record a new field inspection report.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {relevantInspections.map((insp) => (
-                    <div
-                      key={insp.inspection_id}
-                      className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-200">
-                              {insp.inspector}
-                            </span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
-                              {insp.method.toUpperCase()}
-                            </span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-mono">
-                              {insp.source_type}
+                  {relevantInspections.map((insp) => {
+                    const firstPhoto = insp.media_urls?.[0] || insp.media?.[0]?.url;
+                    return (
+                      <div
+                        key={insp.inspection_id}
+                        className="p-4 rounded-xl bg-[#120d0d] border border-[#301c1c] space-y-3"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-stone-200">
+                                {insp.inspector}
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-stone-800 text-stone-400 font-mono">
+                                {insp.method.toUpperCase()}
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-mono">
+                                {insp.source_type}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-stone-500">
+                              Timestamp: {new Date(insp.timestamp).toLocaleString()}
                             </span>
                           </div>
-                          <span className="text-[11px] text-slate-500">
-                            打卡时间: {new Date(insp.timestamp).toLocaleString()}
-                          </span>
+
+                          <div className="text-right">
+                            <span className="text-[10px] text-stone-400 block">Visual Grate Coverage</span>
+                            <span className="text-base font-bold font-mono text-amber-400">
+                              {(insp.visible_grate_coverage_fraction * 100).toFixed(0)}%
+                            </span>
+                          </div>
                         </div>
 
-                        <div className="text-right">
-                          <span className="text-[10px] text-slate-400 block">目测格栅覆盖率</span>
-                          <span className="text-base font-bold font-mono text-amber-400">
-                            {(insp.visible_grate_coverage_fraction * 100).toFixed(0)}%
-                          </span>
+                        <div className="text-xs text-stone-300 bg-[#0e0a0a] p-3 rounded-xl border border-[#281818] leading-relaxed font-sans">
+                          {insp.notes}
                         </div>
-                      </div>
 
-                      <div className="text-xs text-slate-300 bg-slate-900/80 p-3 rounded-lg border border-slate-800/80 leading-relaxed font-sans">
-                        {insp.notes}
-                      </div>
-
-                      {/* Photo evidence placeholder preview */}
-                      <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-400">
-                        <div className="w-20 h-14 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 font-mono text-[9px] text-center p-1">
-                          [现场照片]
+                        {/* Photo evidence preview */}
+                        <div className="flex items-center gap-3 pt-1 text-[11px] text-stone-400">
+                          {firstPhoto ? (
+                            <img
+                              src={firstPhoto}
+                              alt="Inspection"
+                              className="w-20 h-14 rounded-lg object-cover border border-stone-700 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-20 h-14 rounded-lg bg-stone-800 border border-stone-700 flex items-center justify-center text-stone-500 font-mono text-[9px] text-center p-1 shrink-0">
+                              <ImageIcon className="w-5 h-5 text-stone-400" />
+                            </div>
+                          )}
+                          <div>
+                            <span className="font-medium text-stone-300 block">
+                              Evidence Record ID: {insp.inspection_id}
+                            </span>
+                            <span className="text-[10px] text-stone-500">
+                              Primary Debris: {insp.debris_category} · Geospatial timestamp & tamper-evident record
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="font-medium text-slate-300 block">
-                            巡检证据编号: {insp.inspection_id}
-                          </span>
-                          <span className="text-[10px] text-slate-500">
-                            主要堵塞物: {insp.debris_category} · 包含地理空间时间戳与经办人数字签名
-                          </span>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -359,25 +396,28 @@ export const VirtualDebrisLab: React.FC<VirtualDebrisLabProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950/70">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[#301c1c] bg-[#120d0d]">
+          <div className="flex items-center gap-2 text-xs text-stone-400">
             <FileCheck className="w-4 h-4 text-emerald-400" />
-            <span>当前设定：{inletId} 折减率 {(selectedFraction * 100).toFixed(0)}%</span>
+            <span>
+              Active Setting: {inletId} Loss {(selectedFraction * 100).toFixed(0)}% (
+              {currentPreset.presetId})
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 font-medium transition cursor-pointer"
             >
-              取消
+              Cancel
             </button>
             <button
               onClick={handleApply}
-              className="px-5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-cyan-600/30"
+              className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-medium transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-red-900/30"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>应用此假说至当前仿真</span>
+              <span>Apply Hypothesis to Simulation</span>
             </button>
           </div>
         </div>

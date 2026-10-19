@@ -13,10 +13,11 @@ import {
   AppMode,
   TwinViewMode,
 } from '../types';
-import { InspectorAvatar } from './InspectorAvatar';
+import { FieldInspectorsManager } from './FieldInspectorsManager';
 import { TownshipEnvironment } from './TownshipEnvironment';
 import { RainEffect } from './RainEffect';
 import { NetworkHighlightOverlay } from './NetworkHighlightOverlay';
+import { FieldInspector } from '../types';
 
 // Convert local coordinates {x (East), y (North), z (Elevation)} to Three.js [x, z, -y]
 // per Section 6.1 of md/TEAM_WORKFLOW.md
@@ -35,11 +36,15 @@ interface SceneViewerProps {
   twinViewMode?: TwinViewMode;
   onChangeTwinViewMode?: (mode: TwinViewMode) => void;
   isRainActive?: boolean;
+  rainEnabled?: boolean;
+  hasSimulationStarted?: boolean;
   onToggleRain?: () => void;
   stormIntensityMmh?: number;
   onOpenDebrisLab?: () => void;
   isDebrisLabOpen?: boolean;
   appMode?: AppMode;
+  onSelectInspector?: (inspector: FieldInspector) => void;
+  selectedInspectorId?: string | null;
 }
 
 // 3D Node Mesh with physical chamber drop from ground down to invert
@@ -265,7 +270,7 @@ const ConduitMesh: React.FC<{
             anchorX="center"
             anchorY="bottom"
           >
-            {appMode === 'anticipate' ? '⚡ PIPE-P07 (预测水力瓶颈 Ø600mm)' : 'PIPE-P07 (Ø600mm)'}
+            {appMode === 'anticipate' ? '⚡ PIPE-P07 (Bottleneck Trunk Ø600mm)' : 'PIPE-P07 (Ø600mm)'}
           </Text>
         </group>
       )}
@@ -328,7 +333,7 @@ const InletMesh: React.FC<{
             anchorX="center"
             anchorY="bottom"
           >
-            {appMode === 'diagnose' ? '🔍 INLET-D07 (历史受阻积水点)' : '★ INLET-D07 (重点进水口)'}
+            {appMode === 'diagnose' ? '🔍 INLET-D07 (Critical Clogging Point)' : '★ INLET-D07 (Curb Inlet)'}
           </Text>
           {cloggingFraction > 0 && (
             <Text
@@ -338,7 +343,7 @@ const InletMesh: React.FC<{
               anchorX="center"
               anchorY="bottom"
             >
-              {`水力折减假设: ${(cloggingFraction * 100).toFixed(0)}%`}
+              {`Hydraulic Restriction: ${(cloggingFraction * 100).toFixed(0)}%`}
             </Text>
           )}
         </group>
@@ -358,11 +363,15 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   twinViewMode,
   onChangeTwinViewMode,
   isRainActive,
+  rainEnabled = true,
+  hasSimulationStarted = false,
   onToggleRain,
   stormIntensityMmh = 80,
   onOpenDebrisLab,
-  isDebrisLabOpen = false,
+  isDebrisLabOpen: _isDebrisLabOpen = false,
   appMode = 'diagnose',
+  onSelectInspector,
+  selectedInspectorId,
 }) => {
   const controlsRef = useRef<any>(null);
 
@@ -451,9 +460,9 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
                 ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
-            title="地上街区与地下发光管网同时高亮透视显示 (北极星原型视口)"
+            title="Surface township and underground glowing drainage network overlay"
           >
-            <span>💎 透视高亮孪生</span>
+            <span>💎 Digital Twin</span>
           </button>
           <button
             onClick={() => handleSelectMode('realistic')}
@@ -462,9 +471,9 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
                 ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
-            title="住宅区高写实地表街区"
+            title="High-fidelity surface residential township"
           >
-            <span>🏡 街区实景</span>
+            <span>🏡 Realistic Surface</span>
           </button>
           <button
             onClick={() => handleSelectMode('underground_only')}
@@ -473,9 +482,9 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
                 ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
                 : 'text-stone-400 hover:text-stone-200'
             }`}
-            title="纯地下管网落深与水力坡降"
+            title="Subsurface drainage conduits and hydraulic grade line"
           >
-            <span>🚇 纯地下工程</span>
+            <span>🚇 Underground Only</span>
           </button>
         </div>
 
@@ -485,42 +494,62 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           className={`px-2.5 py-1 rounded-xl border text-[11px] transition cursor-pointer flex items-center gap-1.5 ${
             rainActive
               ? 'bg-red-600/20 text-red-300 border-red-500/50 shadow-sm'
+              : rainEnabled
+              ? 'bg-cyan-950/60 text-cyan-300 border-cyan-500/40'
               : 'bg-stone-950/80 text-stone-400 border-stone-800 hover:text-stone-200'
           }`}
-          title="开关三维空间暴雨粒子降水动画"
+          title={
+            !hasSimulationStarted
+              ? rainEnabled
+                ? 'Rain is armed. Precipitation animation will begin when Start Simulation is clicked.'
+                : 'Rain is disabled. Click to arm rain before starting.'
+              : rainActive
+              ? 'Rain active. Click to disable rain.'
+              : 'Rain paused. Click to enable rain.'
+          }
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${rainActive ? 'bg-red-500 animate-ping' : 'bg-stone-600'}`} />
-          <span>🌧️ 降雨渲染 {rainActive ? '开' : '关'}</span>
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              rainActive
+                ? 'bg-red-500 animate-ping'
+                : rainEnabled
+                ? 'bg-cyan-400 animate-pulse'
+                : 'bg-stone-600'
+            }`}
+          />
+          <span>
+            🌧️ {rainActive ? 'Rain Active' : rainEnabled ? 'Rain Armed' : 'Rain Off'}
+          </span>
         </button>
 
         <div className="h-3.5 w-px bg-stone-800/80 mx-0.5" />
 
         {/* 3. Camera Preset Quick Buttons */}
         <div className="flex items-center gap-1 text-stone-400">
-          <span className="text-[10px] text-stone-500 font-medium px-1">视角:</span>
+          <span className="text-[10px] text-stone-500 font-medium px-1">View:</span>
           <button
             onClick={() => handlePreset('overview')}
             className="px-2 py-0.5 rounded-lg hover:bg-stone-900 text-stone-300 hover:text-white transition cursor-pointer"
           >
-            全貌
+            Overview
           </button>
           <button
             onClick={() => handlePreset('d07')}
             className="px-2 py-0.5 rounded-lg hover:bg-amber-500/20 text-amber-300 transition cursor-pointer font-medium"
           >
-            D07低洼
+            D07 Lowland
           </button>
           <button
             onClick={() => handlePreset('outfall')}
             className="px-2 py-0.5 rounded-lg hover:bg-stone-900 text-stone-300 hover:text-white transition cursor-pointer"
           >
-            出水口
+            Outfall
           </button>
           <button
             onClick={() => handlePreset('north')}
             className="px-2 py-0.5 rounded-lg hover:bg-stone-900 text-stone-300 hover:text-white transition cursor-pointer"
           >
-            源头
+            Upstream
           </button>
         </div>
 
@@ -531,7 +560,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           onClick={onOpenDebrisLab}
           className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition cursor-pointer font-medium flex items-center gap-1 shadow-sm"
         >
-          <span>★ 进水口虚拟实验室</span>
+          <span>★ Virtual Debris Lab</span>
         </button>
       </div>
 
@@ -658,11 +687,27 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           );
         })}
 
-        {/* Field Inspector Avatar (Azman - Field Unit A) positioned at INLET-D07 */}
-        <InspectorAvatar
-          position={[43.0, 11.0, 2.5]}
-          onOpenDebrisLab={onOpenDebrisLab || (() => {})}
-          active={isDebrisLabOpen}
+        {/* Real-Time Assigned Field Inspectors Patrol Team (Azman, Siti, Muthu, Kevin) */}
+        <FieldInspectorsManager
+          appMode={appMode}
+          selectedInspectorId={selectedInspectorId}
+          onSelectInspector={(inspector) => {
+            if (onSelectInspector) {
+              onSelectInspector(inspector);
+            } else {
+              // Default selection of assigned asset
+              if (inspector.assignedAssetId.startsWith('INLET')) {
+                const inlet = inlets.find((i) => i.inlet_id === inspector.assignedAssetId);
+                if (inlet) onSelectAsset({ type: 'inlet', id: inlet.inlet_id, data: inlet });
+              } else if (inspector.assignedAssetId.startsWith('PIPE')) {
+                const pipe = conduits.find((c) => c.conduit_id === inspector.assignedAssetId);
+                if (pipe) onSelectAsset({ type: 'conduit', id: pipe.conduit_id, data: pipe });
+              } else {
+                const node = nodes.find((n) => n.node_id === inspector.assignedAssetId);
+                if (node) onSelectAsset({ type: 'node', id: node.node_id, data: node });
+              }
+            }
+          }}
         />
 
         {/* Axis Orientation Gizmo */}

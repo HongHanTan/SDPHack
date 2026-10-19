@@ -33,9 +33,9 @@ const MANHOLE_LABELS: Record<string, string> = {
   'NODE-J04': 'MH-0204',
   'NODE-J05': 'MH-0305',
   'NODE-J06': 'MH-0406',
-  'NODE-J07': 'MH-0421 (低洼溢流)',
+  'NODE-J07': 'MH-0421 (Lowland Overflow)',
   'NODE-J08': 'MH-0508',
-  'NODE-OUT01': 'MH-OUT (出水口)',
+  'NODE-OUT01': 'MH-OUT (Outfall)',
 };
 
 // 3D Glowing Junction Cube Marker (Exact match to the mockup)

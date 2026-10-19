@@ -1,8 +1,10 @@
 import {
   ApiErrorResponse,
   BootstrapResponse,
+  DebrisCreateRequest,
   DebrisPreset,
   HealthResponse,
+  InspectionMediaItem,
   InspectionRecord,
   SimulationCreateRequest,
   SimulationFramesResponse,
@@ -171,20 +173,39 @@ export class ApiClient {
   }
 
   public async createInspection(data: Partial<InspectionRecord>): Promise<InspectionRecord> {
-    const item: InspectionRecord = {
-      inspection_id: `insp-${Date.now()}`,
+    const isGrateAsset = (data.asset_id || '').startsWith('INLET');
+    const isoTimestamp = data.timestamp || new Date().toISOString();
+
+    const payload: Partial<InspectionRecord> = {
       asset_id: data.asset_id || 'INLET-D07',
-      timestamp: new Date().toISOString(),
+      timestamp: isoTimestamp,
       inspector: data.inspector || 'Inspector Azman (Field Unit A)',
       method: data.method || 'visual',
-      source_type: 'observed',
-      visible_grate_coverage_fraction: data.visible_grate_coverage_fraction ?? 0.65,
+      source_type: data.source_type || 'synthetic',
+      visible_grate_coverage_fraction: isGrateAsset
+        ? (data.visible_grate_coverage_fraction ?? 0.65)
+        : null as unknown as number,
       debris_category: data.debris_category || 'leaf_litter',
       notes: data.notes || '',
-      media_urls: data.media_urls || ['/assets/mock_inlet_clogged.jpg'],
+      source_reference: data.source_reference || 'Township FloodOps 3D Client',
     };
 
     if (this.mode === 'mock') {
+      const item: InspectionRecord = {
+        inspection_id: `insp-${Date.now()}`,
+        asset_id: payload.asset_id!,
+        timestamp: payload.timestamp!,
+        inspector: payload.inspector!,
+        method: payload.method!,
+        source_type: payload.source_type!,
+        visible_grate_coverage_fraction: payload.visible_grate_coverage_fraction ?? 0.65,
+        debris_category: payload.debris_category!,
+        notes: payload.notes!,
+        source_reference: payload.source_reference,
+        media_urls: data.media_urls || ['/assets/mock_inlet_clogged.jpg'],
+        media: data.media || [],
+      };
+
       try {
         const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_INSPECTIONS) : null;
         const local = stored ? JSON.parse(stored) : [];
@@ -201,24 +222,110 @@ export class ApiClient {
 
     return this.request<InspectionRecord>('/api/inspections', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
   }
 
-  public async createDebrisScenario(data: Partial<DebrisPreset>): Promise<DebrisPreset> {
+  // Multipart media upload for inspections per T3 contract
+  public async uploadInspectionMedia(
+    inspectionId: string,
+    file: File
+  ): Promise<InspectionMediaItem> {
+    const maxBytes = 10 * 1024 * 1024; // 10 MiB limit
+    if (file.size > maxBytes) {
+      throw new Error(`File size ${(file.size / (1024 * 1024)).toFixed(1)}MB exceeds maximum 10 MiB limit.`);
+    }
+
     if (this.mode === 'mock') {
+      const mockItem: InspectionMediaItem = {
+        media_id: `media-${Date.now()}`,
+        filename: file.name,
+        content_type: file.type || 'image/jpeg',
+        size_bytes: file.size,
+        sha256: 'mock-sha256-' + Math.random().toString(36).substring(2, 10),
+        url: URL.createObjectURL(file),
+        created_at: new Date().toISOString(),
+      };
+
+      // Also attach to local mock inspection
+      try {
+        const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_INSPECTIONS) : null;
+        if (stored) {
+          const list = JSON.parse(stored) as InspectionRecord[];
+          const target = list.find((i) => i.inspection_id === inspectionId);
+          if (target) {
+            target.media = target.media || [];
+            target.media.unshift(mockItem);
+            target.media_urls = target.media_urls || [];
+            target.media_urls.unshift(mockItem.url);
+            localStorage.setItem(STORAGE_KEY_INSPECTIONS, JSON.stringify(list));
+          }
+        }
+      } catch {
+        // Ignore
+      }
+
+      return mockItem;
+    }
+
+    // Real API Multipart Upload (FormData)
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const url = `${this.baseUrl}/api/inspections/${inspectionId}/media`;
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        // Notice: Content-Type header is omitted to let browser calculate boundary
+      });
+    } catch (networkError: unknown) {
+      throw new Error(
+        `[Network Error] Failed to upload media attachment to ${url}: ${
+          networkError instanceof Error ? networkError.message : String(networkError)
+        }`
+      );
+    }
+
+    if (!res.ok) {
+      let errorData: ApiErrorResponse | null = null;
+      try {
+        errorData = (await res.json()) as ApiErrorResponse;
+      } catch {
+        // Ignored
+      }
+      const message = errorData?.error?.message || `HTTP ${res.status}: ${res.statusText}`;
+      const code = errorData?.error?.code || `HTTP_${res.status}`;
+      throw new Error(`[${code}] Media upload failed: ${message}`);
+    }
+
+    return (await res.json()) as InspectionMediaItem;
+  }
+
+  public async createDebrisScenario(
+    data: DebrisCreateRequest | Partial<DebrisPreset>
+  ): Promise<DebrisPreset> {
+    if (this.mode === 'mock') {
+      const clogging =
+        'hydraulic_inlet_clogging_fraction' in data
+          ? data.hydraulic_inlet_clogging_fraction
+          : data.parameters?.hydraulic_inlet_clogging_fraction ?? 0.4;
+      const inletId = 'inlet_id' in data ? data.inlet_id : data.parameters?.inlet_id || 'INLET-D07';
+
       return {
         debris_scenario_id: `mock-debris-${Date.now()}`,
         name: data.name || 'Custom Debris Hypothesis',
         source_type: 'assumed',
         parameters: {
-          inlet_id: data.parameters?.inlet_id || 'INLET-D07',
-          hydraulic_inlet_clogging_fraction: data.parameters?.hydraulic_inlet_clogging_fraction ?? 0.4,
+          inlet_id: inletId,
+          hydraulic_inlet_clogging_fraction: clogging,
           parameter_status: 'assumed_not_calibrated',
         },
         swmm_supported: false,
       };
     }
+
     return this.request<DebrisPreset>('/api/debris/scenarios', {
       method: 'POST',
       body: JSON.stringify(data),

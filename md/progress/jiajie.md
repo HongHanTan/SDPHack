@@ -5,9 +5,9 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
 ## 当前状态
 
 - 最近更新：2026-10-19
-- 当前任务：J0、J1、J2、J3、J4、J5 全部完成！所有前端规划功能与 3D 街区环境全部就绪，闭环通过生产打包与交互验证
+- 当前任务：J0～J5 全部完成，并已完成与 Tay T3 深度集成！最新完成：统一仿真启动生命周期与暴雨开关门控（点击 Start 才开始推演与降雨）、以及前端全源码 100% 英文专业化本地化（0 中文字符残存）。
 - 当前接口版本：`1.2.0`（完全对齐 T3 契约及 `contracts/T3_INTEGRATION.md`）
-- 仓库基线：已从 `origin/main` 保持最新同步，所有 J0～J5 成果均已验证并通过完整编译与构建
+- 仓库基线：`JJ_Branch`，严格限定于 `apps/web/**` 与 `md/progress/jiajie.md`，通过 `npm run build`（2518 模块，0 错误）
 
 ## 任务队列
 
@@ -19,31 +19,21 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
 | J3 | DONE | 3D 巡检员数字身与扫描动画、现场照片证据附录、Virtual Debris Lab（喉口剖面、0/20/40/60% 假说切换、现场可见覆盖率与水力折减率分离看板）；接通 T2 异步轮询与 capabilities 守卫 |
 | J4 | DONE | 诊断复盘 (Diagnose) / 暴雨推演 (Anticipate) 双模式；InterventionDashboard 治理方案对比（基线、清淤、扩径、综合方案）；水量分配横向堆叠条形图；可追溯行动工单与工程复核建议报告 |
 | J5 | DONE | 真实住宅区 3D 街区环境构建（联排洋房住宅群、沥青马路带人行道、绿化草坪与灌木行道树、调蓄水景湖与出水明渠、地面积水洼地与社区标牌）；三分钟路演剧本 `md/DEMO_RUNBOOK.md`；根目录 `README.md` 与运行文档全面闭环 |
+| T3-INT | DONE | **T3 (API v1.2.0) 深度集成**：`POST /api/inspections/{id}/media` 二进制文件上传与实时缩略图预览；原生有限入口敏感性预设 (`demo_inlet_capture_0pct/20pct/40pct/60pct`) 绑定 SWMM 5.2.4 权威捕获与漫溢旁流水量看板；全局顶部导航选项卡与资产精准检索联动 |
+| UX-EN | DONE | **统一仿真启动控制与 100% 英文专业化**：统一“Start Simulation”交互门控（未按 Start 前时间轴静止、暴雨不落下）；降雨预置武装开关（Armed vs Off）；前端所有 UI、3D 标签、工单报告与数据流 100% 英文专业工程词汇转换，0 中文字符残留 |
 
 ## 下一次直接执行
 
-前端已全部达成 MVP 交付标准与路演闭环：
 1. 保持开发服务器随启随用；
-2. 配合 Tay 后续 T4/T5 阶段的动态 `/api/interventions/compare` 接口联调；
+2. 配合 Tay 后续 T4/T5 阶段的动态治理方案对比 `/api/interventions/compare` 接口联调；
 3. 支持评委现场答辩演示与路演彩排。
 
 ## 交接给 Tay
 
-- **J5 视觉与体验全面达成设计原型（North Star Mockup）标准：**
-  - **3D 街区环境与物理管网有机融合**：
-    - 新建 `src/components/TownshipEnvironment.tsx`，将地下 9 个节点和 8 条管线精准对齐至真实的住宅区街道下方；
-    - 渲染成排的 2 层联排别墅（Terrace Houses），配有屋顶、前院车位与窗户；
-    - 渲染清晰的沥青路面（Asphalt Roads）与浅灰色人行道路牙（Curbs）；
-    - 在管网规划节点 `NODE-J06` 东北侧渲染出波光粼粼的“Maple Grove Retention Pond (调蓄水景湖)”；
-    - 在出水口 `NODE-OUT01` 处渲染出具有混凝土护坡的“East Drain Outfall (汇流出水明渠)”；
-    - 在进水口 `INLET-D07` 低洼处渲染地表积水洼地（泥浆反光效果与超载警告标牌）；
-    - 标记 4 大片区 3D 悬浮标识（North Ridge Subdivision、Pinecrest Residential、Cedar View Estates、Riverside Heights）。
-  - **路演演示剧本就绪**：
-    - 编写了完整的 [`md/DEMO_RUNBOOK.md`](../DEMO_RUNBOOK.md)，精确到 3 分钟内各分段的台词讲解、操作步骤与应急预案；
-    - 根目录 `README.md` 与 `md/FRONTEND_SETUP.md` 包含完整复制即可运行的说明。
-  - **离线与在线双保险**：
-    - 默认离线模式加载 SWMM 5.2.4 权威结果，路演时无惧任何断网或 Python 环境问题；
-    - 线上模式已完全准备好与 Tay 的 FastAPI / SWMM 真实环境实时通信。
+- **前端全英文国际化与仿真启动门控闭环**：
+  - 前端 `apps/web/src/**` 现已全量采用国际通用市政与水动力学专业英语（如 Curb Inlet, Hydraulic Restriction Loss, Subsurface Captured Volume, Surface Bypass Runoff, Invert Depth, Surcharged Conduit, Gravity Conveyance 等）；
+  - 仿真在用户点击“Start Simulation”前保持待命（Frame 0, $t=0$）；暴雨开关在启动前可自由 Toggle 武装（Armed），点击 Start 后才会动态飘落；
+  - 依然严格对齐 Tay T3 契约，零破坏、零越界。
 
 ## 阻塞与待确认
 
@@ -52,8 +42,9 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
 
 ## 验证记录
 
+- **全量英文化验证：** 执行 `Get-ChildItem -Path apps\web\src -Recurse -Include *.ts,*.tsx | Select-String -Pattern "[\u4e00-\u9fa5]"`，返回结果为空（0 匹配项，100% 纯英文）。
 - **构建与类型验证：** 在 `apps/web` 下执行 `npm run build`（`tsc -b && vite build`）：
-  - 2513 个模块成功转换；
+  - 2518 个模块成功转换；
   - 0 编译错误，0 类型告警；
   - 产出静态打包资产 `dist/`，退出码 0。
 - **视觉与交互核验：**
@@ -63,6 +54,45 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
   - 按照 `md/DEMO_RUNBOOK.md` 走完 3 分钟业务流，各弹窗与时间轴平滑响应，无任何卡顿或报错。
 
 ## 最近实现记录
+
+- **2026-10-19 [管道/节点自定义淤堵推演、Idle 现场巡更模式与全资产实况照片/CCTV 实拍]：**
+  - **管道与节点自主调节阻塞程度与实时水力仿真 (`AssetDetailModal.tsx` & `App.tsx`)**：
+    - 在资产属性抽屉增加“⚡ 自主调节阻塞程度 (Blockage Degree Tuning)”滑块（0%~90%）与快捷预设（`0% 畅通`、`25% 微淤`、`50% 半阻`、`75% 极卡`）；
+    - 联动全局水动力推演求解：动态扣减管道过水截面与满管容量，计算上游水头壅高与溢流水位（$\Delta H \propto \text{blockage} \times 0.45\text{m}$）；
+    - 当阻塞度提升时，3D 管网管线实时由绿转橙红发光，路面积水漫溢高度与扩展面积动态同步扩张，溢流节点与超载持续时间指标联动更新。
+  - **Idle (常态巡更) 模式与多片区现场巡查员实时回传 (`FieldInspectorsManager.tsx` & `LiveTelemetryTicker.tsx`)**：
+    - 在工作流切换器增加 `Idle (常态巡更)` 模式（晴朗常态天气、无暴雨强降水、现场网格化巡更活动）；
+    - 部署 4 名专业现场巡查员分配至指定管网责任区：
+      1. **Unit A: Inspector Azman**（负责 `INLET-D07 / NODE-J07` 回车岛低洼进水口）；
+      2. **Unit B: Inspector Siti**（负责 `PIPE-P04 / NODE-J04` 联排住宅主干管 CCTV 机器人）；
+      3. **Unit C: Inspector Muthu**（负责 `NODE-J06 / Maple Grove Pond` 调蓄湖水文采样）；
+      4. **Unit D: Inspector Kevin**（负责 `NODE-OUT01 / East Drain` 出水明渠涵闸监测）；
+    - 巡查员配备高反光安全服、安全帽、激光测距探头与三维 5G NB-IoT 无线脉冲回传光环（Animated Transmission Rings）；
+    - 底部构建“现场巡检实时数据回传流 (Live Telemetry Ticker)”：每隔数秒滚动接收现场终端真实遥测数据包，点击任意条目即可瞬间穿梭聚焦至对应管段与巡查员。
+  - **节点与管道现场实况高清照片与管内 CCTV 爬行器实拍 (`sitePhotos.ts` & `AssetDetailModal.tsx`)**：
+    - 建立全管网实况照片库，点击任意检查井、进水口或管道即可调出真实勘查影像；
+    - **地表实景照片 (Surface Photo)**：展示真实重型球墨铸铁井盖、进水口落叶堆积或出水涵闸照片，附带经纬度、采集时间戳、结构完整度与巡检员电子签名；
+    - **管内 CCTV 爬行器内窥 (In-Pipe CCTV Crawler)**：展示管道内部高精度内窥透视视角，包含水流反光、管底泥沙淤积实况、CCTV OSD 遥测屏显（进尺、坡降、水力充满度、缺陷等级）；
+    - 支持点击照片呼出全屏高清 Lightbox 放大模态框。
+  - **编译打包核验**：执行 `npm run build`，2518 模块编译完毕，0 错误，打包 exit code 0。
+
+- **2026-10-19 [T3 API v1.2.0 深度集成与多媒体证据闭环]：**
+  - **巡检多媒体证据上传 (`POST /api/inspections/{id}/media`)**：
+    - `InspectionModal.tsx` 引入文件选择与拖拽支持（PNG / JPEG / WebP / PDF ≤10MiB），提供上传前缩略图实时渲染、文件大小核对与删除重传；
+    - `client.ts` 适配 FormData 原生上传，显式省略 JSON Content-Type 保证 boundary 自动生成；
+    - 针对离线 Mock 模式提供本地 ObjectURL 实时回显与持久化存储，支持现场打卡留痕。
+  - **原生有限入口 (Native Finite Inlets) 敏感性全量对接 (`VirtualDebrisLab.tsx`)**：
+    - 全面替换旧版伪设，严格对齐 Tay T3 权威预设：`demo_inlet_capture_0pct`（0% 清淤畅通基线）、`demo_inlet_capture_20pct`（20% 季节性微淤）、`demo_inlet_40pct`（40% 现场核查折减）、`demo_inlet_capture_60pct`（60% 极端前蓄卡口）；
+    - 嵌入 EPA SWMM 5.2.4 权威收水与漫溢水量平衡看板（D07 捕获水深/水量分别精确对齐 741.8m³ / 593.4m³ / 445.1m³ / 296.7m³，地表旁路溢流对齐 389.7m³ / 538.0m³ / 686.3m³ / 834.7m³）；
+    - 现场照片与巡检证据 Tab 实时渲染已上传真实照片缩略图与完整不可变证据链。
+  - **森那美风格顶部导航与资产检索精准联动 (`StatusHeader.tsx` & `App.tsx`)**：
+    - 导航药丸 (`Dashboard`, `Map`, `Assets`, `Analytics`, `Reports`) 绑定全局交互：点击 `Assets` 瞬间调焦锁定 `MH-0421 / NODE-J07` 遥测卡片；点击 `Map` 触发透视高亮全景；点击 `Analytics / Reports` 弹出治理对比看板；
+    - 顶部搜索框支持回车与即时匹配管网资产编号（`MH-0421`, `NODE-J07`, `INLET-D07`, `PIPE-P07` 等），自动高亮选中并唤起右侧抽屉。
+  - **契约类型升级 (`src/types/index.ts`)**：
+    - 引入 `InletState.capture_flow_m3s` 与 `bypass_flow_m3s`；
+    - 引入 `SimulationMetricsResponse.inlet_volumes`；
+    - 引入 `DebrisCreateRequest` 与 `InspectionMediaItem`。
+  - **编译打包核验**：执行 `npm run build`，2516 模块编译完毕，0 错误，打包 exit code 0。
 
 - **2026-10-19 [J5 完成与真实感强化]：**
   - 重构升级 `src/components/TownshipEnvironment.tsx`：全面重构 3D 住宅建筑模型，采用写实高多边形多坡屋顶（Multi-Gable & Hip Roofs）、前凸车库与双车位卷帘门、混凝土入户车道与停放车辆（Sedan / SUV）、入户门廊立柱、基座毛石护墙、窗框玻璃反光及地基灌木绿化。
@@ -108,3 +138,17 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
   - **底部时间轴极简播放条**：
     - 居中紧凑浮动药丸设计，森那美红播放键、倍速选择（1x/2x/5x）、当前时间戳与平滑进度条，杜绝一切赘述文本。
   - **构建核验**：执行 `npm run build`，2516 模块转换完毕，0 错误，打包 exit code 0。
+
+- **2026-10-19 [统一仿真启动控制、降雨武装开关与全前端 100% 英文专业化]：**
+  - **统一仿真生命周期 (`hasSimulationStarted` & `App.tsx` & `SimulationHUD.tsx`)**：
+    - 仿真默认在首帧（$t=0$, Frame 0）锁定静止，只有当用户明确点击“Start Simulation”统一按钮后，系统才正式激活并开始时间推演；
+    - 启动后提供播放/暂停（Play/Pause）、重置（Reset to t=0）、多倍速切换（1x / 2x / 5x）与全屏时间轴拖动回溯能力。
+  - **降雨武装门控机制 (`rainEnabled` & `isRainActive`)**：
+    - 仿真未启动前，用户可在控制面板与 3D 顶部徽章自由开启或关闭降雨（Rain Armed vs Rain Off）；
+    - 降雨粒子严格门控：`isRainActive = rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && currentTimestamp <= 3600;`；
+    - 确保未点击 Start 前雨丝绝不下落，武装开启后在 Start 触发后伴随产汇流动态倾泻。
+  - **全前端 100% 英文市政水动力学专业化本地化**：
+    - 全面清理 `apps/web/src/**` 中所有汉字字符，覆盖 15+ 个组件与数据模型（包括 `VirtualDebrisLab.tsx`, `AssetDetailModal.tsx`, `InterventionDashboard.tsx`, `TownshipEnvironment.tsx`, `LiveTelemetryTicker.tsx`, `FieldInspectorsManager.tsx` 等）；
+    - 采用纯正市政与水力工程专业术语：如 Curb Inlet Throat, Hydraulic Restriction Loss, Subsurface Captured Volume, Surface Bypass Runoff, Invert Depth, Surcharged Conduit, Gravity Conveyance, Detention Storage 等；
+    - 经 `Select-String -Pattern "[\u4e00-\u9fa5]"` 全盘脚本扫描，全 web 源码匹配结果为 0。
+  - **编译打包核验**：执行 `npm run build`，2518 模块编译完毕，0 错误，0 警告，打包 exit code 0。
