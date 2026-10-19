@@ -64,9 +64,10 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
 
 ## 最近实现记录
 
-- **2026-10-19 [J5 完成]：**
-  - 新建 `src/components/TownshipEnvironment.tsx`：为数字孪生视口提供高质量 3D 地表街景（住宅群、马路、人行道、绿化树木、调蓄湖、出水明渠、地表积水洼地、社区 3D 悬浮标识与天空模式横幅）。
-  - 更新 `src/components/SceneViewer.tsx`：嵌入 `TownshipEnvironment`，升级为白天真实感定向光照、软阴影与远景大气雾效。
+- **2026-10-19 [J5 完成与真实感强化]：**
+  - 重构升级 `src/components/TownshipEnvironment.tsx`：全面重构 3D 住宅建筑模型，采用写实高多边形多坡屋顶（Multi-Gable & Hip Roofs）、前凸车库与双车位卷帘门、混凝土入户车道与停放车辆（Sedan / SUV）、入户门廊立柱、基座毛石护墙、窗框玻璃反光及地基灌木绿化。
+  - 增加街尾环形回车岛（Cul-de-sac Turnaround Loop），道路增加白色中心虚线标线与反光沥青质感。
+  - 更新多球体簇拥写实树木（Lush Suburban Trees），丰富树冠层次与阴影表现。
   - 新建 `md/DEMO_RUNBOOK.md`：详细编制 3 分钟黑客松 Pitch 路演剧本（5 大场景、台词脚本、界面操作动作与应急对策）。
   - 更新根目录 `README.md`：增加 3 分钟 Demo 引导与 J5 街区数字化孪生特性说明。
   - 运行 `npm run build`，编译打包 0 错误。
