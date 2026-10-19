@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,13 +19,14 @@ from .schemas import (
     AssetsResponse, BootstrapResponse, Capabilities, ErrorDetail, ErrorResponse,
     FramesResponse, HealthResponse, MetricsResponse, RunListResponse, RunResponse,
     SimulationAccepted, SimulationRequest, StormCreate, StormRecord,
+    DebrisCreate, DebrisScenario, InspectionCreate, InspectionList, InspectionRecord, MediaRecord,
 )
 from .service import ApiProblem, ScenarioService
 
 ERROR_RESPONSES = {
-    404:{"model":ErrorResponse,"description":"NOT_FOUND: unknown township, storm, run or artifact."},
-    422:{"model":ErrorResponse,"description":"VALIDATION_ERROR or UNSUPPORTED_SCENARIO: invalid input or unsupported restriction/boundary."},
-    500:{"model":ErrorResponse,"description":"INTERNAL_ERROR or RESULT_ARTIFACT_INVALID: server failure or missing/corrupt saved results."},
+    404:{"model":ErrorResponse,"description":"NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact."},
+    422:{"model":ErrorResponse,"description":"VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm."},
+    500:{"model":ErrorResponse,"description":"INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence."},
 }
 RESULT_ERRORS = {409:{"model":ErrorResponse,"description":"RESULTS_NOT_READY for queued/running, SIMULATION_FAILED for failed runs. Query run status; failed runs have persisted error/log references."}}
 
@@ -47,7 +48,7 @@ def create_app(data_dir: Path | None = None, *, run_timeout_s: float = 120, max_
 
     application = FastAPI(
         title="Township FloodOps API",version=API_VERSION,lifespan=lifespan,
-        description="Synthetic uncalibrated network. Storm creation and asynchronous real SWMM runs are persisted in SQLite. Poll run status before fetching results. Only clean direct-node entry and normal tailwater are supported; inspection/restriction/comparison remain T3/T4. One API worker per runtime directory.",
+        description="Synthetic uncalibrated network. Immutable storms, inspection/media provenance, debris mass accounting and asynchronous real SWMM runs are persisted in SQLite. Native finite inlet capture supports independent hydraulic loss hypotheses; retained direct-node baseline remains available. Poll run status before fetching results. High tailwater and interventions remain unsupported. One API worker per runtime directory.",
         responses=ERROR_RESPONSES,
     )
     application.add_middleware(CORSMiddleware,
@@ -104,6 +105,38 @@ def create_app(data_dir: Path | None = None, *, run_timeout_s: float = 120, max_
     @application.get("/api/storms/{storm_id}",response_model=StormRecord,tags=["storms"])
     def get_storm(storm_id: str,request: Request):
         return service(request).get_storm(storm_id)
+
+    @application.post("/api/inspections",response_model=InspectionRecord,status_code=201,tags=["inspections"])
+    def create_inspection(payload: InspectionCreate,request: Request):
+        return service(request).evidence.create(payload)
+
+    @application.get("/api/inspections",response_model=InspectionList,tags=["inspections"])
+    def list_inspections(request: Request,asset_id: str | None = None,limit: Annotated[int,Query(ge=1,le=100)] = 50):
+        return service(request).evidence.list(asset_id,limit)
+
+    @application.get("/api/inspections/{inspection_id}",response_model=InspectionRecord,tags=["inspections"])
+    def get_inspection(inspection_id: str,request: Request):
+        return service(request).evidence.get(inspection_id)
+
+    @application.post("/api/inspections/{inspection_id}/media",response_model=MediaRecord,status_code=201,tags=["inspections"],responses={
+        413:{"model":ErrorResponse,"description":"MEDIA_TOO_LARGE: maximum 10 MiB per file."},
+        415:{"model":ErrorResponse,"description":"UNSUPPORTED_MEDIA: PNG, JPEG, WebP or PDF required, matching file signature and content type."},
+    })
+    async def upload_media(inspection_id: str,request: Request,file: Annotated[UploadFile,File()]):
+        return await service(request).evidence.upload(inspection_id,file)
+
+    @application.get("/api/inspections/{inspection_id}/media/{media_id}",response_class=FileResponse,tags=["inspections"],responses={200:{"content":{"application/octet-stream":{}},"description":"Original media attachment; size/SHA-256 verified."}})
+    def get_media(inspection_id: str,media_id: str,request: Request):
+        path,record = service(request).evidence.download(inspection_id,media_id)
+        return FileResponse(path,filename=record["filename"],media_type=record["content_type"],headers={"X-Content-Type-Options":"nosniff"})
+
+    @application.post("/api/debris/scenarios",response_model=DebrisScenario,status_code=201,tags=["debris"])
+    def create_debris(payload: DebrisCreate,request: Request):
+        return service(request).create_debris(payload)
+
+    @application.get("/api/debris/scenarios/{scenario_id}",response_model=DebrisScenario,tags=["debris"])
+    def get_debris(scenario_id: str,request: Request):
+        return service(request).get_debris(scenario_id)
 
     @application.post("/api/simulations",response_model=SimulationAccepted,status_code=202,tags=["simulations"],responses={
         429:{"model":ErrorResponse,"description":"QUEUE_FULL: at most 8 queued/running jobs by default."},

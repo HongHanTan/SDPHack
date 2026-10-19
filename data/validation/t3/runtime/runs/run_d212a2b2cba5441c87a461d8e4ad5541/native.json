@@ -1,0 +1,169 @@
+{
+  "engine_version": "5.2.4",
+  "continuity_error_percent": {
+    "runoff": -0.0016002755146473646,
+    "routing": -0.02409697137773037
+  },
+  "quality_routing": "not_modelled",
+  "node_statistics": {
+    "AUX-BYPASS-INLET-D01": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.0821072606551103
+    },
+    "AUX-BYPASS-INLET-D02": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.0821072606551103
+    },
+    "AUX-BYPASS-INLET-D04": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.08210726065510986
+    },
+    "AUX-BYPASS-INLET-D07": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.08210726065510983
+    },
+    "AUX-OUT-INLET-D01": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.07538588976925802
+    },
+    "AUX-OUT-INLET-D02": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.07538588976925802
+    },
+    "AUX-OUT-INLET-D04": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.07538588976925831
+    },
+    "AUX-OUT-INLET-D07": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.07538588976925807
+    },
+    "AUX-UP-INLET-D01": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.14397098406297865
+    },
+    "AUX-UP-INLET-D02": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.14397098406297865
+    },
+    "AUX-UP-INLET-D04": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.1439709840629787
+    },
+    "AUX-UP-INLET-D07": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.1439709840629787
+    },
+    "NODE-J01": {
+      "flooding_volume_m3": 0.056352951156100395,
+      "flooding_duration_s": 2.0,
+      "surcharge_duration_s": 3027.0,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J02": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 3091.793,
+      "peak_depth_m": 1.6319806316361345
+    },
+    "NODE-J03": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 3069.793,
+      "peak_depth_m": 1.7312204871196106
+    },
+    "NODE-J04": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 3056.793,
+      "peak_depth_m": 1.3412690289130633
+    },
+    "NODE-J05": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 3260.793,
+      "peak_depth_m": 1.6714993538380012
+    },
+    "NODE-J06": {
+      "flooding_volume_m3": 0.020309636208759637,
+      "flooding_duration_s": 1.0,
+      "surcharge_duration_s": 3007.0,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J07": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 3322.793,
+      "peak_depth_m": 1.5771682817301511
+    },
+    "NODE-J08": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.5177962489071884
+    },
+    "NODE-OUT01": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.5138906544225494
+    }
+  },
+  "surcharge_duration_s": 3322.7929999999997,
+  "routing_step_count": 7202,
+  "simulation_duration_s": 7200,
+  "water_balance": {
+    "rainfall_mm": 119.99999999999828,
+    "runoff_mm": 113.151303275939
+  },
+  "inlet_statistics": [
+    {
+      "inlet_id": "INLET-D01",
+      "captured_volume_m3": 741.7770642725199,
+      "backflow_volume_m3": 0.056352951156100395,
+      "bypass_volume_m3": 389.73540303620604
+    },
+    {
+      "inlet_id": "INLET-D02",
+      "captured_volume_m3": 741.7770642725199,
+      "backflow_volume_m3": 0.0,
+      "bypass_volume_m3": 389.6790759923811
+    },
+    {
+      "inlet_id": "INLET-D04",
+      "captured_volume_m3": 741.7770642725197,
+      "backflow_volume_m3": 0.0,
+      "bypass_volume_m3": 389.6790759923813
+    },
+    {
+      "inlet_id": "INLET-D07",
+      "captured_volume_m3": 741.7770642725196,
+      "backflow_volume_m3": 0.0,
+      "bypass_volume_m3": 389.67907599238123
+    }
+  ]
+}

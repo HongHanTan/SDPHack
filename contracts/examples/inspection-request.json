@@ -1,0 +1,11 @@
+{
+  "asset_id": "INLET-D07",
+  "timestamp": "2026-10-19T01:00:00Z",
+  "inspector": "Synthetic validation inspector",
+  "method": "visual",
+  "source_type": "synthetic",
+  "visible_grate_coverage_fraction": 0.65,
+  "debris_category": "leaf_litter",
+  "notes": "Generated integration record, not a site observation.",
+  "source_reference": "Synthetic one-pixel image used to verify upload integrity only."
+}

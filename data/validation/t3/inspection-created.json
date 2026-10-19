@@ -1,0 +1,17 @@
+{
+  "asset_id": "INLET-D07",
+  "timestamp": "2026-10-19T01:00:00Z",
+  "inspector": "Synthetic validation inspector",
+  "method": "visual",
+  "source_type": "synthetic",
+  "visible_grate_coverage_fraction": 0.65,
+  "debris_category": "leaf_litter",
+  "notes": "Generated integration record, not a site observation.",
+  "source_reference": "Synthetic one-pixel image used to verify upload integrity only.",
+  "inspection_id": "inspection_4b33550573794f59ab007fee79a7cd35",
+  "created_at": "2026-10-19T06:35:09.493460Z",
+  "model_version_id": "taman_kyra_synthetic_v1",
+  "is_verified_site_model": false,
+  "media": [],
+  "media_urls": []
+}

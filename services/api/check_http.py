@@ -59,10 +59,10 @@ def server(directory: Path, label: str):
                 process.wait(timeout=5)
 
 
-def execute_run(client: httpx.Client, directory: Path, label: str, storm_id: str) -> dict:
+def execute_run(client: httpx.Client, directory: Path, label: str, storm_id: str, debris_scenario_id: str = "demo_inlet_clean") -> dict:
     path = directory / label
     path.mkdir()
-    request = {"model_version_id":"taman_kyra_synthetic_v1","storm_id":storm_id,"debris_scenario_id":"demo_inlet_clean","tailwater_case":"normal","intervention":None}
+    request = {"model_version_id":"taman_kyra_synthetic_v1","storm_id":storm_id,"debris_scenario_id":debris_scenario_id,"tailwater_case":"normal","intervention":None}
     write_json(path / "request.json",request)
     accepted = expect(client.post("/api/simulations",json=request),202)
     write_json(path / "accepted.json",accepted)
@@ -122,7 +122,7 @@ def check(directory: Path) -> dict:
             raise RuntimeError("HTTP rainfall change did not produce expected controlled flood response")
         if expect(client.get(f"/api/simulations/{baseline['run']['run_id']}")) != baseline["run"]:
             raise RuntimeError("Creating another storm/run altered the baseline")
-        unsupported = expect(client.post("/api/simulations",json={**read_json(directory / "baseline/request.json"),"debris_scenario_id":"demo_inlet_40pct"}),422)
+        unsupported = expect(client.post("/api/simulations",json={**read_json(directory / "baseline/request.json"),"tailwater_case":"high"}),422)
         write_json(directory / "unsupported.json",unsupported)
         unknown = expect(client.get("/api/simulations/missing"),404)
         write_json(directory / "not-found.json",unknown)

@@ -230,7 +230,6 @@ def test_same_runtime_cannot_be_opened_by_two_api_processes(tmp_path):
     ({"storm_id":"missing"},"NOT_FOUND",404),
     ({"debris_scenario_id":"missing"},"NOT_FOUND",404),
     ({"tailwater_case":"missing"},"NOT_FOUND",404),
-    ({"debris_scenario_id":"demo_inlet_40pct"},"UNSUPPORTED_SCENARIO",422),
     ({"tailwater_case":"high"},"UNSUPPORTED_SCENARIO",422),
 ])
 def test_bad_references_and_unsupported_scenarios_do_not_create_runs(tmp_path,patch,code,status):

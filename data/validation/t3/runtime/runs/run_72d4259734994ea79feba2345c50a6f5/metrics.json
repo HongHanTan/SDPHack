@@ -1,0 +1,76 @@
+{
+  "run_id": "run_72d4259734994ea79feba2345c50a6f5",
+  "model_version_id": "taman_kyra_synthetic_v1",
+  "result_type": "simulated",
+  "engine": "EPA SWMM",
+  "engine_version": "5.2.4",
+  "is_verified_site_model": false,
+  "assumptions": [
+    "Illustrative synthetic layout; not surveyed Taman Kyra underground assets.",
+    "Coordinates use an arbitrary local metric datum; they are not latitude/longitude.",
+    "Node positions are pipe inverts; inlet positions are surface grate elevations.",
+    "Diameters, roughness, elevations and grate areas are synthetic demonstration inputs, not verified site design values.",
+    "Independent inlet capture and obstruction modelling are not yet implemented; the T1 clean baseline routes runoff directly to sewer nodes.",
+    "No surface terrain coupling or validated street flood depths are available.",
+    "Four synthetic 1 ha catchments, each 80% impervious; areas do not imply surveyed catchment boundaries.",
+    "Surface routing uses the SWMM nonlinear reservoir with synthetic width, slope, roughness and depression storage; infiltration uses assumed Horton parameters.",
+    "Outfall stage is fixed at invert plus the selected assumed tailwater depth; no observed river hydrograph is available.",
+    "One-hour rain is followed by one-hour dry drainage; the full simulation window is included in metrics.",
+    "T3 uses native SWMM CUSTOM DIVERSION inlet capture in four independent illustrative open rectangular approach channels. The assumed curve captures 80% of approach flow up to 0.20 m3/s, before applying clogging.",
+    "Each catchment drains to its mapped auxiliary surface approach node. Captured flow enters the original sewer node; non-captured flow passes a separate bypass junction and exit conduit to a free surface outfall. Sewer overflow can return through the native inlet backflow mechanism.",
+    "Auxiliary channels are numerical sensitivity elements, not surveyed roads, pipes, mapped assets, or a 2D street-flood model. Their geometry and rating curve are uncalibrated assumptions.",
+    "Only the selected inlet receives the independent constant hydraulic capacity-loss fraction; other inlets use zero loss with the same finite capture curve. Original sewer conduit diameters and Manning n are unchanged.",
+    "Compare finite-capture scenarios against finite 0% capture loss with identical storm and boundary. The retained T1/T2 unlimited direct-node clean baseline is a different capture assumption.",
+    "Surface bypass volume is discharged outside this illustrative domain; it is not a computed street inundation depth or automatically added to sewer flooding volume. Greater restriction can reduce sewer flooding while increasing bypass."
+  ],
+  "warnings": [
+    "Trace native flooding <0.1 m3 at NODE-J01; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering.",
+    "Finite uncalibrated inlet capture: compare with finite 0% using identical storm/boundary. Reduced sewer flooding can accompany increased surface bypass; display inlet_volumes separately."
+  ],
+  "status_definitions": {
+    "node_surcharged": "Junction depth + 0.00003048 m >= highest connected conduit crown above its invert; outfall excluded. Matches SWMM crown criterion for this zero-offset, circular-conduit model.",
+    "node_flooding": "Reported node flooding loss rate > 1e-9 m3/s; takes display precedence over surcharge. Not a surface flood depth.",
+    "node_normal": "Neither flooding nor crown exceedance at this report instant; outfall is not classified as surcharged.",
+    "pipe_surcharged": "Hydraulic heads at both endpoints exceed their respective conduit crown elevations by > 0.00003048 m; indicates pressurized closed conduit at both ends.",
+    "pipe_near_capacity": "Not surcharged by the endpoint-head rule and reported conduit depth/diameter >= 0.8; a geometric fullness display threshold, not a discharge-capacity or failure estimate.",
+    "pipe_normal": "Neither endpoint-head surcharge nor depth/diameter >= 0.8 at this report instant.",
+    "unknown": "Missing or unsupported hydraulic information; never inferred from inlet restriction.",
+    "inlet": "Independent assumed hydraulic_inlet_clogging_fraction=0; T1 uses unlimited direct-node runoff entry, not a finite-capacity inlet or calibrated capture model."
+  },
+  "inlet_volumes": [
+    {
+      "inlet_id": "INLET-D01",
+      "captured_volume_m3": 741.7611777261975,
+      "backflow_volume_m3": 0.033928383677445675,
+      "bypass_volume_m3": 389.70949791276854
+    },
+    {
+      "inlet_id": "INLET-D02",
+      "captured_volume_m3": 741.7611777261975,
+      "backflow_volume_m3": 0.0,
+      "bypass_volume_m3": 389.67559202960115
+    },
+    {
+      "inlet_id": "INLET-D04",
+      "captured_volume_m3": 741.7611777261976,
+      "backflow_volume_m3": 0.0,
+      "bypass_volume_m3": 389.67559202960115
+    },
+    {
+      "inlet_id": "INLET-D07",
+      "captured_volume_m3": 593.4293218647064,
+      "backflow_volume_m3": 0.0,
+      "bypass_volume_m3": 537.9844278326926
+    }
+  ],
+  "total_flooding_volume_m3": 0.03392838367744285,
+  "flooded_node_count": 1,
+  "surcharge_duration_s": 3260.936,
+  "metric_definitions": {
+    "total_flooding_volume_m3": "Sum of SWMM native node volFlooded statistics, converted by the toolkit to m3 for this CMS model; includes all routing steps, not just displayed report samples.",
+    "flooded_node_count": "Number of nodes with native accumulated flooding volume > 1e-6 m3 over the full simulation; brief events between report frames are included. Native runs with inlet capture also include explicitly mapped auxiliary surface nodes; these are not extra surveyed assets.",
+    "surcharge_duration_s": "Time union over junction crown-exceedance flags sampled at each native routing-step endpoint, weighted by that step duration; overlaps count once, outfall excluded. At most 1 s routing step in the standard model.",
+    "frames": "Actual binary output samples at 60,120,...,7200 s. No fabricated t=0 frame or visual interpolation. A 60 s report sample can miss a routing-step peak.",
+    "inlet_volumes": "Integral of native toolkit CMS inlet capture/backflow and each separate surface outfall inflow at routing-step endpoints, using actual step seconds. Bypass includes sewer backflow returned to the surface. It is not a calibrated street-flood volume or depth."
+  }
+}

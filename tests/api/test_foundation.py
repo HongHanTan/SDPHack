@@ -69,7 +69,9 @@ def test_catalog_identity_geometry_and_outfall_connectivity(client):
         assert node_id == "NODE-OUT01"
     for preset in bootstrap["debris_scenarios"]:
         assert preset["parameters"]["inlet_id"] in inlets
-        assert preset["swmm_supported"] is (preset["parameters"]["hydraulic_inlet_clogging_fraction"] == 0)
+        assert preset["swmm_supported"] is True
+        if preset["parameters"]["hydraulic_inlet_clogging_fraction"] > 0:
+            assert preset["capture_model"] == "swmm_native_custom_diversion_v1"
     assert load_assets().township_id == load_bootstrap().township_id
 
 
@@ -99,7 +101,7 @@ def test_unknown_resources_have_uniform_error(client, path):
 
 def test_unknown_runs_and_unsupported_scenarios_never_return_fake_results(client):
     request = json.loads((REPO_ROOT / "contracts/examples/simulation-request.json").read_text(encoding="utf-8"))
-    unsupported = client.post("/api/simulations",json={**request,"debris_scenario_id":"demo_inlet_40pct"})
+    unsupported = client.post("/api/simulations",json={**request,"tailwater_case":"high"})
     assert unsupported.status_code == 422
     assert unsupported.json()["error"]["code"] == "UNSUPPORTED_SCENARIO"
     responses = []
@@ -144,6 +146,10 @@ def test_exported_contracts_match_app_and_validate_examples(client):
         ("http-run-baseline", "RunResponse"), ("http-run-stronger", "RunResponse"),
         ("http-frames-baseline", "FramesResponse"), ("http-frames-stronger", "FramesResponse"),
         ("http-metrics-baseline", "MetricsResponse"), ("http-metrics-stronger", "MetricsResponse"),
+        ("inspection-request","InspectionCreate"),("inspection-created","InspectionRecord"),
+        ("media-created","MediaRecord"),("debris-request","DebrisCreate"),("debris-created","DebrisScenario"),
+        ("native-inlet-accepted","SimulationAccepted"),("native-inlet-run","RunResponse"),
+        ("native-inlet-frames","FramesResponse"),("native-inlet-metrics","MetricsResponse"),
     ):
         validator_schema = {"$ref": f"#/components/schemas/{model_name}", "components": schema["components"]}
         value = json.loads((examples / f"{name}.json").read_text(encoding="utf-8"))

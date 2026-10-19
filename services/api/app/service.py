@@ -12,21 +12,19 @@ from pathlib import Path
 from simulation.swmm.engine import probe_engine
 from simulation.swmm.model import canonical_hash, read_json, resolve_inputs
 from simulation.swmm.runner import run_model, snapshot_inputs
+from simulation.swmm.inlets import CAPTURE_MODEL, configure_inlets
+from simulation.debris.mass_balance import simulate_mass
 
 from .catalog import API_VERSION, REPO_ROOT, SEED_DIR, load_bootstrap
 from .runtime_lock import RuntimeLease
-from .schemas import Capabilities, FramesResponse, MetricsResponse, RunResponse, SimulationRequest, StormCreate, StormRecord
+from .schemas import Capabilities, DebrisCreate, DebrisPreset, DebrisScenario, FramesResponse, MetricsResponse, RunResponse, SimulationRequest, StormCreate, StormRecord
 from .storage import QueueFullError, Store
+from .errors import ApiProblem
+from .evidence import EvidenceService
 
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat()
-
-
-class ApiProblem(Exception):
-    def __init__(self, status: int, code: str, message: str, details: dict | None = None):
-        super().__init__(message)
-        self.status, self.code, self.details = status, code, details or {}
 
 
 class ScenarioService:
@@ -42,6 +40,7 @@ class ScenarioService:
         try:
             self.store = Store(self.directory)
             self.store.initialize(read_json(SEED_DIR / "bootstrap.json")["storms"])
+            self.evidence = EvidenceService(self.store, self.directory)
             (self.directory / "events").mkdir(exist_ok=True)
             for run in self.store.list_runs(limit=100000, pending_only=True):
                 self.fail(run["run_id"], "RUN_INTERRUPTED", "The previous API process stopped before this run reached a persisted terminal state. Submit a new run to retry.")
@@ -55,14 +54,14 @@ class ScenarioService:
         result.api_version = API_VERSION
         result.capabilities = Capabilities()
         result.storms = [StormRecord.model_validate(storm) for storm in self.store.list_storms()]
-        for debris in result.debris_scenarios:
-            debris.swmm_supported = debris.parameters.hydraulic_inlet_clogging_fraction == 0
+        for record in self.store.list_debris():
+            result.debris_scenarios.append(DebrisPreset.model_validate({key:record[key] for key in DebrisPreset.model_fields}))
         for boundary in result.tailwater_cases:
             boundary.swmm_supported = boundary.tailwater_case == "normal"
         result.assumptions = [
             "Illustrative synthetic geography and uncalibrated hydrology; no verified site forecast or historical cause.",
-            "T2 executes real SWMM asynchronously; query the returned run_id until succeeded or failed before fetching results.",
-            "Only clean direct-node entry and normal tailwater are enabled. Finite inlet restriction remains T3; photo coverage is independent of hydraulic loss.",
+            "Real SWMM executes asynchronously; query the returned run_id until succeeded or failed before fetching results.",
+            "T3 supports native finite inlet capture scenarios and append-only inspection/media evidence. Photo coverage and debris mass are independent of the constant hydraulic loss hypothesis. High tailwater remains unsupported.",
             "Custom storms support constant 0..300 mm/h, 300..21600 seconds in 300-second increments, followed by 3600 seconds dry drainage.",
         ]
         return result
@@ -83,16 +82,46 @@ class ScenarioService:
             raise ApiProblem(404,"NOT_FOUND","Unknown storm.",{"storm_id":storm_id})
         return storm
 
+    def create_debris(self, payload: DebrisCreate) -> dict:
+        catalog_assets = self.evidence.check_asset(payload.inlet_id)
+        if payload.inlet_id not in {x.inlet_id for x in catalog_assets.inlets}:
+            raise ApiProblem(422,"VALIDATION_ERROR","Debris scenarios require an inlet asset.")
+        storm = self.get_storm(payload.storm_id)
+        inspection = self.evidence.get(payload.inspection_id) if payload.inspection_id else None
+        if inspection is not None and inspection["asset_id"] != payload.inlet_id:
+            raise ApiProblem(422,"VALIDATION_ERROR","The inspection must reference the same inlet as this debris scenario.")
+        try:
+            mass = simulate_mass(payload.debris_parameters.model_dump(mode="json"),storm)
+        except ValueError as exc:
+            raise ApiProblem(422,"VALIDATION_ERROR",str(exc)) from exc
+        record = DebrisScenario(
+            debris_scenario_id=f"debris_{uuid.uuid4().hex}",name=payload.name,source_type="assumed",
+            parameters={"inlet_id":payload.inlet_id,"hydraulic_inlet_clogging_fraction":payload.hydraulic_inlet_clogging_fraction,"parameter_status":"assumed_not_calibrated"},
+            swmm_supported=True,capture_model=CAPTURE_MODEL,created_at=now(),storm_id=payload.storm_id,
+            storm_snapshot=storm,inspection_id=payload.inspection_id,inspection_snapshot=inspection,mass_balance=mass,
+        ).model_dump(mode="json")
+        self.store.create_debris(record)
+        return record
+
+    def get_debris(self, scenario_id: str) -> dict:
+        record = self.store.get_debris(scenario_id)
+        if record is None:
+            raise ApiProblem(404,"NOT_FOUND","Unknown created debris scenario.",{"debris_scenario_id":scenario_id})
+        return record
+
     def resolve(self, payload: SimulationRequest) -> dict:
         catalog = load_bootstrap()
         if payload.model_version_id not in {m.model_version_id for m in catalog.model_versions}:
             raise ApiProblem(404,"NOT_FOUND","Unknown model version.",{"model_version_id":payload.model_version_id})
         storm = self.get_storm(payload.storm_id)
-        debris = next((x for x in catalog.debris_scenarios if x.debris_scenario_id == payload.debris_scenario_id), None)
+        debris = self.store.get_debris(payload.debris_scenario_id)
+        if debris is None:
+            seed = next((x for x in catalog.debris_scenarios if x.debris_scenario_id == payload.debris_scenario_id),None)
+            debris = seed.model_dump(mode="json") if seed else None
         if debris is None:
             raise ApiProblem(404,"NOT_FOUND","Unknown debris scenario.",{"debris_scenario_id":payload.debris_scenario_id})
-        if debris.parameters.hydraulic_inlet_clogging_fraction != 0:
-            raise ApiProblem(422,"UNSUPPORTED_SCENARIO","Finite inlet restriction is not implemented; select demo_inlet_clean until T3.",{"debris_scenario_id":payload.debris_scenario_id})
+        if debris.get("storm_id") and debris["storm_id"] != payload.storm_id:
+            raise ApiProblem(422,"SCENARIO_STORM_MISMATCH","Create a new debris scenario for this storm; saved mass timelines are bound to their immutable storm.")
         if payload.tailwater_case not in {b.tailwater_case for b in catalog.tailwater_cases}:
             raise ApiProblem(404,"NOT_FOUND","Unknown tailwater case.",{"tailwater_case":payload.tailwater_case})
         if payload.tailwater_case != "normal":
@@ -100,6 +129,9 @@ class ScenarioService:
         inputs = resolve_inputs(catalog.storms[0].storm_id, payload.tailwater_case)
         inputs["storm"] = storm
         inputs["request"] = payload.model_dump(mode="json")
+        if debris["capture_model"] == CAPTURE_MODEL:
+            inputs["debris_scenario"] = {**debris, "hydraulic_inlet_clogging_fraction":debris["parameters"]["hydraulic_inlet_clogging_fraction"]}
+            configure_inlets(inputs,debris["parameters"]["inlet_id"],debris["parameters"]["hydraulic_inlet_clogging_fraction"])
         try:
             return snapshot_inputs(inputs)
         except ValueError as exc:

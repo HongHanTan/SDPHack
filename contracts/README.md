@@ -1,4 +1,4 @@
-# FloodOps API v1.1.0 — T0 / T1 / T2 handoff
+# FloodOps API v1.2.0 — T0 / T1 / T2 / T3 handoff
 
 `openapi.json` is generated from `services/api/app/main.py` and its Pydantic schemas.
 It is the machine-readable interface source. Never edit generated JSON by hand.
@@ -13,12 +13,15 @@ Implemented:
 - `GET /api/simulations` / `GET /api/simulations/{run_id}`: persisted history/status, timestamps, full input snapshot/hash, warnings, error and evidence URLs.
 - `GET /api/simulations/{run_id}/frames` / `metrics`: actual native results, available only after success.
 - `GET /api/simulations/{run_id}/artifacts/{artifact_name}`: allowlisted `.inp` / `.rpt` / `.out`, native/QA JSON and event/worker logs.
+- `POST /api/inspections`, `GET /api/inspections?asset_id=...`, `GET /api/inspections/{id}`: append-only, timestamped evidence with explicit source and per-asset history.
+- `POST /api/inspections/{id}/media` (multipart `file`), `GET /api/inspections/{id}/media/{media_id}`: append-only PNG/JPEG/WebP/PDF attachments, 10 MiB limit, size/SHA-256 verified downloads.
+- `POST /api/debris/scenarios`, `GET /api/debris/scenarios/{id}`: independent constant hydraulic-loss hypothesis, frozen inspection/media and storm provenance, calculated kg mass timeline, bound to its storm ID.
 
 Simulation routes are implemented. Query the returned run ID until `succeeded` or `failed`; `queued` / `running` results return `409 RESULTS_NOT_READY`, failed results return `409 SIMULATION_FAILED` with the persisted run error. Missing IDs return 404, schema errors 422, unsupported restriction/boundary 422, and queue overflow 429. Missing or corrupt persisted success results return `500 RESULT_ARTIFACT_INVALID`. No empty or fabricated results are returned.
 
-The reserved `intervention` field still accepts only null. Inspection/media/debris creation and comparisons remain T3/T4. `bootstrap.capabilities.storm_creation` and `.simulations` are true; inspections/debris/comparisons remain false. Only `demo_inlet_clean` and normal tailwater are executable; unsupported presets are explicitly marked by `swmm_supported=false` and rejected. Clean entry is unlimited direct-node inflow, not a calibrated finite inlet.
+The reserved `intervention` field still accepts only null. Comparisons remain T4. `bootstrap.capabilities` now enables inspections/debris as well as storm creation and simulations; comparisons remains false. Normal tailwater is executable; high is explicitly marked unsupported and rejected. `demo_inlet_clean` preserves unlimited direct-node inflow. Native finite-capture presets and created scenarios form a separate comparison group, with their own finite 0% baseline. Read [T3_INTEGRATION.md](T3_INTEGRATION.md) before wiring inspection/media/debris or interpreting capture/bypass metrics.
 
-`examples/assets.json` and `examples/bootstrap.json` are actual responses from a fresh isolated runtime. `simulation-request.json` selects the executable clean scenario. `simulation-unsupported.json` replaces the obsolete T0/T1 `simulation-not-implemented.json`; it is an actual 422 response for nonzero restriction. `validation-error.json` is an actual 422 schema error. Export never starts real jobs or mutates the developer's database. Machine-specific health is queried from `/api/health`.
+`examples/assets.json` and `examples/bootstrap.json` are actual responses from a fresh isolated runtime. `simulation-request.json` selects the executable retained clean scenario. `simulation-unsupported.json` is now an actual 422 response for high tailwater; native restriction is supported in T3. `validation-error.json` is an actual 422 schema error. Export never starts real jobs or mutates the developer's database. Machine-specific health is queried from `/api/health`.
 
 **T1 real offline results are available:** `examples/{run,frames,metrics}-baseline.json` and `examples/{run,frames,metrics}-stronger.json` come from actual SWMM 5.2.4 runs (80 / 120 mm/h, each for 60 minutes plus 60 minutes drainage). They use the existing response schemas; no field rename or schema breaking change is needed. Full raw `.inp` / `.rpt` / `.out`, logs, QA, input hashes, repeat runs and half-step checks are in `data/validation/t1/`. `models/illustrative_taman_kyra/` holds runnable model snapshots.
 
@@ -26,7 +29,9 @@ The reserved `intervention` field still accepts only null. Inspection/media/debr
 
 Creating a custom storm uses a flat request, e.g. `{"name":"Assumed custom rain","intensity_mmh":120,"duration_s":3600,"source_type":"assumed"}`. The response keeps parameters nested under `parameters`; use the new `storm_id` in the next simulation request. Supported inputs are constant intensity 0..300 mm/h and duration 300..21600 seconds in 300-second increments. Hyetographs and unsupported fields are rejected. Every run includes 3600 seconds dry drainage.
 
-v1.1.0 preserves the existing asset, request, frames and metrics field names. Run status adds optional top-level storm/debris/boundary IDs and timezone-aware timestamps; older T1 offline fixtures remain valid. Jiajie's `1860feb` already aligns the asset fields. Remaining T2 wiring and browser acceptance steps are in [FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md): capability-aware loading, clean/normal defaults, flat storm creation, status polling, and explicit separation of offline replay from API results.
+v1.2.0 preserves the existing asset, request, frames and metrics field names. Native finite inlet runs add nullable inlet capture/bypass report flows and full-routing-step `inlet_volumes`; retained direct-node runs use null for these unmodelled quantities. Created debris scenarios include `mass_balance.time_series`, independent of hydraulic loss; their frozen storm/inspection/media snapshots enter run input hashes. Older T1/T2 offline fixtures remain valid. Jiajie's `1860feb` already aligns the asset fields; online polling, explicit offline replay separation and T3 wiring remain frontend work. See [FRONTEND_INTEGRATION.md](FRONTEND_INTEGRATION.md) and [T3_INTEGRATION.md](T3_INTEGRATION.md).
+
+**T3 real HTTP fixtures:** `examples/{inspection-request,inspection-created,media-created,debris-request,debris-created,native-inlet-*}.json` come from the retained TCP/process-restart proof in `data/validation/t3/`. Its UUIDs exist only in that evidence runtime. Four native 0/20/40/60% cases, a preserved direct-node baseline, independent 40% repeat and half routing-step check retain complete native artifacts and a SHA-256 manifest. A synthetic test pixel checks upload bytes; it is not a field photo.
 
 From repository root in PowerShell:
 

@@ -1,0 +1,16 @@
+{
+  "name": "T3 D07 assumed 60% capacity loss",
+  "inlet_id": "INLET-D07",
+  "storm_id": "storm_c0dd8ce76d2e46c2a2b49b348b951f2c",
+  "inspection_id": "inspection_4b33550573794f59ab007fee79a7cd35",
+  "hydraulic_inlet_clogging_fraction": 0.6,
+  "debris_parameters": {
+    "cleaning_events": [
+      {
+        "timestamp_s": 1800,
+        "surface_removal_fraction": 0.5,
+        "inlet_removal_fraction": 0.5
+      }
+    ]
+  }
+}

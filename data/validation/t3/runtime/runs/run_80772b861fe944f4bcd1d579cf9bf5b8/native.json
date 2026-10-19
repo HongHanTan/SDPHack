@@ -1,0 +1,71 @@
+{
+  "engine_version": "5.2.4",
+  "continuity_error_percent": {
+    "runoff": -0.0015919245779514313,
+    "routing": -0.031312040984630585
+  },
+  "quality_routing": "not_modelled",
+  "node_statistics": {
+    "NODE-J01": {
+      "flooding_volume_m3": 0.014893217451141265,
+      "flooding_duration_s": 1.0,
+      "surcharge_duration_s": 2464.0,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J02": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2563.0,
+      "peak_depth_m": 1.4495848661576538
+    },
+    "NODE-J03": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2508.0,
+      "peak_depth_m": 1.5103067166349553
+    },
+    "NODE-J04": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2481.0,
+      "peak_depth_m": 1.13524492997116
+    },
+    "NODE-J05": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2859.0,
+      "peak_depth_m": 1.4036772259032444
+    },
+    "NODE-J06": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2279.0,
+      "peak_depth_m": 0.6609018611148227
+    },
+    "NODE-J07": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2970.0,
+      "peak_depth_m": 1.1605800826119541
+    },
+    "NODE-J08": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.5446666471854846
+    },
+    "NODE-OUT01": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.5446554353337367
+    }
+  },
+  "surcharge_duration_s": 2970.0,
+  "routing_step_count": 7201,
+  "simulation_duration_s": 7200,
+  "water_balance": {
+    "rainfall_mm": 80.00000000000166,
+    "runoff_mm": 73.19665702738651
+  }
+}
