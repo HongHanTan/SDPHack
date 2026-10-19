@@ -13,6 +13,7 @@ import {
   AppMode,
 } from '../types';
 import { InspectorAvatar } from './InspectorAvatar';
+import { TownshipEnvironment } from './TownshipEnvironment';
 
 // Convert local coordinates {x (East), y (North), z (Elevation)} to Three.js [x, z, -y]
 // per Section 6.1 of md/TEAM_WORKFLOW.md
@@ -429,10 +430,11 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         camera={{ position: [60, 90, 130], fov: 45, near: 0.1, far: 1000 }}
         shadows
       >
-        <color attach="background" args={['#020617']} />
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[80, 100, 50]} intensity={1.3} castShadow />
-        <directionalLight position={[-80, 50, -50]} intensity={0.4} />
+        <color attach="background" args={['#0f172a']} />
+        <fog attach="fog" args={['#0f172a', 180, 420]} />
+        <ambientLight intensity={1.1} color="#f8fafc" />
+        <directionalLight position={[90, 140, 70]} intensity={2.2} castShadow color="#fffbeb" />
+        <directionalLight position={[-80, 60, -60]} intensity={0.7} color="#93c5fd" />
 
         <OrbitControls
           ref={controlsRef}
@@ -448,44 +450,22 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         <Grid
           args={[260, 260]}
           cellSize={10}
-          cellThickness={0.6}
-          cellColor="#1e293b"
+          cellThickness={0.5}
+          cellColor="#334155"
           sectionSize={40}
-          sectionThickness={1.2}
-          sectionColor="#334155"
+          sectionThickness={1.0}
+          sectionColor="#475569"
           fadeDistance={280}
           fadeStrength={1}
-          position={[50, 0, 0]}
+          position={[50, -0.05, 0]}
         />
 
-        {/* Contextual Street Surfaces & Road Network */}
-        {!showUndergroundOnly && (
-          <group position={[0, 0, 0]}>
-            {/* North East-West Street (y = 120, z = 12.15) */}
-            <mesh position={[40, 12.1, -120]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[130, 12]} />
-              <meshStandardMaterial color="#0f172a" roughness={0.8} />
-            </mesh>
-
-            {/* Mid East-West Road (y = 80, z = 11.9) */}
-            <mesh position={[80, 11.85, -80]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[110, 12]} />
-              <meshStandardMaterial color="#0f172a" roughness={0.8} />
-            </mesh>
-
-            {/* Central Main Street (y = 0, z = 11.0) passing through low point J07 */}
-            <mesh position={[20, 10.95, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[120, 14]} />
-              <meshStandardMaterial color="#1e293b" roughness={0.7} />
-            </mesh>
-
-            {/* South Discharge Canal Corridor (y = -75, z = 10.3) */}
-            <mesh position={[40, 10.25, 75]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[16, 60]} />
-              <meshStandardMaterial color="#0369a1" roughness={0.3} transparent opacity={0.6} />
-            </mesh>
-          </group>
-        )}
+        {/* Full Residential Township Digital Twin (Houses, Roads, Lawns, Lake, Canal) */}
+        <TownshipEnvironment
+          showUndergroundOnly={showUndergroundOnly}
+          floodingActive={Boolean(currentFrame?.inlet_states?.some((i) => i.inlet_id === 'INLET-D07' && i.hydraulic_inlet_clogging_fraction > 0))}
+          appMode={appMode}
+        />
 
         {/* 3D Nodes (Manholes & Drop Chambers) */}
         {nodes.map((node) => {
