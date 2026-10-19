@@ -5,7 +5,7 @@ export const GRID = { nx: 128, ny: 128, dx: 4 };
 export const RIVER_ROWS = 6; // j < 6 is river
 
 export const TERRAIN = { baseZ: 3, slope: 0.02, hillStartY: 380, hillSlope: 0.08, roadDrop: 0.05 };
-export const SAG = { x: 100, y: 64, r: 60, depth: 1.5 };
+export const SAG = { x: 100, y: 64, r: 80, depth: 2.5 };
 export const SAG_CHART_POINT = { x: 82, y: 42 }; // node S3, on the lowest sag road
 export const POND = { x: 430, y: 60, r: 36, depth: 4, initialLevel: 1.0, parkMargin: 30 };
 export const BUND = { xMin: 20, xMax: 180, z: 4.0 }; // riverside bund protecting the sag, rows RIVER_ROWS..+1
@@ -24,4 +24,4 @@ export const THRESHOLDS: Thresholds = { road: 0.15, home: 0.3 };
 export const MMHR = 1 / 3.6e6; // mm/hr -> m/s
 export const INFILTRATION_MMHR = { ROOF: 0, ROAD: 0, LAWN: 15, PARK: 25, POND: 0, RIVER: 0, BIOSWALE: 60 };
 
-export const SIM = { dt: 0.5, recessionS: 3600, frameEveryS: 30 };
+export const SIM = { dt: 0.25, recessionS: 3600, frameEveryS: 30 };
