@@ -522,7 +522,7 @@ export function App() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-950 select-none">
+    <div className="relative w-screen h-screen overflow-hidden bg-slate-100 select-none">
       {/* Top Header & Status Indicators */}
       <StatusHeader
         mode={mode}
@@ -577,10 +577,11 @@ export function App() {
         onUpdateBlockage={handleUpdateBlockage}
       />
 
-      {/* Real-time Field Telemetry Stream (Active in Idle and all modes) */}
+      {/* Real-time Field Telemetry Stream (Intelligent non-overlapping layout) */}
       <LiveTelemetryTicker
         onSelectInspectorAsset={handleSelectInspectorAsset}
         isIdleMode={appMode === 'idle'}
+        isAssetSelected={selectedAsset !== null}
       />
 
       {/* Simulation HUD (Timeline, Storm/Debris Selectors, Metrics, Legend) */}

@@ -85,31 +85,31 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm pointer-events-auto p-4">
-      <div className="w-full max-w-lg bg-[#181111] border border-[#3e2222] rounded-2xl shadow-2xl p-6 text-stone-200 animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between pb-3 border-b border-[#301c1c]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm pointer-events-auto p-4 animate-in fade-in">
+      <div className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl shadow-2xl p-6 text-slate-800 animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20">
+            <div className="p-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200 shadow-xs">
               <Camera className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-stone-100">
+              <h2 className="text-base font-bold text-slate-900">
                 New Field Inspection Record
               </h2>
-              <span className="text-xs text-stone-400 font-mono">Target Asset: {assetId}</span>
+              <span className="text-xs text-slate-500 font-mono">Target Asset: {assetId}</span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 transition cursor-pointer"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {uploadError && (
-          <div className="mt-3 p-3 rounded-xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+          <div className="mt-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
             <span>{uploadError}</span>
           </div>
         )}
@@ -117,21 +117,21 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-xs">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-stone-400 block mb-1">Inspector</label>
+              <label className="text-slate-600 block mb-1 font-medium">Inspector</label>
               <input
                 type="text"
                 value={inspector}
                 onChange={(e) => setInspector(e.target.value)}
-                className="w-full bg-[#100b0b] border border-[#381f1f] rounded-xl px-3 py-2 text-stone-200 focus:outline-none focus:border-red-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-red-500 transition"
                 required
               />
             </div>
             <div>
-              <label className="text-stone-400 block mb-1">Inspection Method</label>
+              <label className="text-slate-600 block mb-1 font-medium">Inspection Method</label>
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value as any)}
-                className="w-full bg-[#100b0b] border border-[#381f1f] rounded-xl px-3 py-2 text-stone-200 focus:outline-none focus:border-red-500 cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-red-500 cursor-pointer transition"
               >
                 <option value="visual">Visual Inspection</option>
                 <option value="cctv">In-Pipe CCTV Crawler</option>
@@ -143,10 +143,10 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
 
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-stone-400">
+              <label className="text-slate-600 font-medium">
                 Visible Grate Surface Coverage
               </label>
-              <span className="text-amber-400 font-mono font-bold text-sm">{coveragePct}%</span>
+              <span className="text-red-600 font-mono font-bold text-sm">{coveragePct}%</span>
             </div>
             <input
               type="range"
@@ -155,16 +155,16 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
               step={5}
               value={coveragePct}
               onChange={(e) => setCoveragePct(Number(e.target.value))}
-              className="w-full h-2 bg-stone-800 rounded-lg appearance-none cursor-pointer accent-red-600"
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600"
             />
           </div>
 
           <div>
-            <label className="text-stone-400 block mb-1">Primary Debris Category</label>
+            <label className="text-slate-600 block mb-1 font-medium">Primary Debris Category</label>
             <select
               value={debrisCategory}
               onChange={(e) => setDebrisCategory(e.target.value as any)}
-              className="w-full bg-[#100b0b] border border-[#381f1f] rounded-xl px-3 py-2 text-stone-200 focus:outline-none focus:border-red-500 cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-red-500 cursor-pointer transition"
             >
               <option value="leaf_litter">Leaf Litter & Twigs</option>
               <option value="sediment">Roadside Sediment & Silt</option>
@@ -175,12 +175,12 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
           </div>
 
           <div>
-            <label className="text-stone-400 block mb-1">Field Observation & Root Cause Notes</label>
+            <label className="text-slate-600 block mb-1 font-medium">Field Observation & Root Cause Notes</label>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full bg-[#100b0b] border border-[#381f1f] rounded-xl px-3 py-2 text-stone-200 focus:outline-none focus:border-red-500 leading-relaxed font-sans"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:bg-white focus:outline-none focus:border-red-500 leading-relaxed font-sans transition"
               required
             />
           </div>
@@ -188,8 +188,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
           {/* Real Photo Attachment with Multipart File Upload Support (T3 Contract) */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="text-stone-400">Photo Evidence Attachment</label>
-              <span className="text-[10px] text-stone-500 font-mono">PNG / JPEG / WebP ≤ 10MB</span>
+              <label className="text-slate-600 font-medium">Photo Evidence Attachment</label>
+              <span className="text-[10px] text-slate-400 font-mono">PNG / JPEG / WebP ≤ 10MB</span>
             </div>
 
             <input
@@ -201,30 +201,30 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
             />
 
             {selectedFile ? (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-[#100b0b] border border-red-500/40">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-red-300">
                 {previewUrl ? (
                   <img
                     src={previewUrl}
                     alt="Preview"
-                    className="w-16 h-14 rounded-lg object-cover border border-stone-700 shrink-0"
+                    className="w-16 h-14 rounded-lg object-cover border border-slate-200 shrink-0"
                   />
                 ) : (
-                  <div className="w-16 h-14 rounded-lg bg-stone-800 border border-stone-700 flex items-center justify-center text-stone-400 shrink-0">
+                  <div className="w-16 h-14 rounded-lg bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-500 shrink-0">
                     <ImageIcon className="w-5 h-5" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0 text-left">
-                  <span className="text-stone-200 font-medium block truncate text-xs">
+                  <span className="text-slate-900 font-semibold block truncate text-xs">
                     {selectedFile.name}
                   </span>
-                  <span className="text-[11px] text-stone-400 font-mono">
+                  <span className="text-[11px] text-slate-500 font-mono">
                     {(selectedFile.size / 1024).toFixed(1)} KB · multipart/form-data
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleClearFile}
-                  className="p-1.5 rounded-lg text-stone-400 hover:text-red-400 hover:bg-stone-800 transition cursor-pointer"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-slate-100 transition cursor-pointer"
                   title="Remove file"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -233,13 +233,13 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-3 p-3 rounded-xl bg-[#100b0b] border border-dashed border-[#3e2222] hover:border-red-500/60 cursor-pointer transition text-left group"
+                className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 border border-dashed border-slate-300 hover:border-red-500 cursor-pointer transition text-left group"
               >
-                <div className="w-12 h-12 rounded-lg bg-[#1f1515] border border-stone-800 flex items-center justify-center text-red-400 group-hover:scale-105 transition">
+                <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-red-600 group-hover:scale-105 transition shadow-xs">
                   <Upload className="w-5 h-5" />
                 </div>
-                <div className="flex-1 text-[11px] text-stone-400">
-                  <span className="text-stone-200 font-medium block">
+                <div className="flex-1 text-[11px] text-slate-500">
+                  <span className="text-slate-800 font-semibold block">
                     Click to select field inspection site photo
                   </span>
                   <span>Automatically timestamped and uploaded to /api/inspections/{'{id}'}/media</span>
@@ -248,8 +248,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
             )}
           </div>
 
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
+          <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
             <div>
               <strong>Engineering Boundary:</strong> Visual surface grate coverage serves as archival asset field evidence. In the SWMM hydraulic engine, hydraulic intake throttling is modeled as an independent Hydraulic Clogging Hypothesis configured in scenario controls, rather than an uncalibrated mechanical conversion.
             </div>
@@ -259,14 +259,14 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 font-medium transition cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold transition cursor-pointer text-xs"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-medium transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-lg shadow-red-900/30"
+              className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-md shadow-red-600/20 text-xs active:scale-95"
             >
               {submitting ? (
                 <span>Saving...</span>

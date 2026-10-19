@@ -100,8 +100,8 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   const isPlaying = isPlayingProp !== undefined ? isPlayingProp : localIsPlaying;
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [simMode, setSimMode] = useState<'realtime' | 'forecast' | 'historical'>('realtime');
-  const [isLayersOpen, setIsLayersOpen] = useState(true);
-  const [isScenarioOpen, setIsScenarioOpen] = useState(true);
+  const [leftTab, setLeftTab] = useState<'scenario' | 'layers' | 'legend'>('scenario');
+  const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
 
   // Map layer toggle states matching mockup
   const [layers, setLayers] = useState({
@@ -177,379 +177,198 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   return (
     <>
       {/* ======================================================== */}
-      {/* 1. LEFT COLUMN: Map Layers & Scenario Controls Panels    */}
+      {/* 1. LEFT COLUMN: Unified Non-Overlapping Operations Card   */}
       {/* ======================================================== */}
-      <div className="absolute top-20 left-6 z-20 flex flex-col gap-3.5 w-76 pointer-events-auto select-none">
-        {/* Panel 1: Map Layers */}
-        <div className="bg-[#181111]/92 backdrop-blur-xl border border-[#3b1818]/70 rounded-2xl shadow-2xl overflow-hidden transition-all">
-          <div
-            onClick={() => setIsLayersOpen(!isLayersOpen)}
-            className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-stone-900/40 border-b border-[#3b1818]/40"
+      {isLeftCollapsed ? (
+        <div className="absolute top-20 left-6 z-20 pointer-events-auto">
+          <button
+            onClick={() => setIsLeftCollapsed(false)}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/95 backdrop-blur-xl border border-slate-200 text-slate-800 shadow-md text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
           >
-            <div className="flex items-center gap-2.5">
-              <Layers className="w-4 h-4 text-red-500" />
-              <span className="font-semibold text-xs text-stone-100 tracking-wide">Map Layers</span>
-            </div>
-            {isLayersOpen ? (
-              <ChevronUp className="w-3.5 h-3.5 text-stone-400" />
-            ) : (
-              <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
-            )}
-          </div>
-
-          {isLayersOpen && (
-            <div className="p-3 text-[11px] space-y-1.5 text-stone-300">
-              {/* Drainage Network */}
-              <div
-                onClick={() => toggleLayer('drainageNetwork')}
-                className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-stone-900/60 cursor-pointer transition"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition ${
-                      layers.drainageNetwork
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'border-stone-700 bg-stone-950/60'
-                    }`}
-                  >
-                    {layers.drainageNetwork && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </div>
-                  <Radio className="w-3.5 h-3.5 text-red-400" />
-                  <span className="font-medium text-stone-200">Drainage Network</span>
-                </div>
-                <MoreHorizontal className="w-3.5 h-3.5 text-stone-500 hover:text-stone-300" />
-              </div>
-
-              {/* Manholes & Inlets */}
-              <div
-                onClick={() => toggleLayer('manholesInlets')}
-                className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-stone-900/60 cursor-pointer transition"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition ${
-                      layers.manholesInlets
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'border-stone-700 bg-stone-950/60'
-                    }`}
-                  >
-                    {layers.manholesInlets && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </div>
-                  <Compass className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Manholes & Inlets</span>
-                </div>
-                <MoreHorizontal className="w-3.5 h-3.5 text-stone-500 hover:text-stone-300" />
-              </div>
-
-              {/* Outfalls */}
-              <div
-                onClick={() => toggleLayer('outfalls')}
-                className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-stone-900/60 cursor-pointer transition"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition ${
-                      layers.outfalls
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'border-stone-700 bg-stone-950/60'
-                    }`}
-                  >
-                    {layers.outfalls && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </div>
-                  <span className="text-[10px] text-cyan-400 font-bold">▲</span>
-                  <span>Outfalls</span>
-                </div>
-                <MoreHorizontal className="w-3.5 h-3.5 text-stone-500 hover:text-stone-300" />
-              </div>
-
-              {/* Flood Risk Zones */}
-              <div
-                onClick={() => toggleLayer('floodRiskZones')}
-                className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-stone-900/60 cursor-pointer transition"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition ${
-                      layers.floodRiskZones
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'border-stone-700 bg-stone-950/60'
-                    }`}
-                  >
-                    {layers.floodRiskZones && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </div>
-                  <Flame className="w-3.5 h-3.5 text-rose-500" />
-                  <span>Flood Risk Zones</span>
-                </div>
-                <MoreHorizontal className="w-3.5 h-3.5 text-stone-500 hover:text-stone-300" />
-              </div>
-
-              {/* Elevation (DEM) */}
-              <div
-                onClick={() => toggleLayer('elevationDem')}
-                className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-stone-900/60 cursor-pointer transition"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition ${
-                      layers.elevationDem
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'border-stone-700 bg-stone-950/60'
-                    }`}
-                  >
-                    {layers.elevationDem && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </div>
-                  <span className="text-stone-400">≈</span>
-                  <span>Elevation (DEM)</span>
-                </div>
-                <MoreHorizontal className="w-3.5 h-3.5 text-stone-500 hover:text-stone-300" />
-              </div>
-
-              {/* Aerial Imagery */}
-              <div
-                onClick={() => toggleLayer('aerialImagery')}
-                className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-stone-900/60 cursor-pointer transition"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition ${
-                      layers.aerialImagery
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'border-stone-700 bg-stone-950/60'
-                    }`}
-                  >
-                    {layers.aerialImagery && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </div>
-                  <Eye className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Aerial Imagery</span>
-                </div>
-                <MoreHorizontal className="w-3.5 h-3.5 text-stone-500 hover:text-stone-300" />
-              </div>
-
-              {/* Property Boundaries */}
-              <div
-                onClick={() => toggleLayer('propertyBoundaries')}
-                className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-stone-900/60 cursor-pointer transition"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition ${
-                      layers.propertyBoundaries
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'border-stone-700 bg-stone-950/60'
-                    }`}
-                  >
-                    {layers.propertyBoundaries && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </div>
-                  <span className="text-stone-400">⬚</span>
-                  <span>Property Boundaries</span>
-                </div>
-                <MoreHorizontal className="w-3.5 h-3.5 text-stone-500 hover:text-stone-300" />
-              </div>
-
-              {/* Critical Infrastructure */}
-              <div
-                onClick={() => toggleLayer('criticalInfrastructure')}
-                className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-stone-900/60 cursor-pointer transition"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition ${
-                      layers.criticalInfrastructure
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'border-stone-700 bg-stone-950/60'
-                    }`}
-                  >
-                    {layers.criticalInfrastructure && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </div>
-                  <span className="text-amber-400">⚡</span>
-                  <span>Critical Infrastructure</span>
-                </div>
-                <MoreHorizontal className="w-3.5 h-3.5 text-stone-500 hover:text-stone-300" />
-              </div>
-
-              {/* Live Weather Radar */}
-              <div
-                onClick={() => toggleLayer('liveWeatherRadar')}
-                className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-stone-900/60 cursor-pointer transition"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center border transition ${
-                      layers.liveWeatherRadar
-                        ? 'bg-red-600 border-red-500 text-white'
-                        : 'border-stone-700 bg-stone-950/60'
-                    }`}
-                  >
-                    {layers.liveWeatherRadar && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                  </div>
-                  <CloudRain className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Live Weather Radar</span>
-                </div>
-                <MoreHorizontal className="w-3.5 h-3.5 text-stone-500 hover:text-stone-300" />
-              </div>
-            </div>
-          )}
+            <Layers className="w-3.5 h-3.5 text-red-600" />
+            <span>Map Controls & Scenario</span>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+          </button>
         </div>
-
-        {/* Panel 2: Scenario Controls */}
-        <div className="bg-[#181111]/92 backdrop-blur-xl border border-[#3b1818]/70 rounded-2xl shadow-2xl overflow-hidden transition-all">
-          <div
-            onClick={() => setIsScenarioOpen(!isScenarioOpen)}
-            className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-stone-900/40 border-b border-[#3b1818]/40"
-          >
-            <div className="flex items-center gap-2.5">
-              <CloudRain className="w-4 h-4 text-red-500" />
-              <span className="font-semibold text-xs text-stone-100 tracking-wide">Scenario Controls</span>
+      ) : (
+        <div className="absolute top-20 left-6 z-20 w-80 max-h-[calc(100vh-6.5rem)] flex flex-col bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-xl overflow-hidden pointer-events-auto select-none animate-in fade-in">
+          {/* Card Navigation Tabs */}
+          <div className="flex items-center justify-between p-1.5 border-b border-slate-200 bg-slate-50/90">
+            <div className="flex items-center gap-1 flex-1">
+              <button
+                onClick={() => setLeftTab('scenario')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer text-center ${
+                  leftTab === 'scenario'
+                    ? 'bg-red-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                }`}
+              >
+                Scenario
+              </button>
+              <button
+                onClick={() => setLeftTab('layers')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer text-center ${
+                  leftTab === 'layers'
+                    ? 'bg-red-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                }`}
+              >
+                Layers
+              </button>
+              <button
+                onClick={() => setLeftTab('legend')}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer text-center ${
+                  leftTab === 'legend'
+                    ? 'bg-red-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                }`}
+              >
+                Legend
+              </button>
             </div>
-            {isScenarioOpen ? (
-              <ChevronUp className="w-3.5 h-3.5 text-stone-400" />
-            ) : (
-              <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
-            )}
+            <button
+              onClick={() => setIsLeftCollapsed(true)}
+              className="p-1.5 ml-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition cursor-pointer"
+              title="Minimize dock"
+            >
+              <ChevronUp className="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          {isScenarioOpen && (
-            <div className="p-4 space-y-4 text-xs">
-              {/* Rainfall Intensity Slider */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-stone-300">Rainfall Intensity</span>
-                  <span className="text-xs font-mono font-bold text-red-400 bg-red-950/60 px-2 py-0.5 rounded-lg border border-red-900/50">
-                    {currentIntensity} mm/hr
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  step="25"
-                  value={currentIntensity <= 50 ? 50 : currentIntensity <= 80 ? 75 : 100}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    if (val <= 50) {
-                      onSelectStorm('synthetic_80mmh_60min');
-                      onLoadVerifiedRun('synthetic_80mmh_60min');
-                    } else if (val <= 75) {
-                      onSelectStorm('synthetic_80mmh_60min');
-                      onLoadVerifiedRun('synthetic_80mmh_60min');
-                    } else {
-                      onSelectStorm('synthetic_120mmh_60min');
-                      onLoadVerifiedRun('synthetic_120mmh_60min');
-                    }
-                  }}
-                  className="w-full h-1.5 bg-stone-900 rounded-lg appearance-none cursor-pointer accent-red-600"
-                />
-                <div className="flex justify-between text-[10px] text-stone-500 font-mono px-0.5">
-                  <span>0</span>
-                  <span>25</span>
-                  <span>50</span>
-                  <span>75</span>
-                  <span>100</span>
-                </div>
-              </div>
-
-              {/* Workflow Mode Switcher (Idle, Diagnose, Anticipate) */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-medium text-stone-300 block">Workflow Mode</span>
-                <div className="grid grid-cols-3 gap-1 bg-stone-950/80 p-1 rounded-xl border border-stone-800/80 text-[11px]">
-                  <button
-                    onClick={() => onChangeAppMode?.('idle')}
-                    className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
-                      appMode === 'idle'
-                        ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-sm'
-                        : 'text-stone-400 hover:text-stone-200'
-                    }`}
-                  >
-                    Idle Patrol
-                  </button>
-                  <button
-                    onClick={() => onChangeAppMode?.('diagnose')}
-                    className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
-                      appMode === 'diagnose'
-                        ? 'bg-gradient-to-r from-amber-600 to-orange-700 text-white shadow-sm'
-                        : 'text-stone-400 hover:text-stone-200'
-                    }`}
-                  >
-                    Diagnose
-                  </button>
-                  <button
-                    onClick={() => onChangeAppMode?.('anticipate')}
-                    className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
-                      appMode === 'anticipate'
-                        ? 'bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-sm'
-                        : 'text-stone-400 hover:text-stone-200'
-                    }`}
-                  >
-                    Anticipate
-                  </button>
-                </div>
-              </div>
-
-              {/* Simulation Mode Pill Switcher */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-medium text-stone-300 block">Simulation Mode</span>
-                <div className="grid grid-cols-3 gap-1 bg-stone-950/80 p-1 rounded-xl border border-stone-800/80 text-[11px]">
-                  <button
-                    onClick={() => setSimMode('realtime')}
-                    className={`py-1 rounded-lg font-medium transition cursor-pointer ${
-                      simMode === 'realtime'
-                        ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
-                        : 'text-stone-400 hover:text-stone-200'
-                    }`}
-                  >
-                    Real-time
-                  </button>
-                  <button
-                    onClick={() => setSimMode('forecast')}
-                    className={`py-1 rounded-lg font-medium transition cursor-pointer ${
-                      simMode === 'forecast'
-                        ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
-                        : 'text-stone-400 hover:text-stone-200'
-                    }`}
-                  >
-                    Forecast
-                  </button>
-                  <button
-                    onClick={() => setSimMode('historical')}
-                    className={`py-1 rounded-lg font-medium transition cursor-pointer ${
-                      simMode === 'historical'
-                        ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
-                        : 'text-stone-400 hover:text-stone-200'
-                    }`}
-                  >
-                    Historical
-                  </button>
-                </div>
-              </div>
-
-              {/* Analysis Tools Buttons */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] font-medium text-stone-300 block">Analysis Tools</span>
+          {/* Tab Content */}
+          <div className="p-3.5 overflow-y-auto max-h-[calc(100vh-10rem)] text-xs text-slate-700 space-y-4">
+            {/* TAB 1: SCENARIO CONTROLS */}
+            {leftTab === 'scenario' && (
+              <div className="space-y-4">
+                {/* Rainfall Intensity Slider */}
                 <div className="space-y-1.5">
-                  <button
-                    onClick={onOpenInspect}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-stone-900/70 hover:bg-stone-800/80 border border-[#3b1818]/70 hover:border-red-500/50 text-stone-200 transition text-[11px] cursor-pointer"
-                  >
-                    <Search className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Inspection Mode</span>
-                  </button>
-                  <button
-                    onClick={onOpenDebrisLab}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-stone-900/70 hover:bg-stone-800/80 border border-[#3b1818]/70 hover:border-red-500/50 text-stone-200 transition text-[11px] cursor-pointer"
-                  >
-                    <span className="text-emerald-400 text-xs">🍃</span>
-                    <span>Debris Mode</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      onSelectStorm('synthetic_120mmh_60min');
-                      onLoadVerifiedRun('synthetic_120mmh_60min');
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-700">Rainfall Intensity</span>
+                    <span className="text-xs font-mono font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
+                      {currentIntensity} mm/hr
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="25"
+                    value={currentIntensity <= 50 ? 50 : currentIntensity <= 80 ? 75 : 100}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (val <= 50) {
+                        onSelectStorm('synthetic_80mmh_60min');
+                        onLoadVerifiedRun('synthetic_80mmh_60min');
+                      } else if (val <= 75) {
+                        onSelectStorm('synthetic_80mmh_60min');
+                        onLoadVerifiedRun('synthetic_80mmh_60min');
+                      } else {
+                        onSelectStorm('synthetic_120mmh_60min');
+                        onLoadVerifiedRun('synthetic_120mmh_60min');
+                      }
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-stone-900/70 hover:bg-stone-800/80 border border-[#3b1818]/70 hover:border-red-500/50 text-stone-200 transition text-[11px] cursor-pointer"
-                  >
-                    <span className="text-red-400 text-xs">🌊</span>
-                    <span>Flood Scenario</span>
-                  </button>
+                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-400 font-mono px-0.5">
+                    <span>50 mm/h</span>
+                    <span>80 mm/h</span>
+                    <span>120 mm/h</span>
+                  </div>
+                </div>
+
+                {/* Workflow Mode Switcher (Idle, Diagnose, Anticipate) */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-semibold text-slate-700 block">Workflow Mode</span>
+                  <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-[11px]">
+                    <button
+                      onClick={() => onChangeAppMode?.('idle')}
+                      className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                        appMode === 'idle'
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Idle Patrol
+                    </button>
+                    <button
+                      onClick={() => onChangeAppMode?.('diagnose')}
+                      className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                        appMode === 'diagnose'
+                          ? 'bg-amber-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Diagnose
+                    </button>
+                    <button
+                      onClick={() => onChangeAppMode?.('anticipate')}
+                      className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                        appMode === 'anticipate'
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Anticipate
+                    </button>
+                  </div>
+                </div>
+
+                {/* Simulation Mode Pill Switcher */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-semibold text-slate-700 block">Simulation Mode</span>
+                  <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-[11px]">
+                    <button
+                      onClick={() => setSimMode('realtime')}
+                      className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                        simMode === 'realtime'
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Real-time
+                    </button>
+                    <button
+                      onClick={() => setSimMode('forecast')}
+                      className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                        simMode === 'forecast'
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Forecast
+                    </button>
+                    <button
+                      onClick={() => setSimMode('historical')}
+                      className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                        simMode === 'historical'
+                          ? 'bg-red-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Historical
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Action Buttons */}
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-semibold text-slate-700 block">Analysis Tools</span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={onOpenInspect}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 transition text-[11px] cursor-pointer"
+                    >
+                      <Search className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Inspect</span>
+                    </button>
+                    <button
+                      onClick={onOpenDebrisLab}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 transition text-[11px] cursor-pointer"
+                    >
+                      <span className="text-emerald-500 text-xs">🍃</span>
+                      <span>Debris Lab</span>
+                    </button>
+                  </div>
 
                   <button
                     onClick={() => {
@@ -559,79 +378,121 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                       onRunSimulation();
                     }}
                     disabled={isRunning}
-                    className="w-full mt-2 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-700 hover:from-red-500 hover:to-amber-600 text-white font-medium text-[11px] transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-red-900/40 disabled:opacity-50"
+                    className="w-full mt-2 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-red-600/20 disabled:opacity-50"
                   >
                     {isRunning ? (
                       <>
-                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         <span>{runProgressMessage || 'Solving...'}</span>
                       </>
                     ) : (
                       <>
-                        <Play className="w-3 h-3 fill-white" />
+                        <Play className="w-3.5 h-3.5 fill-white" />
                         <span>{hasSimulationStarted ? 'Re-Run SWMM Simulation' : 'Start Simulation'}</span>
                       </>
                     )}
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
+            )}
 
-      {/* ======================================================== */}
-      {/* 2. BOTTOM LEFT: Drainage Network Status (Legend)         */}
-      {/* ======================================================== */}
-      <div className="absolute bottom-6 left-6 z-20 w-80 bg-[#181111]/92 backdrop-blur-xl border border-[#3b1818]/70 rounded-2xl p-3.5 shadow-2xl text-[11px] pointer-events-auto select-none">
-        <h4 className="font-semibold text-stone-200 text-xs mb-2.5">Drainage Network Status</h4>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-stone-300">
-          {/* Capacity Colors */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-1.5 rounded-full bg-emerald-500" />
-              <span>Normal Capacity</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-1.5 rounded-full bg-amber-400" />
-              <span>Elevated Load</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-1.5 rounded-full bg-orange-500" />
-              <span>High Load</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-1.5 rounded-full bg-red-600" />
-              <span>Critical / Overflow</span>
-            </div>
+            {/* TAB 2: MAP LAYERS */}
+            {leftTab === 'layers' && (
+              <div className="space-y-1 text-slate-700">
+                {[
+                  { key: 'drainageNetwork', label: 'Drainage Network', icon: <Radio className="w-3.5 h-3.5 text-red-500" /> },
+                  { key: 'manholesInlets', label: 'Manholes & Inlets', icon: <Compass className="w-3.5 h-3.5 text-amber-500" /> },
+                  { key: 'outfalls', label: 'Outfalls', icon: <span className="text-[10px] text-cyan-600 font-bold">▲</span> },
+                  { key: 'floodRiskZones', label: 'Flood Risk Zones', icon: <Flame className="w-3.5 h-3.5 text-rose-500" /> },
+                  { key: 'elevationDem', label: 'Elevation (DEM)', icon: <span className="text-slate-400">≈</span> },
+                  { key: 'aerialImagery', label: 'Aerial Imagery', icon: <Eye className="w-3.5 h-3.5 text-emerald-600" /> },
+                  { key: 'propertyBoundaries', label: 'Property Boundaries', icon: <span className="text-slate-400">⬚</span> },
+                  { key: 'criticalInfrastructure', label: 'Critical Infrastructure', icon: <span className="text-amber-500">⚡</span> },
+                  { key: 'liveWeatherRadar', label: 'Live Weather Radar', icon: <CloudRain className="w-3.5 h-3.5 text-cyan-600" /> },
+                ].map(({ key, label, icon }) => {
+                  const active = layers[key as keyof typeof layers];
+                  return (
+                    <div
+                      key={key}
+                      onClick={() => toggleLayer(key as keyof typeof layers)}
+                      className="flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-slate-100 cursor-pointer transition"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div
+                          className={`w-4 h-4 rounded flex items-center justify-center border transition ${
+                            active
+                              ? 'bg-red-600 border-red-600 text-white'
+                              : 'border-slate-300 bg-white'
+                          }`}
+                        >
+                          {active && <Check className="w-3 h-3 stroke-[3]" />}
+                        </div>
+                        {icon}
+                        <span className="font-medium text-slate-800 text-[11px]">{label}</span>
+                      </div>
+                      <MoreHorizontal className="w-3.5 h-3.5 text-slate-400 hover:text-slate-600" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* TAB 3: DRAINAGE NETWORK STATUS (LEGEND) */}
+            {leftTab === 'legend' && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <span className="text-[11px] font-bold text-slate-800 block">Hydraulic Capacity</span>
+                  <div className="space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-2 rounded-full bg-emerald-500" />
+                      <span className="text-slate-700">Normal Capacity (&lt;75%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-2 rounded-full bg-amber-400" />
+                      <span className="text-slate-700">Elevated Load (75-90%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-2 rounded-full bg-orange-500" />
+                      <span className="text-slate-700">High Load (90-99%)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-2 rounded-full bg-red-600" />
+                      <span className="text-slate-700">Critical / Overflow (100%)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <span className="text-[11px] font-bold text-slate-800 block">Network Symbology</span>
+                  <div className="space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-slate-600">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-slate-800">◯</span>
+                      <span className="text-slate-700">Manhole / Chamber</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-slate-800">▢</span>
+                      <span className="text-slate-700">Catch Basin / Inlet Grate</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-cyan-600">▲</span>
+                      <span className="text-slate-700">Gravity Outfall</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-slate-800">➔</span>
+                      <span className="text-slate-700">Flow Direction Vector</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Symbology Icons */}
-          <div className="space-y-1.5 text-stone-400 border-l border-stone-800/80 pl-3">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs">◯</span>
-              <span className="text-stone-300">Manhole</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs">▢</span>
-              <span className="text-stone-300">Catch Basin / Inlet</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs">▲</span>
-              <span className="text-stone-300">Outfall</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs">➔</span>
-              <span className="text-stone-300">Flow Direction</span>
-            </div>
-          </div>
         </div>
-      </div>
+      )}
 
       {/* ======================================================== */}
-      {/* 3. BOTTOM CENTER: Minimalist Timeline Player Bar         */}
+      {/* 2. BOTTOM CENTER: Minimalist Light Timeline Player Bar   */}
       {/* ======================================================== */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-xl bg-[#181111]/92 backdrop-blur-xl border border-[#3b1818]/70 rounded-2xl px-5 py-3 shadow-2xl flex flex-col gap-2 pointer-events-auto">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-xl bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl px-5 py-3 shadow-xl flex flex-col gap-2 pointer-events-auto text-slate-800">
         {!hasSimulationStarted ? (
           /* Pre-Start State: Unified Start Button & Armed Rain Toggle */
           <div className="flex items-center justify-between text-xs py-0.5">
@@ -639,7 +500,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
               {/* Unified Start Button */}
               <button
                 onClick={onStartSimulation}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-700 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs transition cursor-pointer shadow-lg shadow-red-900/40 active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition cursor-pointer shadow-md shadow-red-600/20 active:scale-95"
               >
                 <Play className="w-4 h-4 fill-white" />
                 <span>Start Simulation</span>
@@ -650,8 +511,8 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                 onClick={onToggleRain}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium border transition cursor-pointer ${
                   rainEnabled
-                    ? 'bg-cyan-950/70 border-cyan-500/50 text-cyan-300 shadow-sm'
-                    : 'bg-stone-900/80 border-stone-800 text-stone-400 hover:text-stone-200'
+                    ? 'bg-cyan-50 border-cyan-200 text-cyan-800 shadow-sm'
+                    : 'bg-slate-100 border-slate-200 text-slate-500 hover:text-slate-800'
                 }`}
                 title={
                   rainEnabled
@@ -660,16 +521,16 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                 }
               >
                 <CloudRain
-                  className={`w-3.5 h-3.5 ${rainEnabled ? 'text-cyan-400 animate-pulse' : 'text-stone-500'}`}
+                  className={`w-3.5 h-3.5 ${rainEnabled ? 'text-cyan-600 animate-pulse' : 'text-slate-400'}`}
                 />
                 <span>{rainEnabled ? 'Rain: Armed (Starts on Run)' : 'Rain: Off'}</span>
               </button>
             </div>
 
             {/* Ready Status Pill */}
-            <span className="px-3 py-1.5 rounded-full bg-stone-900/80 border border-stone-800 text-stone-300 text-[11px] font-medium flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              Simulation Ready (Click Start)
+            <span className="px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-[11px] font-medium flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              Simulation Ready
             </span>
           </div>
         ) : (
@@ -679,7 +540,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
               {/* Play/Pause Button in Sime Darby Red */}
               <button
                 onClick={() => (onTogglePlay ? onTogglePlay() : setLocalIsPlaying(!localIsPlaying))}
-                className="p-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-medium transition cursor-pointer flex items-center justify-center shadow-lg shadow-red-900/40"
+                className="p-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-medium transition cursor-pointer flex items-center justify-center shadow-md shadow-red-600/20"
                 title={isPlaying ? 'Pause Simulation' : 'Resume Simulation'}
               >
                 {isPlaying ? (
@@ -698,22 +559,22 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                     onSeekFrame(0);
                   }
                 }}
-                className="p-2 rounded-xl bg-stone-900/80 hover:bg-stone-800 text-stone-300 transition cursor-pointer"
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition cursor-pointer border border-slate-200"
                 title="Reset Simulation"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
 
               {/* Speed pills */}
-              <div className="flex items-center rounded-xl bg-stone-950/80 border border-stone-800/80 p-0.5">
+              <div className="flex items-center rounded-xl bg-slate-100 border border-slate-200 p-0.5">
                 {[1, 2, 5].map((speed) => (
                   <button
                     key={speed}
                     onClick={() => setPlaybackSpeed(speed)}
                     className={`px-2 py-0.5 rounded-lg text-[10px] font-mono transition cursor-pointer ${
                       playbackSpeed === speed
-                        ? 'bg-red-600/30 text-red-300 font-bold border border-red-500/40'
-                        : 'text-stone-400 hover:text-stone-200'
+                        ? 'bg-red-600 text-white font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     {speed}x
@@ -722,7 +583,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
               </div>
 
               {/* Current Timestamp */}
-              <span className="font-mono text-red-400 font-bold text-xs bg-stone-950/60 px-2.5 py-1 rounded-lg border border-stone-800/60">
+              <span className="font-mono text-slate-800 font-bold text-xs bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                 {formatTime(currentTimestamp)}
               </span>
 
@@ -731,15 +592,15 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                 onClick={onToggleRain}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-mono transition cursor-pointer ${
                   isRainActive
-                    ? 'bg-cyan-950/50 border-cyan-500/40 text-cyan-300'
+                    ? 'bg-cyan-50 border-cyan-200 text-cyan-800'
                     : rainEnabled
-                    ? 'bg-amber-950/50 border-amber-500/40 text-amber-300'
-                    : 'bg-stone-950/60 border-stone-800 text-stone-500'
+                    ? 'bg-amber-50 border-amber-200 text-amber-800'
+                    : 'bg-slate-100 border-slate-200 text-slate-500'
                 }`}
                 title="Toggle rain animation"
               >
                 <CloudRain
-                  className={`w-3 h-3 ${isRainActive ? 'text-cyan-400 animate-pulse' : 'text-stone-500'}`}
+                  className={`w-3 h-3 ${isRainActive ? 'text-cyan-600 animate-pulse' : 'text-slate-400'}`}
                 />
                 <span>
                   {isRainActive
@@ -754,18 +615,18 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
             {/* Surcharge Load Pill */}
             <div>
               {hasFlooding ? (
-                <span className="px-2.5 py-1 rounded-full bg-red-600/20 border border-red-500/50 text-red-300 text-[11px] font-semibold flex items-center gap-1.5 animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                <span className="px-2.5 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 text-[11px] font-semibold flex items-center gap-1.5 animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-red-600" />
                   Critical / Overflow
                 </span>
               ) : hasSurcharge ? (
-                <span className="px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-300 text-[11px] font-semibold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
                   High Load (78%)
                 </span>
               ) : (
-                <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 text-[11px] font-semibold flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   Normal Capacity
                 </span>
               )}
@@ -786,7 +647,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
               else setLocalIsPlaying(false);
               onSeekFrame(Number(e.target.value));
             }}
-            className="w-full h-1.5 bg-stone-900 rounded-lg appearance-none cursor-pointer accent-red-600"
+            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600"
           />
         </div>
       </div>

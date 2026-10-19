@@ -4,8 +4,8 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
 
 ## 当前状态
 
-- 最近更新：2026-10-19
-- 当前任务：J0～J5 全部完成，并已完成与 Tay T3 深度集成！最新完成：统一仿真启动生命周期与暴雨开关门控（点击 Start 才开始推演与降雨）、以及前端全源码 100% 英文专业化本地化（0 中文字符残存）。
+- 最近更新：2026-10-20
+- 当前任务：J0～J5 全部完成，并已完成与 Tay T3 深度集成！最新完成：**全系统 UI 重置为极简明亮主题 (Light Theme)**、**彻底解决各侧面板与抽屉展开时的重叠冲突 (Zero Collision)**、**治理方案报告 (Intervention / Report) 极致精简与高亮呈现**，同时 100% 保留所有仿真推演与交互能力。
 - 当前接口版本：`1.2.0`（完全对齐 T3 契约及 `contracts/T3_INTEGRATION.md`）
 - 仓库基线：`JJ_Branch`，严格限定于 `apps/web/**` 与 `md/progress/jiajie.md`，通过 `npm run build`（2518 模块，0 错误）
 
@@ -21,6 +21,7 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
 | J5 | DONE | 真实住宅区 3D 街区环境构建（联排洋房住宅群、沥青马路带人行道、绿化草坪与灌木行道树、调蓄水景湖与出水明渠、地面积水洼地与社区标牌）；三分钟路演剧本 `md/DEMO_RUNBOOK.md`；根目录 `README.md` 与运行文档全面闭环 |
 | T3-INT | DONE | **T3 (API v1.2.0) 深度集成**：`POST /api/inspections/{id}/media` 二进制文件上传与实时缩略图预览；原生有限入口敏感性预设 (`demo_inlet_capture_0pct/20pct/40pct/60pct`) 绑定 SWMM 5.2.4 权威捕获与漫溢旁流水量看板；全局顶部导航选项卡与资产精准检索联动 |
 | UX-EN | DONE | **统一仿真启动控制与 100% 英文专业化**：统一“Start Simulation”交互门控（未按 Start 前时间轴静止、暴雨不落下）；降雨预置武装开关（Armed vs Off）；前端所有 UI、3D 标签、工单报告与数据流 100% 英文专业工程词汇转换，0 中文字符残留 |
+| UI-LIGHT | DONE | **极简明亮主题与无重叠界面重构**：全站切换为 Light Theme（Sime Darby Red 经典品牌色点缀、白底轻灰卡片）；左侧多栏收纳为单一 Tabbed Dock（彻底消除与图例重叠）；右侧现场流与详情抽屉互斥折叠响应（消除上下挤压重叠）；治理报告精简为高亮 KPI 对比卡片与三行决策摘要，杜绝冗长文字墙 |
 
 ## 下一次直接执行
 
@@ -30,10 +31,12 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
 
 ## 交接给 Tay
 
-- **前端全英文国际化与仿真启动门控闭环**：
-  - 前端 `apps/web/src/**` 现已全量采用国际通用市政与水动力学专业英语（如 Curb Inlet, Hydraulic Restriction Loss, Subsurface Captured Volume, Surface Bypass Runoff, Invert Depth, Surcharged Conduit, Gravity Conveyance 等）；
-  - 仿真在用户点击“Start Simulation”前保持待命（Frame 0, $t=0$）；暴雨开关在启动前可自由 Toggle 武装（Armed），点击 Start 后才会动态飘落；
-  - 依然严格对齐 Tay T3 契约，零破坏、零越界。
+- **极简明亮主题与面板重叠根治完成**：
+  - 前端界面已全面重置为 Light Theme（Sime Darby Property 经典红白灰基调，背景为清爽浅灰 `#f1f5f9` 与白色卡片，边框与文字层次分明）；
+  - 左侧控制栏重构为单一体积可收缩 Tabbed Dock（`Scenario` / `Layers` / `Legend`），高度严控在 320px 以内，彻底根除与左下角图例碰撞；
+  - 右侧资产抽屉与现场巡查回传流实现互斥智能折叠（选中资产时，底部 Telemetry Feed 自动折叠为右下角紧凑浮动药丸，关闭资产抽屉时自动展开），解决右侧屏幕垂直空间争抢问题；
+  - 治理决策报告（`InterventionDashboard.tsx`）彻底重构：移除大篇幅重复论述，提炼为 4 个清晰的 KPI 方案卡片、4 个高对比度指标变化块、横向水量分配条与 3 条高管工程洞见摘要；
+  - 构建通过 `npm run build`（2518 模块，0 错误），100% 保留所有仿真推演、淤堵调节、CCTV 内窥与工单派发能力。
 
 ## 阻塞与待确认
 
@@ -47,13 +50,35 @@ Owner：Jiajie。只有 Jiajie 身份的 agent 更新本文件；Tay 读取交�
   - 2518 个模块成功转换；
   - 0 编译错误，0 类型告警；
   - 产出静态打包资产 `dist/`，退出码 0。
-- **视觉与交互核验：**
-  - 启动 `npm run dev`，3D 视口呈现白天下阳光照射的生动住宅区街区景象；
-  - 绿/黄/红彩色管线如设计图一般在马路地底穿行与发光显示；
-  - 点击 `[全貌模式 / 地下高亮]` 按钮，地面洋房与草坪虚化为线框，清晰呈现地下管道结构；
-  - 按照 `md/DEMO_RUNBOOK.md` 走完 3 分钟业务流，各弹窗与时间轴平滑响应，无任何卡顿或报错。
+- **视觉无重叠与轻量化核验：**
+  - 左侧面板切换 `Scenario`、`Layers`、`Legend` 各标签页，展开与收起自如，与底部无任何空间冲突；
+  - 点击管网节点或管道打开右侧详情抽屉时，右下角巡查数据流智能折叠为紧凑浮动药丸，完全杜绝重叠覆盖；
+  - 打开 `Reports` 治理模态框，排版呼吸感强，无大段头疼长文，一目了然呈现决策数据；
+  - 3D 视口光照自然柔和，地下高亮透视与地表街区对比鲜明。
 
 ## 最近实现记录
+
+- **2026-10-20 [全系统极简明亮主题 (Light Theme) 重置、面板重叠零冲突重构与治理报告精炼]：**
+  - **Sime Darby Property 极简明亮主题全面上线 (`StatusHeader.tsx`, `SimulationHUD.tsx`, `AssetDetailModal.tsx`, `SceneViewer.tsx`, `InterventionDashboard.tsx`, `VirtualDebrisLab.tsx`, `InspectionModal.tsx`, `App.tsx`)**：
+    - 全面从暗黑基底（`#140e0e`/`#181111`）重塑为干净清爽的白底轻灰现代工程风格（`bg-slate-100` 全局底色，`bg-white/95` 浮动面板，`border-slate-200` 微边框，`text-slate-800/900` 高可读性排版）；
+    - 保留并升华 Sime Darby Property 标志性 Crimson Red（`#C8102E` / `bg-red-600`）品牌主色作为主行动项、激活指示与关键预警高亮；
+    - 3D 视口光照适配明亮天光，雾效与天空盒背景适配柔和清爽的 `#f1f5f9` 浅色调。
+  - **彻底解决界面展开时的重叠碰撞冲突 (Zero Panel Collision)**：
+    - **左侧面板重叠根除 (`SimulationHUD.tsx`)**：将先前垂直并排的 Map Layers、Scenario Controls 与左下角 Drainage Legend 统一收纳进紧凑的 **三段式选项卡扩展坞 (Tabbed Dock: `[Scenario] | [Layers] | [Legend]`)**，附带一键极简折叠按钮，高度严格限制在 320px 范围，绝不与底部时间轴或图例发生垂直挤压或重叠；
+    - **右侧抽屉与遥测流空间冲突根除 (`LiveTelemetryTicker.tsx` & `App.tsx`)**：引入 `isAssetSelected` 响应式互斥折叠机制。当用户点击资产呼出 `AssetDetailModal` 右侧抽屉时，右下角 `LiveTelemetryTicker` 自动折叠为一个低干扰的紧凑悬浮按钮（`[Field Feed (4 Online) #148]`），关闭抽屉时无缝恢复，彻底消除两者纵向撞车。
+  - **治理决策报告极简化重构 (`InterventionDashboard.tsx`)**：
+    - 摒弃以往大篇幅、多段落的长篇文本堆砌，重构为高管层与工程主管一眼即懂的清晰决策面板；
+    - **4 个清晰候选方案卡片**（Base 80mm/h、Desilting、Pipe Upsizing、Combined Scheme），直观展示推荐等级徽章与实施周期；
+    - **4 个高对比度 KPI 指标变化卡**：积水峰值深度、进水口截流率、管网超载持续时间、过水充满度，配合红绿增减箭头一目了然；
+    - **极简工程洞见摘要 (Executive Summary)**：精炼为 3 条核心要点（水动力瓶颈归因、最佳性价比推荐、水土保持红线预警）；
+    - **可追溯工单系统 (Traceable Action Work Orders)**：清晰列明工单编号、指派承包商、核查点位与一键复制功能。
+  - **功能 100% 完整保留与全英文专业术语**：
+    - 仿真生命周期（Unified Start Button, Pre-start Rain Arming, Frame 0 Lock, Reset, 1x/2x/5x 播放倍速）；
+    - 管道/节点 0%~90% 自定义淤堵度实时调节与上游壅水漫溢推演；
+    - 4 位常态巡更员（Idle Mode）实时 NB-IoT 数据遥测轮转；
+    - 现场照片实况与管内 CCTV 爬行内窥高解析度透视；
+    - 全源码纯正英文市政水力术语（0 中文字符残留）。
+  - **编译打包核验**：执行 `npm run build`，2518 模块编译通过，0 错误，0 警告，打包 exit code 0。
 
 - **2026-10-19 [管道/节点自定义淤堵推演、Idle 现场巡更模式与全资产实况照片/CCTV 实拍]：**
   - **管道与节点自主调节阻塞程度与实时水力仿真 (`AssetDetailModal.tsx` & `App.tsx`)**：

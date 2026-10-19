@@ -12,8 +12,6 @@ import {
   FileText,
   Copy,
   Check,
-  Info,
-  ShieldAlert,
   Sparkles,
 } from 'lucide-react';
 import { InterventionOption, ProposedAction, InspectionRecord } from '../types';
@@ -273,41 +271,41 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md pointer-events-auto p-4 select-none">
-      <div className="w-full max-w-5xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm pointer-events-auto p-4 select-none animate-in fade-in">
+      <div className="w-full max-w-5xl bg-white border border-slate-200/90 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <div className="p-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200 shadow-xs">
               <Sliders className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-slate-100">
-                  Interventions & Mitigation Action Plan
+                <h2 className="text-base font-bold text-slate-900">
+                  Mitigation & Counterfactual Decision Report
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 font-mono border border-cyan-500/20">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-mono font-semibold border border-emerald-200">
                   EPA SWMM 5.2.4 Verified
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 font-mono border border-amber-500/20">
-                  Synthetic Twin
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-mono font-semibold border border-red-200">
+                  Taman Kyra Twin
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Hydraulic Scenario Comparison: Shared 120 mm/h 60min Storm & Free Outfall
+              <p className="text-xs text-slate-500 mt-0.5">
+                Multi-Scenario Hydraulic Evaluation (120 mm/h 60min Storm Benchmark)
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {/* Tabs */}
-            <div className="flex items-center rounded-lg bg-slate-950 p-0.5 border border-slate-800 mr-2">
+            <div className="flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200">
               <button
                 onClick={() => setActiveTab('compare')}
-                className={`px-3 py-1 rounded text-xs transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'compare'
-                    ? 'bg-cyan-500/20 text-cyan-300 font-medium border border-cyan-500/40'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5" />
@@ -315,10 +313,10 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
               </button>
               <button
                 onClick={() => setActiveTab('actions')}
-                className={`px-3 py-1 rounded text-xs transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
                   activeTab === 'actions'
-                    ? 'bg-cyan-500/20 text-cyan-300 font-medium border border-cyan-500/40'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -328,7 +326,7 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -336,13 +334,13 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
         </div>
 
         {/* Content Area */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div className="p-6 overflow-y-auto space-y-5 text-xs text-slate-700">
           {activeTab === 'compare' ? (
             <>
               {/* Option Selector Cards */}
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-2.5">
-                  Select Mitigation Option Candidate:
+                <label className="text-xs font-bold text-slate-800 block mb-2">
+                  Select Mitigation Candidate:
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   {options.slice(0, 4).map((opt) => {
@@ -353,50 +351,50 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                       <div
                         key={opt.id}
                         onClick={() => setSelectedOptionId(opt.id)}
-                        className={`p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between text-left ${
+                        className={`p-3.5 rounded-2xl border transition cursor-pointer flex flex-col justify-between text-left ${
                           isSelected
-                            ? 'bg-cyan-950/30 border-cyan-500/60 shadow-lg shadow-cyan-950/50'
-                            : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900/50'
+                            ? 'bg-red-50/60 border-2 border-red-600 shadow-md shadow-red-600/10'
+                            : 'bg-slate-50/80 border-slate-200 hover:border-slate-300 hover:bg-slate-100/70'
                         }`}
                       >
                         <div>
-                          <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center justify-between mb-2">
                             <span
-                              className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                              className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
                                 isBase
-                                  ? 'bg-slate-800 text-slate-300'
+                                  ? 'bg-slate-200 text-slate-700'
                                   : opt.id === 'clean_inlet'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  ? 'bg-emerald-100 text-emerald-800'
                                   : opt.id === 'upsize_conduit'
-                                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                                  : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-purple-100 text-purple-800'
                               }`}
                             >
                               {opt.tag}
                             </span>
-                            {isSelected && <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />}
+                            {isSelected && <CheckCircle2 className="w-4 h-4 text-red-600 shrink-0" />}
                           </div>
 
-                          <h4 className="text-xs font-bold text-slate-200">{opt.title}</h4>
-                          <span className="text-[10px] text-slate-400 font-mono block mb-2">
+                          <h4 className="text-xs font-bold text-slate-900">{opt.title}</h4>
+                          <span className="text-[10px] text-slate-500 font-mono block mb-1.5">
                             {opt.subtitle}
                           </span>
-                          <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                          <p className="text-[11px] text-slate-600 leading-snug line-clamp-2">
                             {opt.description}
                           </p>
                         </div>
 
-                        <div className="pt-3 mt-3 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
-                          <span className="text-slate-500">Lead Time: {opt.feasibility.timeframe}</span>
+                        <div className="pt-2.5 mt-2.5 border-t border-slate-200/80 flex items-center justify-between text-[10px]">
+                          <span className="text-slate-500 font-medium">Lead: {opt.feasibility.timeframe}</span>
                           <span
-                            className={`font-semibold ${
+                            className={`font-bold ${
                               opt.feasibility.cost_rating === 'FREE'
-                                ? 'text-slate-400'
+                                ? 'text-slate-500'
                                 : opt.feasibility.cost_rating === 'LOW'
-                                ? 'text-emerald-400'
+                                ? 'text-emerald-700'
                                 : opt.feasibility.cost_rating === 'MEDIUM'
-                                ? 'text-amber-400'
-                                : 'text-rose-400'
+                                ? 'text-amber-700'
+                                : 'text-rose-700'
                             }`}
                           >
                             Cost: {opt.feasibility.cost_rating}
@@ -409,164 +407,164 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
               </div>
 
               {/* Side-by-side KPI Delta Breakdown */}
-              <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-4.5 space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4.5 space-y-4">
+                <div className="flex items-center justify-between pb-2.5 border-b border-slate-200">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-200">
-                      Hydraulic Metric Comparison (Relative Delta Analysis)
+                    <span className="text-xs font-bold text-slate-900">
+                      Key Hydraulic Performance Metrics
                     </span>
-                    <span className="text-xs text-slate-400">
-                      — Relative to Baseline (40% Loss, Ø600mm)
+                    <span className="text-xs text-slate-500">
+                      (Benchmarked against Baseline: 40% Clogged, Ø600mm)
                     </span>
                   </div>
-                  <div className="text-xs text-slate-400 font-mono">
-                    Viewing: <span className="text-cyan-400 font-bold">{selectedOption.title}</span>
+                  <div className="text-xs font-semibold text-slate-700">
+                    Active: <span className="text-red-600 font-bold">{selectedOption.title}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
                   {/* Metric 1: Surface Bypass Volume */}
-                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                  <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
                     <div>
-                      <span className="text-[11px] text-slate-400 block mb-1">
-                        Surface Bypass Runoff (Ponding)
+                      <span className="text-[11px] font-medium text-slate-500 block mb-1">
+                        Surface Ponding Runoff
                       </span>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-bold font-mono text-rose-400">
+                        <span className="text-xl font-bold font-mono text-red-600">
                           {selectedOption.metrics.d07_bypass_volume_m3.toFixed(1)} m³
                         </span>
-                        <span className="text-[10px] text-slate-500 line-through">
+                        <span className="text-[10px] text-slate-400 line-through">
                           {baseline.metrics.d07_bypass_volume_m3.toFixed(1)} m³
                         </span>
                       </div>
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                       {selectedOption.id === 'baseline' ? (
-                        <span className="text-slate-500">Baseline Reference</span>
+                        <span className="text-slate-400">Baseline Benchmark</span>
                       ) : bypassDeltaM3 < 0 ? (
-                        <span className="text-emerald-400 font-bold flex items-center gap-0.5">
+                        <span className="text-emerald-700 font-bold flex items-center gap-0.5">
                           <TrendingDown className="w-3.5 h-3.5" />
                           {bypassDeltaPct.toFixed(1)}% ({bypassDeltaM3.toFixed(1)} m³)
                         </span>
                       ) : (
                         <span className="text-slate-400">No Change</span>
                       )}
-                      <span className="text-[10px] text-slate-500 font-mono">Lower is Better</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Lower is Better</span>
                     </div>
                   </div>
 
                   {/* Metric 2: Inlet Captured Volume */}
-                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                  <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
                     <div>
-                      <span className="text-[11px] text-slate-400 block mb-1">
-                        Curb Inlet Captured Flow
+                      <span className="text-[11px] font-medium text-slate-500 block mb-1">
+                        Curb Inflow Captured
                       </span>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-bold font-mono text-blue-400">
+                        <span className="text-xl font-bold font-mono text-blue-600">
                           {selectedOption.metrics.d07_captured_volume_m3.toFixed(1)} m³
                         </span>
-                        <span className="text-[10px] text-slate-500 line-through">
+                        <span className="text-[10px] text-slate-400 line-through">
                           {baseline.metrics.d07_captured_volume_m3.toFixed(1)} m³
                         </span>
                       </div>
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                       {selectedOption.id === 'baseline' ? (
-                        <span className="text-slate-500">Baseline Reference</span>
+                        <span className="text-slate-400">Baseline Benchmark</span>
                       ) : capturedDeltaM3 > 0 ? (
-                        <span className="text-emerald-400 font-bold flex items-center gap-0.5">
+                        <span className="text-emerald-700 font-bold flex items-center gap-0.5">
                           <TrendingUp className="w-3.5 h-3.5" />
                           +{capturedDeltaPct.toFixed(1)}% (+{capturedDeltaM3.toFixed(1)} m³)
                         </span>
                       ) : (
                         <span className="text-slate-400">No Change</span>
                       )}
-                      <span className="text-[10px] text-slate-500 font-mono">Higher is Better</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Higher is Better</span>
                     </div>
                   </div>
 
                   {/* Metric 3: Sewer Surcharge Duration */}
-                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                  <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
                     <div>
-                      <span className="text-[11px] text-slate-400 block mb-1">
+                      <span className="text-[11px] font-medium text-slate-500 block mb-1">
                         Conduit Surcharge Duration
                       </span>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-bold font-mono text-amber-400">
+                        <span className="text-xl font-bold font-mono text-amber-600">
                           {(selectedOption.metrics.surcharge_duration_s / 60).toFixed(1)} min
                         </span>
-                        <span className="text-[10px] text-slate-500 line-through">
+                        <span className="text-[10px] text-slate-400 line-through">
                           {(baseline.metrics.surcharge_duration_s / 60).toFixed(1)} min
                         </span>
                       </div>
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                       {selectedOption.id === 'baseline' ? (
-                        <span className="text-slate-500">Baseline Reference</span>
+                        <span className="text-slate-400">Baseline Benchmark</span>
                       ) : selectedOption.metrics.surcharge_duration_s === 0 ? (
-                        <span className="text-emerald-400 font-bold flex items-center gap-0.5">
+                        <span className="text-emerald-700 font-bold flex items-center gap-0.5">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          -100% (Fully Eliminated)
+                          100% Eliminated
                         </span>
                       ) : surchargeDeltaMin > 0 ? (
-                        <span className="text-rose-400 font-medium flex items-center gap-0.5">
+                        <span className="text-rose-700 font-bold flex items-center gap-0.5">
                           +{surchargeDeltaMin.toFixed(1)} min (Full Inflow)
                         </span>
                       ) : (
-                        <span className="text-emerald-400 font-bold">
+                        <span className="text-emerald-700 font-bold">
                           {surchargeDeltaMin.toFixed(1)} min
                         </span>
                       )}
-                      <span className="text-[10px] text-slate-500 font-mono">Downstream Pressure</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Pipe Pressure</span>
                     </div>
                   </div>
 
                   {/* Metric 4: Conduit Capacity Utilization */}
-                  <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 flex flex-col justify-between">
+                  <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
                     <div>
-                      <span className="text-[11px] text-slate-400 block mb-1">
-                        Trunk Conduit Peak Capacity (PIPE-P07)
+                      <span className="text-[11px] font-medium text-slate-500 block mb-1">
+                        Peak Pipe Utilization (PIPE-P07)
                       </span>
                       <div className="flex items-baseline gap-2">
                         <span
-                          className={`text-lg font-bold font-mono ${
+                          className={`text-xl font-bold font-mono ${
                             selectedOption.metrics.peak_conduit_utilization_pct >= 95
-                              ? 'text-rose-400'
-                              : 'text-emerald-400'
+                              ? 'text-red-600'
+                              : 'text-emerald-700'
                           }`}
                         >
                           {selectedOption.metrics.peak_conduit_utilization_pct}%
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-slate-400">
                           (Ø{selectedOption.parameters.pipe_diameter_mm}mm)
                         </span>
                       </div>
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                       <span
-                        className={
+                        className={`font-semibold ${
                           selectedOption.metrics.peak_conduit_utilization_pct >= 95
-                            ? 'text-rose-400 font-medium'
-                            : 'text-emerald-400 font-medium'
-                        }
+                            ? 'text-rose-700'
+                            : 'text-emerald-700'
+                        }`}
                       >
                         {selectedOption.metrics.peak_conduit_utilization_pct >= 95
-                          ? 'Surcharged'
+                          ? 'Pressurized'
                           : 'Gravity Free Flow'}
                       </span>
-                      <span className="text-[10px] text-slate-500 font-mono">Manning Q</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Conveyance</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Comparative Bar Visualization */}
-                <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
-                  <div className="text-xs font-semibold text-slate-300">
-                    Multi-Scenario Water Balance & Routing Partitioning:
+                <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2.5">
+                  <div className="text-xs font-bold text-slate-800">
+                    Multi-Scenario Water Balance Routing Partitioning:
                   </div>
 
                   {options.slice(0, 4).map((opt) => {
@@ -577,29 +575,29 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                     return (
                       <div key={opt.id} className="space-y-1">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-300 font-medium">
+                          <span className="text-slate-800 font-semibold">
                             {opt.title}{' '}
-                            <span className="text-slate-500 font-normal">({opt.subtitle})</span>
+                            <span className="text-slate-400 font-normal">({opt.subtitle})</span>
                           </span>
-                          <span className="font-mono text-slate-400 text-[10px]">
+                          <span className="font-mono text-slate-600 text-[10px]">
                             Captured: {opt.metrics.d07_captured_volume_m3.toFixed(0)} m³ ({capturedPct.toFixed(0)}%) | Surface Ponding: {opt.metrics.d07_bypass_volume_m3.toFixed(0)} m³ ({bypassPct.toFixed(0)}%)
                           </span>
                         </div>
                         {/* Stacked bar */}
-                        <div className="h-4 w-full bg-slate-950 rounded-full overflow-hidden flex border border-slate-800">
+                        <div className="h-3.5 w-full bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
                           <div
                             style={{ width: `${capturedPct}%` }}
-                            className="bg-blue-500/80 hover:bg-blue-500 transition-all flex items-center justify-center text-[9px] font-mono text-white font-bold"
+                            className="bg-blue-500 hover:bg-blue-600 transition-all flex items-center justify-center text-[9px] font-mono text-white font-bold"
                             title={`Captured Inflow: ${opt.metrics.d07_captured_volume_m3.toFixed(1)} m³`}
                           >
-                            {capturedPct > 15 ? 'Captured' : ''}
+                            {capturedPct > 18 ? 'Captured' : ''}
                           </div>
                           <div
                             style={{ width: `${bypassPct}%` }}
-                            className="bg-rose-500/80 hover:bg-rose-500 transition-all flex items-center justify-center text-[9px] font-mono text-white font-bold"
+                            className="bg-rose-500 hover:bg-rose-600 transition-all flex items-center justify-center text-[9px] font-mono text-white font-bold"
                             title={`Surface Ponding Bypass: ${opt.metrics.d07_bypass_volume_m3.toFixed(1)} m³`}
                           >
-                            {bypassPct > 15 ? 'Surface Bypass' : ''}
+                            {bypassPct > 18 ? 'Surface Ponding' : ''}
                           </div>
                         </div>
                       </div>
@@ -607,49 +605,59 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                   })}
                 </div>
 
-                {/* Physical Hydraulic Insight Callout */}
-                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-bold text-amber-300">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>Core Hydraulic & Civil Engineering Revelation:</span>
+                {/* Concise Executive Takeaways (Clean 3-Bullet Decision Architecture) */}
+                <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 leading-relaxed space-y-2">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-950 text-xs">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    <span>Executive Summary & Engineering Insight:</span>
                   </div>
-                  <p>
-                    <strong>Divergence Between Blueprint Design and Field Reality:</strong> When curb inlets are obstructed, rainwater ponds on the surface (Bypass up to 686 m³). Subsurface conduits appear artificially "under capacity" merely because runoff cannot enter the drainage network.
-                  </p>
-                  <p>
-                    If <strong>only inlet desilting</strong> is executed, surface ponding drops dramatically by 43.2% (-296.7 m³), but the massive influx of runoff immediately forces the existing Ø600mm conduit into prolonged pressurized surcharge for 55.4 minutes.
-                    Conversely, if <strong>only the conduit is upsized without clearing the inlet</strong>, stormwater cannot enter the choked throat, leaving surface street ponding completely unchanged.
-                  </p>
-                  <p className="text-amber-100 font-semibold">
-                    👉 Scientific Mitigation Strategy: Dispatch emergency O&M crew to clear inlet grates immediately (eliminating surface street ponding), while programming downstream PIPE-P07 upsizing into municipal capital expenditure (CAPEX) to permanently resolve network surcharge bottlenecks.
-                  </p>
+                  <ul className="space-y-1.5 text-xs text-amber-900 pl-1">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-600 font-bold shrink-0">1. Immediate O&M (24h):</span>
+                      <span>
+                        Desilting INLET-D07 eliminates <strong>43.2% of surface street ponding</strong> (-296.7 m³) immediately by restoring full grate capture aperture.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-700 font-bold shrink-0">2. Downstream Reality:</span>
+                      <span>
+                        Conveying all surface runoff into existing Ø600mm conduit causes a <strong>55.4 min pressurized pipe surcharge</strong> because the subsurface network becomes the primary bottleneck.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-700 font-bold shrink-0">3. Capital Work (CAPEX):</span>
+                      <span>
+                        Upsizing downstream trunk conduit PIPE-P07 to <strong>Ø750mm permanently eliminates surcharge</strong>, allowing full gravity free-flow to the retention pond.
+                      </span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </>
           ) : (
             /* Action Plans Tab */
             <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-100">
-                    Traceable Action Orders & Engineering Recommendations
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Traceable Action Orders & Work Recommendations
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Traceable evidence chain linked to SWMM hydraulic modeling & {inspections.length} field inspections (Focal: INLET-D07)
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Engineering evidence chain backed by SWMM hydrodynamic modeling & {inspections.length} field records
                   </p>
                 </div>
                 <button
                   onClick={handleCopyReport}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs transition cursor-pointer flex items-center gap-1.5 border border-slate-700"
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 border border-slate-200 shadow-xs"
                 >
                   {copiedReport ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copied to Clipboard!</span>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="text-emerald-700 font-bold">Copied to Clipboard!</span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-3.5 h-3.5 text-slate-600" />
                       <span>Copy Work Orders</span>
                     </>
                   )}
@@ -657,112 +665,89 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
               </div>
 
               {/* Action Cards */}
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 {proposedActions.map((action) => (
                   <div
                     key={action.id}
-                    className="p-4.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3"
+                    className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {action.category === 'OPERATIONAL_MAINTENANCE' ? (
-                          <Wrench className="w-4 h-4 text-rose-400 shrink-0" />
+                          <Wrench className="w-4 h-4 text-red-600 shrink-0" />
                         ) : (
-                          <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
+                          <Building2 className="w-4 h-4 text-amber-600 shrink-0" />
                         )}
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             action.priority === 'CRITICAL'
-                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              ? 'bg-red-100 text-red-800 border border-red-200'
+                              : 'bg-amber-100 text-amber-800 border border-amber-200'
                           }`}
                         >
                           {action.priority === 'CRITICAL' ? 'EMERGENCY WORK ORDER' : 'CAPITAL ENGINEERING'}
                         </span>
-                        <span className="text-xs font-mono text-slate-400">{action.id}</span>
+                        <span className="text-xs font-mono font-bold text-slate-500">{action.id}</span>
                       </div>
-                      <span className="text-xs font-medium text-cyan-400 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
+                      <span className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-slate-400" />
                         Lead Time: {action.estimated_lead_time}
                       </span>
                     </div>
 
                     <div>
-                      <h4 className="text-sm font-bold text-slate-100">{action.title}</h4>
-                      <div className="text-xs text-slate-400 font-mono mt-0.5">
-                        Target Asset: <strong className="text-slate-200">{action.target_asset}</strong>
+                      <h4 className="text-sm font-bold text-slate-900">{action.title}</h4>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">
+                        Target Asset: <strong className="text-slate-800">{action.target_asset}</strong>
                       </div>
                     </div>
 
-                    <div className="p-3 rounded-lg bg-slate-900 border border-slate-800/80 text-xs space-y-1.5">
+                    <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1.5 shadow-xs">
                       <div>
-                        <strong className="text-slate-300">Work Order Justification: </strong>
-                        <span className="text-slate-400">{action.justification}</span>
+                        <strong className="text-slate-700">Justification: </strong>
+                        <span className="text-slate-600">{action.justification}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-cyan-300 font-mono text-[11px] pt-1">
-                        <FileText className="w-3.5 h-3.5 shrink-0" />
+                      <div className="flex items-center gap-2 text-slate-600 font-mono text-[11px] pt-1">
+                        <FileText className="w-3.5 h-3.5 text-red-600 shrink-0" />
                         <span>Evidence Source: {action.evidence_reference}</span>
                       </div>
                     </div>
 
                     {/* Action Steps */}
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-semibold text-slate-300">Implementation Action Steps:</span>
-                      <ol className="list-decimal list-inside space-y-1 text-xs text-slate-400 pl-1">
+                    <div className="space-y-1">
+                      <span className="text-xs font-bold text-slate-800">Action Steps:</span>
+                      <ol className="list-decimal list-inside space-y-0.5 text-xs text-slate-600 pl-1">
                         {action.action_steps.map((step, sIdx) => (
                           <li key={sIdx}>{step}</li>
                         ))}
                       </ol>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
-                      <span>Responsible Entity: {action.responsible_entity}</span>
-                      <span className="text-emerald-400 font-medium">
-                        Expected Hydraulic Benefit: {action.expected_hydraulic_impact}
+                    <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium">
+                      <span>Responsible: {action.responsible_entity}</span>
+                      <span className="text-emerald-700 font-bold">
+                        Benefit: {action.expected_hydraulic_impact}
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Provenance Footer */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
-                <div className="font-semibold text-slate-300 flex items-center gap-1.5">
-                  <Info className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Model Provenance & Engineering Audit Trail:</span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-1 font-mono text-[10px] text-slate-500">
-                  <div>Model: taman_kyra_synthetic_v1</div>
-                  <div>Engine: EPA SWMM 5.2.4</div>
-                  <div>Field Record: #INSP-2026-10-18-001</div>
-                  <div>Audit Status: Verified Snapshot</div>
-                </div>
-              </div>
             </div>
           )}
-
-          {/* Strict Engineering Disclaimer */}
-          <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-[10px] text-slate-500 leading-relaxed flex items-start gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <div>
-              <strong>[ENGINEERING & LEGAL DISCLAIMER]</strong>{' '}
-              This comparison and proposed action orders are derived from an uncalibrated synthetic digital twin model (taman_kyra_synthetic_v1) and EPA SWMM 5.2.4 hydrodynamic simulation. They do not constitute official construction engineering drawings, commercial contractor bids, or certified real-world flood forecasts for Taman Kyra. Any civil engineering interventions must be verified on-site by a registered Professional Engineer (PE) and municipal drainage authorities prior to execution.
-            </div>
-          </div>
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-800 bg-slate-950/60">
-          <div className="text-xs text-slate-400">
+        <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 bg-slate-50">
+          <div className="text-xs text-slate-600">
             Selected Option:{' '}
-            <strong className="text-cyan-400">{selectedOption.title}</strong>{' '}
-            <span className="text-slate-500">({selectedOption.tag})</span>
+            <strong className="text-slate-900 font-bold">{selectedOption.title}</strong>{' '}
+            <span className="text-slate-500 font-medium">({selectedOption.tag})</span>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold transition cursor-pointer"
             >
               Close
             </button>
@@ -771,7 +756,7 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                 onApplyIntervention(selectedOption.id);
                 onClose();
               }}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-medium transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-cyan-600/20"
+              className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-red-600/20 active:scale-95"
             >
               <span>Apply Option to 3D Twin</span>
               <ArrowRight className="w-3.5 h-3.5" />

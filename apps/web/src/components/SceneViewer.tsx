@@ -448,17 +448,17 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   };
 
   return (
-    <div className="w-full h-full relative bg-[#0c0909]">
+    <div className="w-full h-full relative bg-slate-100">
       {/* Top Floating View & Preset Quick Control Bar */}
-      <div className="absolute top-18 left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-[#181111]/92 backdrop-blur-xl border border-[#3b1818]/70 text-[11px] text-stone-300 shadow-2xl">
+      <div className="absolute top-18 left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200/90 text-[11px] text-slate-700 shadow-md">
         {/* 1. Twin View Modes (Matching user mockup) */}
-        <div className="flex items-center rounded-xl bg-stone-950/80 p-0.5 border border-stone-800/80">
+        <div className="flex items-center rounded-xl bg-slate-100 p-0.5 border border-slate-200">
           <button
             onClick={() => handleSelectMode('twin_highlight')}
             className={`px-3 py-1 rounded-lg transition cursor-pointer font-medium flex items-center gap-1.5 ${
               currentMode === 'twin_highlight'
-                ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
-                : 'text-stone-400 hover:text-stone-200'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
             title="Surface township and underground glowing drainage network overlay"
           >
@@ -468,8 +468,8 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
             onClick={() => handleSelectMode('realistic')}
             className={`px-2.5 py-1 rounded-lg transition cursor-pointer font-medium ${
               currentMode === 'realistic'
-                ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
-                : 'text-stone-400 hover:text-stone-200'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
             title="High-fidelity surface residential township"
           >
@@ -479,8 +479,8 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
             onClick={() => handleSelectMode('underground_only')}
             className={`px-2.5 py-1 rounded-lg transition cursor-pointer font-medium ${
               currentMode === 'underground_only'
-                ? 'bg-gradient-to-r from-red-600 to-amber-700 text-white shadow-sm'
-                : 'text-stone-400 hover:text-stone-200'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
             title="Subsurface drainage conduits and hydraulic grade line"
           >
@@ -491,12 +491,12 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         {/* 2. Rain FX Toggle */}
         <button
           onClick={handleToggleRain}
-          className={`px-2.5 py-1 rounded-xl border text-[11px] transition cursor-pointer flex items-center gap-1.5 ${
+          className={`px-2.5 py-1 rounded-xl border text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
             rainActive
-              ? 'bg-red-600/20 text-red-300 border-red-500/50 shadow-sm'
+              ? 'bg-red-50 text-red-700 border-red-200 shadow-xs'
               : rainEnabled
-              ? 'bg-cyan-950/60 text-cyan-300 border-cyan-500/40'
-              : 'bg-stone-950/80 text-stone-400 border-stone-800 hover:text-stone-200'
+              ? 'bg-cyan-50 text-cyan-800 border-cyan-200 shadow-xs'
+              : 'bg-slate-100 text-slate-500 border-slate-200 hover:text-slate-800'
           }`}
           title={
             !hasSimulationStarted
@@ -513,8 +513,8 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
               rainActive
                 ? 'bg-red-500 animate-ping'
                 : rainEnabled
-                ? 'bg-cyan-400 animate-pulse'
-                : 'bg-stone-600'
+                ? 'bg-cyan-500 animate-pulse'
+                : 'bg-slate-400'
             }`}
           />
           <span>
@@ -522,43 +522,43 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           </span>
         </button>
 
-        <div className="h-3.5 w-px bg-stone-800/80 mx-0.5" />
+        <div className="h-3.5 w-px bg-slate-200 mx-0.5" />
 
         {/* 3. Camera Preset Quick Buttons */}
-        <div className="flex items-center gap-1 text-stone-400">
-          <span className="text-[10px] text-stone-500 font-medium px-1">View:</span>
+        <div className="flex items-center gap-1 text-slate-600">
+          <span className="text-[10px] text-slate-400 font-semibold px-1">View:</span>
           <button
             onClick={() => handlePreset('overview')}
-            className="px-2 py-0.5 rounded-lg hover:bg-stone-900 text-stone-300 hover:text-white transition cursor-pointer"
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium"
           >
             Overview
           </button>
           <button
             onClick={() => handlePreset('d07')}
-            className="px-2 py-0.5 rounded-lg hover:bg-amber-500/20 text-amber-300 transition cursor-pointer font-medium"
+            className="px-2 py-0.5 rounded-lg hover:bg-amber-100 text-amber-800 transition cursor-pointer font-bold"
           >
             D07 Lowland
           </button>
           <button
             onClick={() => handlePreset('outfall')}
-            className="px-2 py-0.5 rounded-lg hover:bg-stone-900 text-stone-300 hover:text-white transition cursor-pointer"
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium"
           >
             Outfall
           </button>
           <button
             onClick={() => handlePreset('north')}
-            className="px-2 py-0.5 rounded-lg hover:bg-stone-900 text-stone-300 hover:text-white transition cursor-pointer"
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium"
           >
             Upstream
           </button>
         </div>
 
-        <div className="h-3.5 w-px bg-stone-800/80 mx-0.5" />
+        <div className="h-3.5 w-px bg-slate-200 mx-0.5" />
 
         {/* 4. Virtual Debris Lab Quick Button */}
         <button
           onClick={onOpenDebrisLab}
-          className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition cursor-pointer font-medium flex items-center gap-1 shadow-sm"
+          className="px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition cursor-pointer font-bold flex items-center gap-1 shadow-xs"
         >
           <span>★ Virtual Debris Lab</span>
         </button>
@@ -568,11 +568,11 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         camera={{ position: [60, 90, 130], fov: 45, near: 0.1, far: 1000 }}
         shadows
       >
-        <color attach="background" args={['#0f172a']} />
-        <fog attach="fog" args={['#0f172a', 180, 420]} />
-        <ambientLight intensity={1.1} color="#f8fafc" />
-        <directionalLight position={[90, 140, 70]} intensity={2.2} castShadow color="#fffbeb" />
-        <directionalLight position={[-80, 60, -60]} intensity={0.7} color="#93c5fd" />
+        <color attach="background" args={['#f1f5f9']} />
+        <fog attach="fog" args={['#f1f5f9', 200, 480]} />
+        <ambientLight intensity={1.3} color="#ffffff" />
+        <directionalLight position={[90, 140, 70]} intensity={2.4} castShadow color="#ffffff" />
+        <directionalLight position={[-80, 60, -60]} intensity={0.8} color="#93c5fd" />
 
         <OrbitControls
           ref={controlsRef}
@@ -589,10 +589,10 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           args={[260, 260]}
           cellSize={10}
           cellThickness={0.5}
-          cellColor="#334155"
+          cellColor="#cbd5e1"
           sectionSize={40}
           sectionThickness={1.0}
-          sectionColor="#475569"
+          sectionColor="#94a3b8"
           fadeDistance={280}
           fadeStrength={1}
           position={[50, -0.05, 0]}
