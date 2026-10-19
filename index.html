@@ -4,12 +4,47 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Township Flood Simulator</title>
-    <style>
-      html, body, #viewport { margin: 0; height: 100%; }
-    </style>
   </head>
   <body>
-    <div id="viewport"></div>
+    <header class="top">
+      <h1>Township Flood Simulator</h1>
+      <span class="tag">Sime Darby Property University Hackathon 2026 · Planet · Climate Resilience</span>
+      <button id="assumptions-btn">Show assumptions</button>
+    </header>
+    <main class="layout">
+      <aside class="panel">
+        <h2>Storm</h2>
+        <select id="storm"></select>
+        <p id="storm-note" class="note"></p>
+        <h2>Interventions</h2>
+        <div id="interventions"></div>
+        <p class="note">Costs are indicative placeholders — replace with SDP quantity-surveyor rates.</p>
+        <button id="run" class="primary">Run storm</button>
+        <h2>Timeline</h2>
+        <input id="scrubber" type="range" min="0" max="0" value="0" />
+        <div id="clock">0 min</div>
+        <button id="play" class="secondary">Pause</button>
+        <p id="status" class="status"></p>
+      </aside>
+      <div id="viewport">
+        <div class="legend">
+          <div><i style="background: linear-gradient(90deg, #9fd3ff, #08306b)"></i>Water depth 0 → 1 m+</div>
+          <div><i style="background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c)"></i>Pipe load 0 → full</div>
+          <div><i style="background: #e74c3c"></i>Pulsing = manhole overflowing</div>
+        </div>
+      </div>
+      <aside class="panel right">
+        <h2>Results vs baseline</h2>
+        <div id="cards"><p class="note">Run a storm to see results.</p></div>
+        <h2>Water depth at the sag</h2>
+        <div id="chart"></div>
+        <div id="balance"></div>
+      </aside>
+    </main>
+    <dialog id="assumptions">
+      <div id="assumptions-body"></div>
+      <button id="assumptions-close" class="secondary">Close</button>
+    </dialog>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
