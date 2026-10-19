@@ -1,0 +1,1685 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Township FloodOps API",
+    "description": "Synthetic demonstration network. Health/bootstrap/assets are implemented. Real offline SWMM validation results are retained under data/validation/t1. HTTP simulation routes remain planned contracts and return 501 NOT_IMPLEMENTED until T2.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township or resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bootstrap": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Bootstrap",
+        "operationId": "bootstrap_api_bootstrap_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BootstrapResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township or resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/townships/{township_id}/assets": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Assets",
+        "operationId": "assets_api_townships__township_id__assets_get",
+        "parameters": [
+          {
+            "name": "township_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Township Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township or resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/simulations": {
+      "post": {
+        "tags": [
+          "simulations (planned)"
+        ],
+        "summary": "Create Simulation",
+        "description": "Planned shape only. Never returns a fabricated run ID or success.",
+        "operationId": "create_simulation_api_simulations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationAccepted"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township or resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "NOT_IMPLEMENTED: HTTP simulation execution and persistence arrive in T2; offline T1 validation exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "planned"
+      }
+    },
+    "/api/simulations/{run_id}": {
+      "get": {
+        "tags": [
+          "simulations (planned)"
+        ],
+        "summary": "Get Simulation",
+        "operationId": "get_simulation_api_simulations__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township or resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "NOT_IMPLEMENTED: HTTP simulation execution and persistence arrive in T2; offline T1 validation exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "planned"
+      }
+    },
+    "/api/simulations/{run_id}/frames": {
+      "get": {
+        "tags": [
+          "simulations (planned)"
+        ],
+        "summary": "Get Frames",
+        "operationId": "get_frames_api_simulations__run_id__frames_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FramesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township or resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "NOT_IMPLEMENTED: HTTP simulation execution and persistence arrive in T2; offline T1 validation exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "planned"
+      }
+    },
+    "/api/simulations/{run_id}/metrics": {
+      "get": {
+        "tags": [
+          "simulations (planned)"
+        ],
+        "summary": "Get Metrics",
+        "operationId": "get_metrics_api_simulations__run_id__metrics_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township or resource.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR: request does not match the contract.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: unexpected server failure.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "NOT_IMPLEMENTED: HTTP simulation execution and persistence arrive in T2; offline T1 validation exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "x-implementation-status": "planned"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssetsResponse": {
+        "properties": {
+          "township_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Township Id"
+          },
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "source_type": {
+            "type": "string",
+            "const": "synthetic",
+            "title": "Source Type"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "coordinate_system": {
+            "type": "string",
+            "const": "local_metres_east_north_elevation",
+            "title": "Coordinate System"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/Node"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Nodes"
+          },
+          "inlets": {
+            "items": {
+              "$ref": "#/components/schemas/Inlet"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Inlets"
+          },
+          "conduits": {
+            "items": {
+              "$ref": "#/components/schemas/Conduit"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Conduits"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "township_id",
+          "model_version_id",
+          "source_type",
+          "coordinate_system",
+          "nodes",
+          "inlets",
+          "conduits",
+          "assumptions"
+        ],
+        "title": "AssetsResponse"
+      },
+      "BootstrapResponse": {
+        "properties": {
+          "api_version": {
+            "type": "string",
+            "title": "Api Version"
+          },
+          "township_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Township Id"
+          },
+          "model_versions": {
+            "items": {
+              "$ref": "#/components/schemas/ModelVersion"
+            },
+            "type": "array",
+            "title": "Model Versions"
+          },
+          "storms": {
+            "items": {
+              "$ref": "#/components/schemas/StormPreset"
+            },
+            "type": "array",
+            "title": "Storms"
+          },
+          "debris_scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/DebrisPreset"
+            },
+            "type": "array",
+            "title": "Debris Scenarios"
+          },
+          "tailwater_cases": {
+            "items": {
+              "$ref": "#/components/schemas/TailwaterPreset"
+            },
+            "type": "array",
+            "title": "Tailwater Cases"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/Capabilities"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "api_version",
+          "township_id",
+          "model_versions",
+          "storms",
+          "debris_scenarios",
+          "tailwater_cases",
+          "capabilities",
+          "assumptions"
+        ],
+        "title": "BootstrapResponse"
+      },
+      "Capabilities": {
+        "properties": {
+          "assets": {
+            "type": "boolean",
+            "title": "Assets",
+            "default": true
+          },
+          "storm_creation": {
+            "type": "boolean",
+            "title": "Storm Creation",
+            "default": false
+          },
+          "simulations": {
+            "type": "boolean",
+            "title": "Simulations",
+            "default": false
+          },
+          "inspections": {
+            "type": "boolean",
+            "title": "Inspections",
+            "default": false
+          },
+          "debris": {
+            "type": "boolean",
+            "title": "Debris",
+            "default": false
+          },
+          "comparisons": {
+            "type": "boolean",
+            "title": "Comparisons",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Capabilities"
+      },
+      "Conduit": {
+        "properties": {
+          "conduit_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Conduit Id"
+          },
+          "from_node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "From Node Id"
+          },
+          "to_node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "To Node Id"
+          },
+          "diameter_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Diameter M"
+          },
+          "length_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Length M"
+          },
+          "manning_n": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Manning N"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conduit_id",
+          "from_node_id",
+          "to_node_id",
+          "diameter_m",
+          "length_m",
+          "manning_n",
+          "source_type"
+        ],
+        "title": "Conduit"
+      },
+      "DebrisParameters": {
+        "properties": {
+          "inlet_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inlet Id"
+          },
+          "hydraulic_inlet_clogging_fraction": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Hydraulic Inlet Clogging Fraction"
+          },
+          "parameter_status": {
+            "type": "string",
+            "const": "assumed_not_calibrated",
+            "title": "Parameter Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inlet_id",
+          "hydraulic_inlet_clogging_fraction",
+          "parameter_status"
+        ],
+        "title": "DebrisParameters"
+      },
+      "DebrisPreset": {
+        "properties": {
+          "debris_scenario_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Debris Scenario Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/DebrisParameters"
+          },
+          "swmm_supported": {
+            "type": "boolean",
+            "title": "Swmm Supported",
+            "description": "False until restriction integration is verified in T3."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "debris_scenario_id",
+          "name",
+          "source_type",
+          "parameters",
+          "swmm_supported"
+        ],
+        "title": "DebrisPreset"
+      },
+      "EngineHealth": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "engine": {
+            "type": "string",
+            "const": "EPA SWMM",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Version"
+          },
+          "execution_verified": {
+            "type": "boolean",
+            "title": "Execution Verified"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "available",
+          "engine",
+          "engine_version",
+          "execution_verified",
+          "message"
+        ],
+        "title": "EngineHealth"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "Frame": {
+        "properties": {
+          "timestamp_s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Timestamp S"
+          },
+          "pipe_states": {
+            "items": {
+              "$ref": "#/components/schemas/PipeState"
+            },
+            "type": "array",
+            "title": "Pipe States"
+          },
+          "node_states": {
+            "items": {
+              "$ref": "#/components/schemas/NodeState"
+            },
+            "type": "array",
+            "title": "Node States"
+          },
+          "inlet_states": {
+            "items": {
+              "$ref": "#/components/schemas/InletState"
+            },
+            "type": "array",
+            "title": "Inlet States"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "timestamp_s",
+          "pipe_states",
+          "node_states",
+          "inlet_states"
+        ],
+        "title": "Frame"
+      },
+      "FramesResponse": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id"
+          },
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "result_type": {
+            "type": "string",
+            "const": "simulated",
+            "title": "Result Type"
+          },
+          "engine": {
+            "type": "string",
+            "const": "EPA SWMM",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Engine Version"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "status_definitions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Status Definitions",
+            "description": "Physical basis and thresholds used for each pipe/node status. Unestablished status is unknown."
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/Frame"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Frames",
+            "description": "Chronologically ordered; returned only after success."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "model_version_id",
+          "result_type",
+          "engine",
+          "engine_version",
+          "assumptions",
+          "warnings",
+          "status_definitions",
+          "frames"
+        ],
+        "title": "FramesResponse"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "api_version": {
+            "type": "string",
+            "title": "Api Version"
+          },
+          "swmm": {
+            "$ref": "#/components/schemas/EngineHealth"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/Capabilities"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "api_version",
+          "swmm",
+          "capabilities"
+        ],
+        "title": "HealthResponse"
+      },
+      "Inlet": {
+        "properties": {
+          "inlet_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inlet Id"
+          },
+          "node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Node Id"
+          },
+          "position_m": {
+            "$ref": "#/components/schemas/Position",
+            "description": "Surface grate position, not the node invert."
+          },
+          "grate_area_m2": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Grate Area M2"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inlet_id",
+          "node_id",
+          "position_m",
+          "grate_area_m2",
+          "source_type"
+        ],
+        "title": "Inlet"
+      },
+      "InletState": {
+        "properties": {
+          "inlet_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inlet Id"
+          },
+          "hydraulic_inlet_clogging_fraction": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Hydraulic Inlet Clogging Fraction"
+          },
+          "parameter_status": {
+            "type": "string",
+            "const": "assumed_not_calibrated",
+            "title": "Parameter Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inlet_id",
+          "hydraulic_inlet_clogging_fraction",
+          "parameter_status"
+        ],
+        "title": "InletState"
+      },
+      "MetricsResponse": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id"
+          },
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "result_type": {
+            "type": "string",
+            "const": "simulated",
+            "title": "Result Type"
+          },
+          "engine": {
+            "type": "string",
+            "const": "EPA SWMM",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Engine Version"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "status_definitions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Status Definitions",
+            "description": "Physical basis and thresholds used for each pipe/node status. Unestablished status is unknown."
+          },
+          "total_flooding_volume_m3": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Total Flooding Volume M3"
+          },
+          "flooded_node_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Flooded Node Count"
+          },
+          "surcharge_duration_s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Surcharge Duration S",
+            "description": "Elapsed time during which at least one node is surcharged; overlapping nodes count once."
+          },
+          "metric_definitions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Metric Definitions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "model_version_id",
+          "result_type",
+          "engine",
+          "engine_version",
+          "assumptions",
+          "warnings",
+          "status_definitions",
+          "total_flooding_volume_m3",
+          "flooded_node_count",
+          "surcharge_duration_s",
+          "metric_definitions"
+        ],
+        "title": "MetricsResponse"
+      },
+      "ModelVersion": {
+        "properties": {
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "const": "synthetic",
+            "title": "Source Type"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "readiness": {
+            "type": "string",
+            "enum": [
+              "asset_fixture_only",
+              "execution_verified"
+            ],
+            "title": "Readiness"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model_version_id",
+          "name",
+          "source_type",
+          "readiness",
+          "parameters"
+        ],
+        "title": "ModelVersion"
+      },
+      "Node": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Node Id"
+          },
+          "node_type": {
+            "type": "string",
+            "enum": [
+              "junction",
+              "outfall",
+              "storage"
+            ],
+            "title": "Node Type"
+          },
+          "position_m": {
+            "$ref": "#/components/schemas/Position",
+            "description": "Node invert position; Three.js mapping is [x,z,-y]."
+          },
+          "invert_elevation_m": {
+            "type": "number",
+            "title": "Invert Elevation M"
+          },
+          "ground_elevation_m": {
+            "type": "number",
+            "title": "Ground Elevation M"
+          },
+          "max_depth_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Depth M"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "node_id",
+          "node_type",
+          "position_m",
+          "invert_elevation_m",
+          "ground_elevation_m",
+          "max_depth_m",
+          "source_type"
+        ],
+        "title": "Node"
+      },
+      "NodeState": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Node Id"
+          },
+          "depth_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Depth M"
+          },
+          "flooding_rate_m3s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Flooding Rate M3S"
+          },
+          "surcharge_flag": {
+            "type": "boolean",
+            "title": "Surcharge Flag"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "surcharged",
+              "flooding",
+              "unknown"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "node_id",
+          "depth_m",
+          "flooding_rate_m3s",
+          "surcharge_flag",
+          "status"
+        ],
+        "title": "NodeState"
+      },
+      "PipeState": {
+        "properties": {
+          "conduit_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Conduit Id"
+          },
+          "flow_m3s": {
+            "type": "number",
+            "title": "Flow M3S",
+            "description": "Signed flow in the conduit's from-to direction."
+          },
+          "depth_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Depth M"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "near_capacity",
+              "surcharged",
+              "unknown"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conduit_id",
+          "flow_m3s",
+          "depth_m",
+          "status"
+        ],
+        "title": "PipeState"
+      },
+      "Position": {
+        "properties": {
+          "x": {
+            "type": "number",
+            "title": "X",
+            "description": "Local east coordinate in metres."
+          },
+          "y": {
+            "type": "number",
+            "title": "Y",
+            "description": "Local north coordinate in metres."
+          },
+          "z": {
+            "type": "number",
+            "title": "Z",
+            "description": "Elevation in metres relative to an assumed local datum."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "title": "Position"
+      },
+      "RunResponse": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "input_snapshot": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input Snapshot",
+            "description": "Full resolved model, storm, boundary and scenario parameters, not IDs alone."
+          },
+          "input_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Input Hash",
+            "description": "SHA-256 of canonical resolved input JSON."
+          },
+          "engine": {
+            "type": "string",
+            "const": "EPA SWMM",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Version"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_references": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence References"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "status",
+          "model_version_id",
+          "input_snapshot",
+          "input_hash",
+          "engine",
+          "engine_version",
+          "assumptions",
+          "warnings",
+          "error",
+          "evidence_references"
+        ],
+        "title": "RunResponse"
+      },
+      "SimulationAccepted": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "status"
+        ],
+        "title": "SimulationAccepted"
+      },
+      "SimulationRequest": {
+        "properties": {
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "storm_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Storm Id"
+          },
+          "debris_scenario_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Debris Scenario Id"
+          },
+          "tailwater_case": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Tailwater Case"
+          },
+          "intervention": {
+            "type": "null",
+            "title": "Intervention",
+            "description": "Reserved for T4; only null is supported in v1.0.0."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model_version_id",
+          "storm_id",
+          "debris_scenario_id",
+          "tailwater_case"
+        ],
+        "title": "SimulationRequest"
+      },
+      "StormParameters": {
+        "properties": {
+          "intensity_mmh": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Intensity Mmh"
+          },
+          "duration_s": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration S"
+          },
+          "pattern": {
+            "type": "string",
+            "const": "constant",
+            "title": "Pattern"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "intensity_mmh",
+          "duration_s",
+          "pattern"
+        ],
+        "title": "StormParameters"
+      },
+      "StormPreset": {
+        "properties": {
+          "storm_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Storm Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/StormParameters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "storm_id",
+          "name",
+          "source_type",
+          "parameters"
+        ],
+        "title": "StormPreset"
+      },
+      "TailwaterParameters": {
+        "properties": {
+          "depth_above_outfall_invert_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Depth Above Outfall Invert M"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "depth_above_outfall_invert_m"
+        ],
+        "title": "TailwaterParameters"
+      },
+      "TailwaterPreset": {
+        "properties": {
+          "tailwater_case": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Tailwater Case"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/TailwaterParameters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tailwater_case",
+          "name",
+          "source_type",
+          "parameters"
+        ],
+        "title": "TailwaterPreset"
+      }
+    }
+  }
+}

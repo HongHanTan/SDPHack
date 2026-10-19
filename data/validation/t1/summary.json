@@ -1,0 +1,215 @@
+{
+  "status": "passed",
+  "model_version_id": "taman_kyra_synthetic_v1",
+  "engine": "EPA SWMM",
+  "engine_version": "5.2.4",
+  "swmm_toolkit_version": "0.17.0",
+  "python_version": "3.12.10",
+  "is_verified_site_model": false,
+  "runs": {
+    "baseline": {
+      "run_id": "t1_baseline",
+      "input_hash": "ae48132120a9ab7a19aa5f5ff7863798461c0f3eb23fbb1bc6d86cc543ba90d8",
+      "engine_version": "5.2.4",
+      "total_flooding_volume_m3": 0.014893217451141265,
+      "flooded_node_count": 1,
+      "surcharge_duration_s": 2970.0,
+      "continuity_error_percent": {
+        "runoff": -0.0015919245779514313,
+        "routing": -0.031312040984630585
+      },
+      "nonconverging_steps_percent": 0.24,
+      "warnings": [
+        "Trace native flooding <0.1 m3 at NODE-J01; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering."
+      ],
+      "artifact_sha256": {
+        "frames.json": "13581c3a3ac10f1bb6910cdf5453517f3c7876bd8f84f9c68c5c3bb52f683061",
+        "inputs.json": "e6ca4cbbd8587c2edfee8f93adecd5e94c056ad9328e95e4b9db6e209d0dbb09",
+        "metrics.json": "c2f4fc40292a1f6dcfc3a2e6c18039c1821a190254f91eb75690ead217857820",
+        "model.inp": "9ae42f52f5e54a4ee82f3c16835f63d536199dd5209f5335a6855ef6170e2df1",
+        "model.out": "67456588c7ab0cec5e0915f6ba7438d4c564c7e3d0cd4fcb561a0d659efdd82d",
+        "model.rpt": "38425fd4e2562c0434f7bbfbe5b35d285aeece039ed2146b3fc6ce19c6634b4e",
+        "native.json": "b0774e9e5db9665e9e392e4b333f9c80fabce7df86c45d13374a29d696d81176",
+        "qa.json": "bd2c1e3c78b056e022cb30015191d498d200e0c3fe0085434cef23275e42ed47",
+        "run.json": "4d82682f96e55ab9d9f35fa9fdf6649a60b12422fea1840d82a419a594c9bd48",
+        "worker.log": "65744161c4764be6e1f310777e7b9c05ba510daa8ad956118d97420625490849"
+      }
+    },
+    "stronger": {
+      "run_id": "t1_stronger",
+      "input_hash": "1601bc90dfb8a1fe027092e98190824720a3162a0b4294eaac7b5c9eae9d5330",
+      "engine_version": "5.2.4",
+      "total_flooding_volume_m3": 728.7648845066433,
+      "flooded_node_count": 6,
+      "surcharge_duration_s": 3478.747,
+      "continuity_error_percent": {
+        "runoff": -0.0016002755146473646,
+        "routing": -0.03068840317428112
+      },
+      "nonconverging_steps_percent": 0.28,
+      "warnings": [
+        "Trace native flooding <0.1 m3 at NODE-J06; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering."
+      ],
+      "artifact_sha256": {
+        "frames.json": "d342789c2ee100622b321788a1de79a5fd2e6aa5742f275b51e2aa1ce21f7d69",
+        "inputs.json": "ca478ebfd417911916499c14bf2b7fa2de8967a5c714d29aeb7c5b1481837242",
+        "metrics.json": "62b159f2ad618c1ee6593b8dd697721ef424ec44c4670a175d7f707808980ee3",
+        "model.inp": "876999ed0c1e5895cf39bcfc20da854e77478f70ae92b6e10ffedc3a0fc3e96e",
+        "model.out": "fd995bb715ee74e83a652e68e6a5331805d42f9ba82ced9270d192580579929a",
+        "model.rpt": "ba50d48ecd786da02698134deafa7d4938f80bfdb0aba6cdbeedd501e7e7d9b7",
+        "native.json": "bdc902013c6572977fac4c1e24e6b1a01444b821e848d8c01e5e44140b40e9b7",
+        "qa.json": "50a52d1fc1a4df1bee28da3f43f799ab65d159909a04745eef417845bc7d70d5",
+        "run.json": "4c13383cab68be0426d63412524fcf430fae38c7790a78edf9af47d5e3029951",
+        "worker.log": "e3e85491cf350faa6788ff0785c43fd3475e5e8b6c026e5ef676a6a2cd500273"
+      }
+    },
+    "baseline_repeat": {
+      "run_id": "t1_baseline_repeat",
+      "input_hash": "ae48132120a9ab7a19aa5f5ff7863798461c0f3eb23fbb1bc6d86cc543ba90d8",
+      "engine_version": "5.2.4",
+      "total_flooding_volume_m3": 0.014893217451141265,
+      "flooded_node_count": 1,
+      "surcharge_duration_s": 2970.0,
+      "continuity_error_percent": {
+        "runoff": -0.0015919245779514313,
+        "routing": -0.031312040984630585
+      },
+      "nonconverging_steps_percent": 0.24,
+      "warnings": [
+        "Trace native flooding <0.1 m3 at NODE-J01; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering."
+      ],
+      "artifact_sha256": {
+        "frames.json": "29e82f837d44bd04215245885a1f88c618af92c474d84149d44e96708b854b5e",
+        "inputs.json": "e6ca4cbbd8587c2edfee8f93adecd5e94c056ad9328e95e4b9db6e209d0dbb09",
+        "metrics.json": "d27176a4e46825ebfa3eb5deff7e2f7fc1c14cb8adac83a2c5b12e14e0a3dc92",
+        "model.inp": "9ae42f52f5e54a4ee82f3c16835f63d536199dd5209f5335a6855ef6170e2df1",
+        "model.out": "67456588c7ab0cec5e0915f6ba7438d4c564c7e3d0cd4fcb561a0d659efdd82d",
+        "model.rpt": "720cc2e38d70a5621b0d78f39fc1f2d080546b3f53d6c03463488845ebd3de8d",
+        "native.json": "b0774e9e5db9665e9e392e4b333f9c80fabce7df86c45d13374a29d696d81176",
+        "qa.json": "bd2c1e3c78b056e022cb30015191d498d200e0c3fe0085434cef23275e42ed47",
+        "run.json": "58f8088a1b36b24170cd40c9c21a01817dc7a215878d1435de810f0b50a6d846",
+        "worker.log": "65744161c4764be6e1f310777e7b9c05ba510daa8ad956118d97420625490849"
+      }
+    },
+    "stronger_repeat": {
+      "run_id": "t1_stronger_repeat",
+      "input_hash": "1601bc90dfb8a1fe027092e98190824720a3162a0b4294eaac7b5c9eae9d5330",
+      "engine_version": "5.2.4",
+      "total_flooding_volume_m3": 728.7648845066433,
+      "flooded_node_count": 6,
+      "surcharge_duration_s": 3478.747,
+      "continuity_error_percent": {
+        "runoff": -0.0016002755146473646,
+        "routing": -0.03068840317428112
+      },
+      "nonconverging_steps_percent": 0.28,
+      "warnings": [
+        "Trace native flooding <0.1 m3 at NODE-J06; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering."
+      ],
+      "artifact_sha256": {
+        "frames.json": "ed14bd1b42f3c2081fa1b92d6be6db2958975afc1f8570219d6b33abb686d121",
+        "inputs.json": "ca478ebfd417911916499c14bf2b7fa2de8967a5c714d29aeb7c5b1481837242",
+        "metrics.json": "467b46c237c6c20a9fcd3af304a8a7d7a5d036092c68f200a78351012e4a45fa",
+        "model.inp": "876999ed0c1e5895cf39bcfc20da854e77478f70ae92b6e10ffedc3a0fc3e96e",
+        "model.out": "fd995bb715ee74e83a652e68e6a5331805d42f9ba82ced9270d192580579929a",
+        "model.rpt": "dac6a871bdfdbdb5bc98cd833e26bd08fc89ae128b2a1a8a878110b36af073d2",
+        "native.json": "bdc902013c6572977fac4c1e24e6b1a01444b821e848d8c01e5e44140b40e9b7",
+        "qa.json": "50a52d1fc1a4df1bee28da3f43f799ab65d159909a04745eef417845bc7d70d5",
+        "run.json": "09d33cc22564ddcbe4d881ce0692afb9717c9525eca3374fbdda16a1d892897f",
+        "worker.log": "e3e85491cf350faa6788ff0785c43fd3475e5e8b6c026e5ef676a6a2cd500273"
+      }
+    },
+    "baseline_half_step": {
+      "run_id": "t1_baseline_half_step",
+      "input_hash": "84aa2a88a8ac9f621e9fea9393688ea9c5039bd74d125d79b88d408dea8f893a",
+      "engine_version": "5.2.4",
+      "total_flooding_volume_m3": 0.01575032072253046,
+      "flooded_node_count": 2,
+      "surcharge_duration_s": 2974.5000000000005,
+      "continuity_error_percent": {
+        "runoff": -0.0015919245779514313,
+        "routing": -0.03600944206118584
+      },
+      "nonconverging_steps_percent": 0.22,
+      "warnings": [
+        "Trace native flooding <0.1 m3 at NODE-J01, NODE-J03; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering."
+      ],
+      "artifact_sha256": {
+        "frames.json": "9823e7f1d1ad635022f2b3693597fe0b7fc376fc199dde9054df9c811e87288e",
+        "inputs.json": "93bb7cd4ea19083cfb8c420eb820490d83ef54b0a1b0111df8197f33b49cb58c",
+        "metrics.json": "be1a3562c7beec3f836103585e915303b7d166f371a65ac30ca14247699cba5f",
+        "model.inp": "e1773d93d16ef8b9fbd98c249b82d0ed2ee59ea8b0c32a24387f54738bb61f6f",
+        "model.out": "c0d98ed1f9ced82fbc5814e2a7dd76c4fe94d954ceb53aa05bb40841a53537a6",
+        "model.rpt": "007a6b7d6fd0ac1e79ae9b73edb037b97d3e9af664cce9ad38dada166286dcdc",
+        "native.json": "1b7e3d6d04a6bc752db8bcbfc05e042d85d96cfbe7e2018bac9192b4288f0ca1",
+        "qa.json": "05c53124ab0cae79bb8f003b624655229afaf632441ce76bc02bd7888a0a55e5",
+        "run.json": "022263beb3f16ebeafa2b5d8643c4acfdd91861bc9af8fa665148b6965ead30d",
+        "worker.log": "68dc66c8b116437eb8056c28d8c866617fdb31b8d2dc56e72cdf496e55931e4b"
+      }
+    },
+    "stronger_half_step": {
+      "run_id": "t1_stronger_half_step",
+      "input_hash": "b9a14eedee8fdc7270b8743f88e6914b486f0b4877c1ae9ab02d0736d7e580e1",
+      "engine_version": "5.2.4",
+      "total_flooding_volume_m3": 728.8115544597096,
+      "flooded_node_count": 6,
+      "surcharge_duration_s": 3484.5000000000005,
+      "continuity_error_percent": {
+        "runoff": -0.0016002755146473646,
+        "routing": -0.037019673734903336
+      },
+      "nonconverging_steps_percent": 0.2,
+      "warnings": [
+        "Trace native flooding <0.1 m3 at NODE-J06; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering."
+      ],
+      "artifact_sha256": {
+        "frames.json": "e461a077e3f85fa9fdb7ae7fd28510c281f18ce31ed92dca68498a7bab0a6949",
+        "inputs.json": "0f6bb548e8bd1be791e74d9837b271faeca40238c06a45bff38be0bbfa1d954c",
+        "metrics.json": "8b023e44a238b89c78ea3dc8d34b7516267edf95e3c46cbbd84a7bb7b94b7233",
+        "model.inp": "c3acfd09b2137465bae5ed0270da8df1478f836358ccffe732e1b0a9da5eea5c",
+        "model.out": "5662fd0d1a0cf07350088cdfe2c57391f2259ed5a8cebc5cb35a2b37654dda4d",
+        "model.rpt": "ebcede0b16a644ca5c1caf023a85d18d79b7b540a15c2958b42dfae7286e67c1",
+        "native.json": "7a07eb90bbc49f77f881737c340279c1aa824de1e8ad0df71b51a5090fa65ef9",
+        "qa.json": "a95ed33fd1de7a499fe9a3df9884d064da566813e5300cdc7c96247cf66c3eb4",
+        "run.json": "5825d6e1aba661c6755dbcdb11b7c3d5b2c09ae83cc3883d447ea9cf4bdfcc4c",
+        "worker.log": "68dc66c8b116437eb8056c28d8c866617fdb31b8d2dc56e72cdf496e55931e4b"
+      }
+    }
+  },
+  "reproducibility": {
+    "baseline": {
+      "parsed_results_exactly_equal": true,
+      "binary_output_exactly_equal": true
+    },
+    "stronger": {
+      "parsed_results_exactly_equal": true,
+      "binary_output_exactly_equal": true
+    }
+  },
+  "routing_step_refinement": {
+    "baseline": {
+      "flood_volume_absolute_difference_m3": 0.0008571032713891955,
+      "acceptance_tolerance_m3": 0.1,
+      "flooded_node_count_equal": false,
+      "surcharge_duration_absolute_difference_s": 4.500000000000455
+    },
+    "stronger": {
+      "flood_volume_absolute_difference_m3": 0.046669953066270864,
+      "acceptance_tolerance_m3": 7.287648845066433,
+      "flooded_node_count_equal": true,
+      "surcharge_duration_absolute_difference_s": 5.753000000000611
+    }
+  },
+  "rainfall_comparison": {
+    "only_storm_changed": true,
+    "baseline_intensity_mmh": 80,
+    "stronger_intensity_mmh": 120,
+    "rainfall_duration_s": 3600,
+    "simulation_duration_s": 7200,
+    "flood_volume_increase_m3": 728.7499912891922
+  },
+  "warnings": [
+    "Tiny native flooding events are retained; flooded-node count changes under routing-step refinement near zero volume. Do not interpret trace events as robust site predictions.",
+    "Synthetic geometry and uncalibrated hydrology; this validation proves execution/reproducibility, not site accuracy or inlet restriction support."
+  ]
+}

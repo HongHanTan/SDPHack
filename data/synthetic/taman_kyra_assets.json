@@ -1,0 +1,42 @@
+{
+  "township_id": "taman_kyra_demo",
+  "model_version_id": "taman_kyra_synthetic_v1",
+  "source_type": "synthetic",
+  "is_verified_site_model": false,
+  "coordinate_system": "local_metres_east_north_elevation",
+  "nodes": [
+    {"node_id":"NODE-J01","node_type":"junction","position_m":{"x":0,"y":120,"z":10.2},"invert_elevation_m":10.2,"ground_elevation_m":12.2,"max_depth_m":2,"source_type":"synthetic"},
+    {"node_id":"NODE-J02","node_type":"junction","position_m":{"x":80,"y":120,"z":10.1},"invert_elevation_m":10.1,"ground_elevation_m":12.1,"max_depth_m":2,"source_type":"synthetic"},
+    {"node_id":"NODE-J03","node_type":"junction","position_m":{"x":40,"y":80,"z":9.8},"invert_elevation_m":9.8,"ground_elevation_m":11.8,"max_depth_m":2,"source_type":"synthetic"},
+    {"node_id":"NODE-J04","node_type":"junction","position_m":{"x":120,"y":80,"z":10},"invert_elevation_m":10,"ground_elevation_m":12,"max_depth_m":2,"source_type":"synthetic"},
+    {"node_id":"NODE-J05","node_type":"junction","position_m":{"x":80,"y":40,"z":9.4},"invert_elevation_m":9.4,"ground_elevation_m":11.4,"max_depth_m":2,"source_type":"synthetic"},
+    {"node_id":"NODE-J06","node_type":"junction","position_m":{"x":0,"y":0,"z":9.5},"invert_elevation_m":9.5,"ground_elevation_m":11.5,"max_depth_m":2,"source_type":"synthetic"},
+    {"node_id":"NODE-J07","node_type":"junction","position_m":{"x":40,"y":0,"z":9},"invert_elevation_m":9,"ground_elevation_m":11,"max_depth_m":2,"source_type":"synthetic"},
+    {"node_id":"NODE-J08","node_type":"junction","position_m":{"x":40,"y":-50,"z":8.6},"invert_elevation_m":8.6,"ground_elevation_m":10.6,"max_depth_m":2,"source_type":"synthetic"},
+    {"node_id":"NODE-OUT01","node_type":"outfall","position_m":{"x":40,"y":-100,"z":8.2},"invert_elevation_m":8.2,"ground_elevation_m":10.2,"max_depth_m":2,"source_type":"synthetic"}
+  ],
+  "inlets": [
+    {"inlet_id":"INLET-D01","node_id":"NODE-J01","position_m":{"x":0,"y":120,"z":12.2},"grate_area_m2":0.6,"source_type":"synthetic"},
+    {"inlet_id":"INLET-D02","node_id":"NODE-J02","position_m":{"x":80,"y":120,"z":12.1},"grate_area_m2":0.6,"source_type":"synthetic"},
+    {"inlet_id":"INLET-D04","node_id":"NODE-J04","position_m":{"x":120,"y":80,"z":12},"grate_area_m2":0.6,"source_type":"synthetic"},
+    {"inlet_id":"INLET-D07","node_id":"NODE-J07","position_m":{"x":40,"y":0,"z":11},"grate_area_m2":0.6,"source_type":"synthetic"}
+  ],
+  "conduits": [
+    {"conduit_id":"PIPE-P01","from_node_id":"NODE-J01","to_node_id":"NODE-J03","diameter_m":0.45,"length_m":56.568542,"manning_n":0.013,"source_type":"synthetic"},
+    {"conduit_id":"PIPE-P02","from_node_id":"NODE-J02","to_node_id":"NODE-J03","diameter_m":0.45,"length_m":56.568542,"manning_n":0.013,"source_type":"synthetic"},
+    {"conduit_id":"PIPE-P03","from_node_id":"NODE-J03","to_node_id":"NODE-J05","diameter_m":0.6,"length_m":56.568542,"manning_n":0.013,"source_type":"synthetic"},
+    {"conduit_id":"PIPE-P04","from_node_id":"NODE-J04","to_node_id":"NODE-J05","diameter_m":0.45,"length_m":56.568542,"manning_n":0.013,"source_type":"synthetic"},
+    {"conduit_id":"PIPE-P05","from_node_id":"NODE-J05","to_node_id":"NODE-J07","diameter_m":0.6,"length_m":56.568542,"manning_n":0.013,"source_type":"synthetic"},
+    {"conduit_id":"PIPE-P06","from_node_id":"NODE-J06","to_node_id":"NODE-J07","diameter_m":0.45,"length_m":40,"manning_n":0.013,"source_type":"synthetic"},
+    {"conduit_id":"PIPE-P07","from_node_id":"NODE-J07","to_node_id":"NODE-J08","diameter_m":0.6,"length_m":50,"manning_n":0.013,"source_type":"synthetic"},
+    {"conduit_id":"PIPE-P08","from_node_id":"NODE-J08","to_node_id":"NODE-OUT01","diameter_m":0.75,"length_m":50,"manning_n":0.013,"source_type":"synthetic"}
+  ],
+  "assumptions": [
+    "Illustrative synthetic layout; not surveyed Taman Kyra underground assets.",
+    "Coordinates use an arbitrary local metric datum; they are not latitude/longitude.",
+    "Node positions are pipe inverts; inlet positions are surface grate elevations.",
+    "Diameters, roughness, elevations and grate areas are synthetic demonstration inputs, not verified site design values.",
+    "Independent inlet capture and obstruction modelling are not yet implemented; the T1 clean baseline routes runoff directly to sewer nodes.",
+    "No surface terrain coupling or validated street flood depths are available."
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "run_id": "t1_stronger_half_step",
+  "model_version_id": "taman_kyra_synthetic_v1",
+  "result_type": "simulated",
+  "engine": "EPA SWMM",
+  "engine_version": "5.2.4",
+  "is_verified_site_model": false,
+  "assumptions": [
+    "Illustrative synthetic layout; not surveyed Taman Kyra underground assets.",
+    "Coordinates use an arbitrary local metric datum; they are not latitude/longitude.",
+    "Node positions are pipe inverts; inlet positions are surface grate elevations.",
+    "Diameters, roughness, elevations and grate areas are synthetic demonstration inputs, not verified site design values.",
+    "Independent inlet capture and obstruction modelling are not yet implemented; the T1 clean baseline routes runoff directly to sewer nodes.",
+    "No surface terrain coupling or validated street flood depths are available.",
+    "Four synthetic 1 ha catchments, each 80% impervious; areas do not imply surveyed catchment boundaries.",
+    "Surface routing uses the SWMM nonlinear reservoir with synthetic width, slope, roughness and depression storage; infiltration uses assumed Horton parameters.",
+    "T1 clean scenario routes all catchment runoff directly to its associated sewer node, with no independent inlet capture limit. Finite inlet restriction is not yet implemented (T3).",
+    "Flooding is lost from the 1D network (ALLOW_PONDING=NO); no surface flood depth, extent, return flow or 2D coupling is computed.",
+    "Outfall stage is fixed at invert plus the selected assumed tailwater depth; no observed river hydrograph is available.",
+    "One-hour rain is followed by one-hour dry drainage; the full simulation window is included in metrics."
+  ],
+  "warnings": [
+    "Trace native flooding <0.1 m3 at NODE-J06; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering."
+  ],
+  "status_definitions": {
+    "node_surcharged": "Junction depth + 0.00003048 m >= highest connected conduit crown above its invert; outfall excluded. Matches SWMM crown criterion for this zero-offset, circular-conduit model.",
+    "node_flooding": "Reported node flooding loss rate > 1e-9 m3/s; takes display precedence over surcharge. Not a surface flood depth.",
+    "node_normal": "Neither flooding nor crown exceedance at this report instant; outfall is not classified as surcharged.",
+    "pipe_surcharged": "Hydraulic heads at both endpoints exceed their respective conduit crown elevations by > 0.00003048 m; indicates pressurized closed conduit at both ends.",
+    "pipe_near_capacity": "Not surcharged by the endpoint-head rule and reported conduit depth/diameter >= 0.8; a geometric fullness display threshold, not a discharge-capacity or failure estimate.",
+    "pipe_normal": "Neither endpoint-head surcharge nor depth/diameter >= 0.8 at this report instant.",
+    "unknown": "Missing or unsupported hydraulic information; never inferred from inlet restriction.",
+    "inlet": "Independent assumed hydraulic_inlet_clogging_fraction=0; T1 uses unlimited direct-node runoff entry, not a finite-capacity inlet or calibrated capture model."
+  },
+  "total_flooding_volume_m3": 728.8115544597096,
+  "flooded_node_count": 6,
+  "surcharge_duration_s": 3484.5000000000005,
+  "metric_definitions": {
+    "total_flooding_volume_m3": "Sum of SWMM native node volFlooded statistics, converted by the toolkit to m3 for this CMS model; includes all routing steps, not just displayed report samples.",
+    "flooded_node_count": "Number of nodes with native accumulated flooding volume > 1e-6 m3 over the full simulation; brief events between report frames are included.",
+    "surcharge_duration_s": "Time union over junction crown-exceedance flags sampled at each native routing-step endpoint, weighted by that step duration; overlaps count once, outfall excluded. At most 1 s routing step in the standard model.",
+    "frames": "Actual binary output samples at 60,120,...,7200 s. No fabricated t=0 frame or visual interpolation. A 60 s report sample can miss a routing-step peak."
+  }
+}
