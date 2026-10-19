@@ -6,6 +6,8 @@ const combos: Array<[string, InterventionId[]]> = [
   ['baseline', []],
   ...INTERVENTIONS.map((iv, k): [string, InterventionId[]] => [`#${k + 1} ${iv.name}`, [iv.id]]),
   ['#3 + #5 tank + flap', ['detention-tank', 'flap-gate']],
+  ['#2 + #6 relief + inlets', ['relief-pond', 'sag-inlets']],
+  ['#6 + #7 inlets + pump', ['sag-inlets', 'pump']],
 ];
 
 const rows = combos.map(([name, ids]) => {
@@ -13,7 +15,7 @@ const rows = combos.map(([name, ids]) => {
   const m = runSimulation(buildScenario(ids, '100yr')).metrics;
   return {
     scenario: name,
-    'sag peak (m)': m.peakSagDepth.toFixed(2),
+    'sag peak (m)': m.peakSagDepth.toFixed(3),
     homes: m.homesFlooded,
     'road area (m²)': m.floodedRoadArea,
     'passable (min)': m.minutesToPassable === null ? '> 60' : m.minutesToPassable.toFixed(0),

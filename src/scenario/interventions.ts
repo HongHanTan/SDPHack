@@ -1,5 +1,5 @@
 import { LandUse, type DrainNode, type Grid, type Network } from '../sim/types';
-import { BIOSWALE_Y, BOULEVARD_I, GRID, INFILTRATION_MMHR, MMHR, PIPE_D, POND, PUMP_RATE, TANK } from './config';
+import { BIOSWALE, GRID, INFILTRATION_MMHR, MANHOLE, MMHR, PIPE_D, POND, PUMP_RATE, TANK } from './config';
 import { makeNode, makePipe, OUTFALL_RIVER_POINT, SAG_NODE_IDS, TRUNK_PIPE_IDS } from './network';
 import { cellAt } from './terrain';
 
@@ -51,8 +51,19 @@ export const INTERVENTIONS: Intervention[] = [
     costRM: 1_800_000,
     disruption: 'Medium',
     apply(t) {
-      const ground = t.grid.z[cellAt(POND.x, POND.y)];
-      const p = makeNode(t.grid, 'P', POND.x, POND.y, { invert: ground, maxDepth: 0.5, inletPerimeter: 0 });
+      // The pipe discharges into the pond. A node with no outlet would block after its first 0.5 m³, so the
+      // pond's live storage (normal level → +reliefRise, measured on the grid) is modelled as storage at node P;
+      // if that ever fills, the excess spills onto the pond surface.
+      const g = t.grid;
+      const cellArea = g.dx * g.dx;
+      const lo = POND.initialLevel;
+      const hi = POND.initialLevel + POND.reliefRise;
+      let live = 0;
+      for (let c = 0; c < g.z.length; c++) {
+        if (g.land[c] === LandUse.POND) live += (Math.max(0, hi - g.z[c]) - Math.max(0, lo - g.z[c])) * cellArea;
+      }
+      const ground = g.z[cellAt(POND.x, POND.y)];
+      const p = makeNode(g, 'P', POND.x, POND.y, { invert: ground, area: live / POND.reliefRise, maxDepth: POND.reliefRise, inletPerimeter: 0 });
       t.network.nodes.push(p);
       t.network.pipes.push(makePipe(findNode(t, 'S3'), p, 0.9));
     },
@@ -67,25 +78,25 @@ export const INTERVENTIONS: Intervention[] = [
       const o = findNode(t, 'O');
       const tk = makeNode(t.grid, 'TK', TANK.x, TANK.y, { invert: o.invert + 0.3, area: TANK.area, maxDepth: TANK.depth, inletPerimeter: 0 });
       t.network.nodes.push(tk);
-      t.network.pipes.push(makePipe(findNode(t, 'T6'), tk, TANK.inflowD), makePipe(tk, o, TANK.outflowD));
+      t.network.pipes.push(makePipe(findNode(t, TANK.feedNode), tk, TANK.inflowD), makePipe(tk, o, TANK.outflowD));
     },
   },
   {
     id: 'bioswales',
-    name: 'Bioswales on the boulevard',
-    description: 'Planted, lowered strips either side of the main boulevard',
+    name: 'Bioswales on the sag approach street',
+    description: 'Planted, lowered verges either side of the street above the sag, intercepting runoff across the slope',
     costRM: 800_000,
     disruption: 'Low',
     apply(t) {
       const g = t.grid;
-      for (let j = 0; j < GRID.ny; j++) {
-        const y = (j + 0.5) * GRID.dx;
-        if (y < BIOSWALE_Y.min || y > BIOSWALE_Y.max) continue;
-        for (const i of [BOULEVARD_I - 3, BOULEVARD_I - 2, BOULEVARD_I + 2, BOULEVARD_I + 3]) {
+      for (const j of [BIOSWALE.roadJ - 1, BIOSWALE.roadJ + 1]) {
+        for (let i = 0; i < GRID.nx; i++) {
+          if ((i + 0.5) * GRID.dx > BIOSWALE.xMax) break;
           const c = j * GRID.nx + i;
+          if (g.land[c] === LandUse.ROAD) continue; // cross streets stay open
           g.land[c] = LandUse.PARK;
           g.infil[c] = INFILTRATION_MMHR.BIOSWALE * MMHR;
-          g.z[c] -= 0.2;
+          g.z[c] -= BIOSWALE.depth;
           g.building[c] = -1;
         }
       }
@@ -104,11 +115,11 @@ export const INTERVENTIONS: Intervention[] = [
   {
     id: 'sag-inlets',
     name: 'Extra inlets in the sag',
-    description: 'Triple the grate capacity at sag manholes',
+    description: 'Add two gully grates at every sag manhole, including the low point',
     costRM: 300_000,
     disruption: 'Low',
     apply(t) {
-      for (const id of SAG_NODE_IDS) findNode(t, id).inletPerimeter *= 3;
+      for (const id of SAG_NODE_IDS) findNode(t, id).inletPerimeter += 2 * MANHOLE.inletPerimeter;
     },
   },
   {

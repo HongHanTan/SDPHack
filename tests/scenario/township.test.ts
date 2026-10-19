@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUND, GRID, INFILTRATION_MMHR, MMHR, PIPE_D, RIVER_ROWS } from '../../src/scenario/config';
+import { BUND, GRID, INFILTRATION_MMHR, INLET_SUMP, MMHR, PIPE_D, RIVER_ROWS } from '../../src/scenario/config';
 import { buildScenario, buildTownship, scenarioKey } from '../../src/scenario/index';
 import { applyInterventions, INTERVENTIONS, type InterventionId } from '../../src/scenario/interventions';
 import { buildNetwork, TRUNK_PIPE_IDS } from '../../src/scenario/network';
@@ -16,7 +16,18 @@ describe('terrain', () => {
   });
 
   it('has a sag lower than its surroundings', () => {
-    expect(grid.z[cellAt(100, 64)]).toBeLessThan(grid.z[cellAt(250, 64)] - 1);
+    expect(grid.z[cellAt(100, 64)]).toBeLessThan(grid.z[cellAt(250, 64)] - 0.9);
+  });
+
+  it('encloses the sag catchment with a ridge above its upslope swale and the sag side', () => {
+    const crest = grid.z[cellAt(140, 120)]; // on the diagonal ridge
+    expect(crest).toBeGreaterThan(grid.z[cellAt(140, 128)] + 0.3); // diversion swale, just upslope
+    expect(crest).toBeGreaterThan(grid.z[cellAt(140, 104)] + 0.2); // polder side
+    expect(grid.land[cellAt(140, 128)]).toBe(LandUse.PARK); // grassed swale, no houses
+  });
+
+  it('sets inlets in gully sumps below the street', () => {
+    expect(grid.z[cellAt(258, 202)]).toBeCloseTo(grid.z[cellAt(258, 206)] - 0.08 - INLET_SUMP, 4);
   });
 
   it('protects the sag frontage with a bund', () => {
@@ -63,13 +74,15 @@ describe('interventions', () => {
     expect(only('relief-pond').network.pipes.some((p) => p.id === 'S3-P')).toBe(true);
     const tank = only('detention-tank').network;
     expect(tank.nodes.find((n) => n.id === 'TK')!.area).toBe(1500);
-    expect(tank.pipes.map((p) => p.id)).toEqual(expect.arrayContaining(['T6-TK', 'TK-O']));
+    expect(tank.pipes.map((p) => p.id)).toEqual(expect.arrayContaining(['T8-TK', 'TK-O']));
     const swale = only('bioswales').grid;
-    const c = cellAt(61 * 4 + 2, 200);
+    const c = cellAt(50, 78); // verge just south of the sag approach street (road row j = 20)
     expect(swale.land[c]).toBe(LandUse.PARK);
     expect(swale.infil[c]).toBeCloseTo(INFILTRATION_MMHR.BIOSWALE * MMHR, 12);
     expect(only('flap-gate').network.outfalls[0].flapGate).toBe(true);
-    expect(only('sag-inlets').network.nodes.find((n) => n.id === 'S3')!.inletPerimeter).toBe(6);
+    expect(base.network.nodes.find((n) => n.id === 'S3')!.inletPerimeter).toBe(0); // solid cover at the low point
+    expect(only('sag-inlets').network.nodes.find((n) => n.id === 'S3')!.inletPerimeter).toBe(4);
+    expect(only('sag-inlets').network.nodes.find((n) => n.id === 'SL1')!.inletPerimeter).toBe(6);
     expect(only('pump').network.pumps.length).toBe(1);
   });
 

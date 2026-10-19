@@ -1,6 +1,6 @@
 import { MANNING_N } from '../sim/pipes';
 import type { DrainNode, Grid, Network, Pipe } from '../sim/types';
-import { COVER, MANHOLE, PIPE_D } from './config';
+import { COVER, MANHOLE, NODE_INLETS, NODE_LAYOUT, OUTFALL_DROP, PIPE_D } from './config';
 import { cellAt } from './terrain';
 
 export const OUTFALL_RIVER_POINT = { x: 82, y: 10 };
@@ -32,17 +32,6 @@ export function makePipe(a: DrainNode, b: DrainNode, diameter: number): Pipe {
   return { id: `${a.id}-${b.id}`, from: a.id, to: b.id, diameter, length, slope: (a.invert - b.invert) / length, n: MANNING_N };
 }
 
-// Nodes sit on road cells: x or y = 2 + 40k, or on the boulevard (x = 258).
-const LAYOUT: Array<[string, number, number]> = [
-  ['T0', 258, 362], ['T1', 258, 322], ['T2', 258, 282], ['T3', 258, 242], ['T4', 258, 202],
-  ['T5', 258, 162], ['T6', 258, 122], ['T7', 258, 82], ['T8', 258, 42],
-  ['W0', 122, 242], ['W1', 162, 242], ['W2', 202, 242],
-  ['E0', 362, 162], ['E1', 322, 162], ['E2', 282, 162],
-  ['S0', 202, 42], ['S1', 162, 42], ['S2', 122, 42], ['S3', 82, 42],
-  ['SL0', 42, 82], ['SL1', 122, 82],
-  ['O', 82, 34],
-];
-
 type Kind = 'trunk' | 'branch' | 'local';
 const LINKS: Array<[string, string, Kind]> = [
   ['T0', 'T1', 'trunk'], ['T1', 'T2', 'trunk'], ['T2', 'T3', 'trunk'], ['T3', 'T4', 'trunk'],
@@ -57,7 +46,12 @@ export const TRUNK_PIPE_IDS: string[] = LINKS.filter((l) => l[2] === 'trunk').ma
 export const SAG_NODE_IDS = ['S0', 'S1', 'S2', 'S3', 'SL0', 'SL1', 'O'];
 
 export function buildNetwork(grid: Grid): Network {
-  const nodes = LAYOUT.map(([id, x, y]) => makeNode(grid, id, x, y));
+  const nodes = NODE_LAYOUT.map(([id, x, y]) =>
+    makeNode(grid, id, x, y, {
+      ...(id in NODE_INLETS ? { inletPerimeter: NODE_INLETS[id] } : {}),
+      ...(id === 'O' ? { invert: grid.z[cellAt(x, y)] - COVER - OUTFALL_DROP } : {}),
+    }),
+  );
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const pipes = LINKS.map(([a, b, kind]) =>
     makePipe(byId.get(a)!, byId.get(b)!, kind === 'trunk' ? PIPE_D.trunk : kind === 'branch' ? PIPE_D.branch : PIPE_D.local),

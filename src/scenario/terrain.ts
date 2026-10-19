@@ -1,5 +1,5 @@
 import { LandUse, type Grid } from '../sim/types';
-import { BOULEVARD_I, BUND, GRID, INFILTRATION_MMHR, MMHR, POND, RIVER_ROWS, SAG, TERRAIN } from './config';
+import { BOULEVARD_I, BUND, GRID, INFILTRATION_MMHR, INLET_SUMP, MMHR, NODE_LAYOUT, POND, RIDGE, RIVER_ROWS, SAG, TERRAIN } from './config';
 
 export function cellAt(x: number, y: number): number {
   return Math.floor(y / GRID.dx) * GRID.nx + Math.floor(x / GRID.dx);
@@ -18,6 +18,26 @@ export const INFIL_BY_LAND: number[] = [
 function bowl(x: number, y: number, cx: number, cy: number, r: number, depth: number): number {
   const d = Math.hypot(x - cx, y - cy);
   return d < r ? depth * (1 - (d / r) ** 2) : 0;
+}
+
+function distToSegment(x: number, y: number, [ax, ay]: [number, number], [bx, by]: [number, number]): number {
+  const vx = bx - ax;
+  const vy = by - ay;
+  const f = Math.max(0, Math.min(1, ((x - ax) * vx + (y - ay) * vy) / (vx * vx + vy * vy)));
+  return Math.hypot(x - ax - f * vx, y - ay - f * vy);
+}
+
+/** 0 = off the ridge, 1 = ridge crest, 2 = diversion swale on the ridge's upslope (left-hand) side. */
+function ridgeZone(x: number, y: number): 0 | 1 | 2 {
+  const p = RIDGE.points;
+  let zone: 0 | 1 | 2 = 0;
+  for (let k = 0; k + 1 < p.length; k++) {
+    const d = distToSegment(x, y, p[k], p[k + 1]);
+    if (d <= RIDGE.halfWidth) return 1;
+    const left = (p[k + 1][0] - p[k][0]) * (y - p[k][1]) - (p[k + 1][1] - p[k][1]) * (x - p[k][0]) > 0;
+    if (left && d <= RIDGE.halfWidth + RIDGE.swaleWidth) zone = 2;
+  }
+  return zone;
 }
 
 /** Deterministic synthetic township: hill (north) → housing grid → sag (SW) + pond (SE) → river (south). */
@@ -40,7 +60,8 @@ export function buildTerrain(): Grid {
         land[c] = LandUse.RIVER;
         continue;
       }
-      let zc = TERRAIN.baseZ + TERRAIN.slope * y + Math.max(0, y - TERRAIN.hillStartY) * TERRAIN.hillSlope;
+      const plane = TERRAIN.baseZ + TERRAIN.slope * y + Math.max(0, y - TERRAIN.hillStartY) * TERRAIN.hillSlope;
+      let zc = plane;
       zc -= bowl(x, y, SAG.x, SAG.y, SAG.r, SAG.depth);
       zc -= bowl(x, y, POND.x, POND.y, POND.r, POND.depth);
       const pondDist = Math.hypot(x - POND.x, y - POND.y);
@@ -56,6 +77,17 @@ export function buildTerrain(): Grid {
         building[c] = Math.floor(i / 10) + Math.floor(j / 10) * 100;
       }
 
+      const rz = ridgeZone(x, y);
+      if (rz === 1) {
+        zc = plane + RIDGE.height;
+        if (lc !== LandUse.ROAD) lc = LandUse.LAWN;
+        building[c] = -1;
+      } else if (rz === 2 && pondDist >= POND.r) {
+        zc -= RIDGE.swaleDepth;
+        if (lc !== LandUse.ROAD) lc = LandUse.PARK;
+        building[c] = -1;
+      }
+
       if (j < RIVER_ROWS + 2 && x >= BUND.xMin && x <= BUND.xMax) {
         zc = Math.max(zc, BUND.z);
         lc = LandUse.LAWN;
@@ -67,6 +99,7 @@ export function buildTerrain(): Grid {
       if (lc === LandUse.POND) h0[c] = Math.max(0, POND.initialLevel - zc);
     }
   }
+  for (const [, x, y] of NODE_LAYOUT) z[cellAt(x, y)] -= INLET_SUMP;
   for (let c = 0; c < n; c++) infil[c] = INFIL_BY_LAND[land[c]];
   return { nx, ny, dx, z, land, infil, building, h0 };
 }
