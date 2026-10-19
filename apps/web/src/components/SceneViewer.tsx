@@ -11,9 +11,12 @@ import {
   Position3D,
   SimulationFrame,
   AppMode,
+  TwinViewMode,
 } from '../types';
 import { InspectorAvatar } from './InspectorAvatar';
 import { TownshipEnvironment } from './TownshipEnvironment';
+import { RainEffect } from './RainEffect';
+import { NetworkHighlightOverlay } from './NetworkHighlightOverlay';
 
 // Convert local coordinates {x (East), y (North), z (Elevation)} to Three.js [x, z, -y]
 // per Section 6.1 of md/TEAM_WORKFLOW.md
@@ -29,6 +32,11 @@ interface SceneViewerProps {
   selectedAssetId?: string | null;
   onSelectAsset: (asset: { type: 'node' | 'inlet' | 'conduit'; id: string; data: unknown }) => void;
   showUndergroundOnly?: boolean;
+  twinViewMode?: TwinViewMode;
+  onChangeTwinViewMode?: (mode: TwinViewMode) => void;
+  isRainActive?: boolean;
+  onToggleRain?: () => void;
+  stormIntensityMmh?: number;
   onOpenDebrisLab?: () => void;
   isDebrisLabOpen?: boolean;
   appMode?: AppMode;
@@ -42,7 +50,8 @@ const NodeMesh: React.FC<{
   isSelected: boolean;
   onClick: () => void;
   showUndergroundOnly: boolean;
-}> = ({ node, status, depthM = 0, isSelected, onClick, showUndergroundOnly }) => {
+  isTwinHighlight?: boolean;
+}> = ({ node, status, depthM = 0, isSelected, onClick, showUndergroundOnly, isTwinHighlight }) => {
   const [hovered, setHovered] = useState(false);
 
   // Bottom invert position
@@ -83,9 +92,9 @@ const NodeMesh: React.FC<{
               roughness={0.4}
               metalness={0.2}
               transparent
-              opacity={showUndergroundOnly ? 0.95 : 0.75}
-              emissive={isSelected || hovered ? color : '#000000'}
-              emissiveIntensity={isSelected ? 0.7 : hovered ? 0.35 : 0}
+              opacity={showUndergroundOnly ? 0.95 : isTwinHighlight ? 0.9 : 0.75}
+              emissive={isSelected || hovered ? color : isTwinHighlight ? color : '#000000'}
+              emissiveIntensity={isSelected ? 0.7 : hovered ? 0.35 : isTwinHighlight ? 0.45 : 0}
             />
           </mesh>
 
@@ -167,7 +176,8 @@ const ConduitMesh: React.FC<{
   isSelected: boolean;
   onClick: () => void;
   appMode?: AppMode;
-}> = ({ conduit, fromNode, toNode, status, isSelected, onClick, appMode }) => {
+  isTwinHighlight?: boolean;
+}> = ({ conduit, fromNode, toNode, status, isSelected, onClick, appMode, isTwinHighlight }) => {
   const [hovered, setHovered] = useState(false);
 
   const { midpoint, length, orientation } = useMemo(() => {
@@ -227,10 +237,24 @@ const ConduitMesh: React.FC<{
           metalness={0.1}
           transparent
           opacity={0.9}
-          emissive={isSelected || hovered ? color : '#000000'}
-          emissiveIntensity={isSelected ? 0.6 : hovered ? 0.3 : 0}
+          emissive={isSelected || hovered ? color : isTwinHighlight ? color : '#000000'}
+          emissiveIntensity={isSelected ? 0.7 : hovered ? 0.35 : isTwinHighlight ? 0.5 : 0}
         />
       </mesh>
+
+      {/* Outer translucent neon glow sleeve when Twin Highlight is active */}
+      {isTwinHighlight && (
+        <mesh>
+          <cylinderGeometry args={[radius * 1.35, radius * 1.35, length, 12]} />
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={0.25}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      )}
 
       {/* 3D Label for bottleneck conduit PIPE-P07 */}
       {conduit.conduit_id === 'PIPE-P07' && (
@@ -331,11 +355,37 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   selectedAssetId,
   onSelectAsset,
   showUndergroundOnly = false,
+  twinViewMode,
+  onChangeTwinViewMode,
+  isRainActive,
+  onToggleRain,
+  stormIntensityMmh = 80,
   onOpenDebrisLab,
   isDebrisLabOpen = false,
   appMode = 'diagnose',
 }) => {
   const controlsRef = useRef<any>(null);
+
+  // Local view mode fallback
+  const [internalViewMode, setInternalViewMode] = useState<TwinViewMode>('twin_highlight');
+  const currentMode: TwinViewMode = twinViewMode ?? (showUndergroundOnly ? 'underground_only' : internalViewMode);
+
+  // Local rain toggle fallback
+  const [internalRain, setInternalRain] = useState<boolean>(true);
+  const rainActive = isRainActive ?? internalRain;
+
+  const handleSelectMode = (mode: TwinViewMode) => {
+    setInternalViewMode(mode);
+    onChangeTwinViewMode?.(mode);
+  };
+
+  const handleToggleRain = () => {
+    if (onToggleRain) {
+      onToggleRain();
+    } else {
+      setInternalRain(!internalRain);
+    }
+  };
 
   // Map nodes by node_id
   const nodeMap = useMemo(() => {
@@ -390,37 +440,96 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
 
   return (
     <div className="w-full h-full relative bg-slate-950">
-      {/* Camera Preset Quick Buttons */}
-      <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 backdrop-blur-md border border-slate-800 text-[11px] text-slate-300">
-        <span className="px-2 text-slate-500 font-medium">视角预设:</span>
+      {/* Top Floating View & Preset Quick Control Bar */}
+      <div className="absolute top-22 left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-slate-900/90 backdrop-blur-md border border-slate-800 text-[11px] text-slate-300 shadow-2xl">
+        {/* 1. Twin View Modes (Matching user mockup) */}
+        <div className="flex items-center rounded-xl bg-slate-950/80 p-0.5 border border-slate-800/80">
+          <button
+            onClick={() => handleSelectMode('twin_highlight')}
+            className={`px-3 py-1 rounded-lg transition cursor-pointer font-medium flex items-center gap-1.5 ${
+              currentMode === 'twin_highlight'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="地上街区与地下发光管网同时高亮透视显示 (北极星原型视口)"
+          >
+            <span>💎 透视高亮孪生</span>
+          </button>
+          <button
+            onClick={() => handleSelectMode('realistic')}
+            className={`px-2.5 py-1 rounded-lg transition cursor-pointer font-medium ${
+              currentMode === 'realistic'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="住宅区高写实地表街区"
+          >
+            <span>🏡 街区实景</span>
+          </button>
+          <button
+            onClick={() => handleSelectMode('underground_only')}
+            className={`px-2.5 py-1 rounded-lg transition cursor-pointer font-medium ${
+              currentMode === 'underground_only'
+                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="纯地下管网落深与水力坡降"
+          >
+            <span>🚇 纯地下工程</span>
+          </button>
+        </div>
+
+        {/* 2. Rain FX Toggle */}
         <button
-          onClick={() => handlePreset('overview')}
-          className="px-2.5 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+          onClick={handleToggleRain}
+          className={`px-2.5 py-1 rounded-xl border text-[11px] transition cursor-pointer flex items-center gap-1.5 ${
+            rainActive
+              ? 'bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-sm'
+              : 'bg-slate-950/80 text-slate-400 border-slate-800 hover:text-slate-200'
+          }`}
+          title="开关三维空间暴雨粒子降水动画"
         >
-          全貌俯视
+          <span className={`w-1.5 h-1.5 rounded-full ${rainActive ? 'bg-blue-400 animate-ping' : 'bg-slate-600'}`} />
+          <span>🌧️ 降雨渲染 {rainActive ? '开' : '关'}</span>
         </button>
-        <button
-          onClick={() => handlePreset('d07')}
-          className="px-2.5 py-1 rounded-lg hover:bg-amber-500/20 text-amber-300 transition cursor-pointer font-medium"
-        >
-          低洼进水点 (D07)
-        </button>
-        <button
-          onClick={() => handlePreset('outfall')}
-          className="px-2.5 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
-        >
-          出水口 (OUT01)
-        </button>
-        <button
-          onClick={() => handlePreset('north')}
-          className="px-2.5 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
-        >
-          上游源头 (J01/J02)
-        </button>
-        <div className="h-3 w-px bg-slate-700 mx-1" />
+
+        <div className="h-3.5 w-px bg-slate-700/60 mx-0.5" />
+
+        {/* 3. Camera Preset Quick Buttons */}
+        <div className="flex items-center gap-1 text-slate-400">
+          <span className="text-[10px] text-slate-500 font-medium px-1">视角:</span>
+          <button
+            onClick={() => handlePreset('overview')}
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+          >
+            全貌
+          </button>
+          <button
+            onClick={() => handlePreset('d07')}
+            className="px-2 py-0.5 rounded-lg hover:bg-amber-500/20 text-amber-300 transition cursor-pointer font-medium"
+          >
+            D07低洼
+          </button>
+          <button
+            onClick={() => handlePreset('outfall')}
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+          >
+            出水口
+          </button>
+          <button
+            onClick={() => handlePreset('north')}
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+          >
+            源头
+          </button>
+        </div>
+
+        <div className="h-3.5 w-px bg-slate-700/60 mx-0.5" />
+
+        {/* 4. Virtual Debris Lab Quick Button */}
         <button
           onClick={onOpenDebrisLab}
-          className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition cursor-pointer font-medium flex items-center gap-1 shadow-sm"
+          className="px-2.5 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition cursor-pointer font-medium flex items-center gap-1 shadow-sm"
         >
           <span>★ 进水口虚拟实验室</span>
         </button>
@@ -460,14 +569,38 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           position={[50, -0.05, 0]}
         />
 
-        {/* Full Residential Township Digital Twin (Houses, Roads, Lawns, Lake, Canal) */}
-        <TownshipEnvironment
-          showUndergroundOnly={showUndergroundOnly}
-          floodingActive={Boolean(currentFrame?.inlet_states?.some((i) => i.inlet_id === 'INLET-D07' && i.hydraulic_inlet_clogging_fraction > 0))}
-          appMode={appMode}
+        {/* 3D Falling Rain Streaks & Ground Splash Animation */}
+        <RainEffect
+          active={rainActive}
+          stormIntensityMmh={stormIntensityMmh}
         />
 
-        {/* 3D Nodes (Manholes & Drop Chambers) */}
+        {/* Full Residential Township Digital Twin (Houses, Roads, Lawns, Lake, Canal, and Rising Ponding Water) */}
+        <TownshipEnvironment
+          showUndergroundOnly={currentMode === 'underground_only'}
+          floodingActive={Boolean(
+            currentFrame?.inlet_states?.some(
+              (i) => i.inlet_id === 'INLET-D07' && i.hydraulic_inlet_clogging_fraction > 0
+            ) ||
+              currentFrame?.node_states?.some(
+                (n) => n.node_id === 'NODE-J07' && (n.status === 'flooding' || n.depth_m > 1.4)
+              )
+          )}
+          appMode={appMode}
+          currentFrame={currentFrame}
+        />
+
+        {/* Glowing Surface Road Flow Ribbons & 3D Glowing Junction Markers (Mockup View) */}
+        <NetworkHighlightOverlay
+          nodes={nodes}
+          conduits={conduits}
+          currentFrame={currentFrame}
+          selectedAssetId={selectedAssetId}
+          onSelectAsset={onSelectAsset}
+          active={currentMode === 'twin_highlight'}
+        />
+
+        {/* 3D Physical Nodes (Manholes & Drop Chambers) */}
         {nodes.map((node) => {
           const state = nodeStateMap.get(node.node_id);
           return (
@@ -478,12 +611,13 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
               depthM={state?.depth || 0}
               isSelected={selectedAssetId === node.node_id}
               onClick={() => onSelectAsset({ type: 'node', id: node.node_id, data: node })}
-              showUndergroundOnly={showUndergroundOnly}
+              showUndergroundOnly={currentMode === 'underground_only'}
+              isTwinHighlight={currentMode === 'twin_highlight'}
             />
           );
         })}
 
-        {/* 3D Conduits / Sewer Pipes */}
+        {/* 3D Physical Conduits / Sewer Pipes */}
         {conduits.map((conduit) => {
           const fromId = conduit.from_node_id || conduit.from_node!;
           const toId = conduit.to_node_id || conduit.to_node!;
@@ -502,6 +636,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
               isSelected={selectedAssetId === conduit.conduit_id}
               onClick={() => onSelectAsset({ type: 'conduit', id: conduit.conduit_id, data: conduit })}
               appMode={appMode}
+              isTwinHighlight={currentMode === 'twin_highlight'}
             />
           );
         })}

@@ -10,6 +10,7 @@ import {
   SimulationFrame,
   SimulationMetricsResponse,
   AppMode,
+  TwinViewMode,
 } from './types';
 import { StatusHeader } from './components/StatusHeader';
 import { SceneViewer } from './components/SceneViewer';
@@ -51,7 +52,8 @@ export function App() {
     data: unknown;
   } | null>(null);
   const [inspectingAssetId, setInspectingAssetId] = useState<string | null>(null);
-  const [undergroundOnly, setUndergroundOnly] = useState<boolean>(false);
+  const [twinViewMode, setTwinViewMode] = useState<TwinViewMode>('twin_highlight');
+  const [rainEnabled, setRainEnabled] = useState<boolean>(true);
 
   // J3: Virtual Debris Lab states
   const [isDebrisLabOpen, setIsDebrisLabOpen] = useState<boolean>(false);
@@ -283,6 +285,10 @@ export function App() {
     }
   };
 
+  const stormIntensity = selectedStormId === 'synthetic_120mmh_60min' ? 120 : 80;
+  const currentTimestamp = frames[currentFrameIndex]?.timestamp_s ?? 0;
+  const isRainActive = rainEnabled && (currentTimestamp <= 3600 || isRunning);
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-950 select-none">
       {/* Top Header & Status Indicators */}
@@ -306,7 +312,12 @@ export function App() {
         currentFrame={frames[currentFrameIndex] || null}
         selectedAssetId={selectedAsset?.id}
         onSelectAsset={(asset) => setSelectedAsset(asset)}
-        showUndergroundOnly={undergroundOnly}
+        showUndergroundOnly={twinViewMode === 'underground_only'}
+        twinViewMode={twinViewMode}
+        onChangeTwinViewMode={(m) => setTwinViewMode(m)}
+        isRainActive={isRainActive}
+        onToggleRain={() => setRainEnabled(!rainEnabled)}
+        stormIntensityMmh={stormIntensity}
         onOpenDebrisLab={() => setIsDebrisLabOpen(true)}
         isDebrisLabOpen={isDebrisLabOpen}
         appMode={appMode}
@@ -341,8 +352,10 @@ export function App() {
           currentFrameIndex={currentFrameIndex}
           onSeekFrame={(idx) => setCurrentFrameIndex(idx)}
           metrics={metrics}
-          undergroundOnly={undergroundOnly}
-          onToggleUnderground={() => setUndergroundOnly(!undergroundOnly)}
+          undergroundOnly={twinViewMode === 'underground_only'}
+          onToggleUnderground={() =>
+            setTwinViewMode((prev) => (prev === 'underground_only' ? 'twin_highlight' : 'underground_only'))
+          }
         />
       )}
 

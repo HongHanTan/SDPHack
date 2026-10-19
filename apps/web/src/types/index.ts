@@ -12,6 +12,7 @@ export type SourceType = 'observed' | 'literature_derived' | 'assumed' | 'synthe
 export type ConduitStatus = 'normal' | 'near_capacity' | 'surcharged' | 'unknown';
 export type NodeStatus = 'normal' | 'surcharged' | 'flooding' | 'unknown';
 export type RunStatus = 'queued' | 'running' | 'succeeded' | 'failed';
+export type TwinViewMode = 'twin_highlight' | 'realistic' | 'underground_only';
 
 export interface AssetNode {
   node_id: string;

@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
 import { Text } from '@react-three/drei';
+import { SimulationFrame } from '../types';
+import { PondingWaterAnimation } from './PondingWaterAnimation';
 
 interface TownshipEnvironmentProps {
   showUndergroundOnly?: boolean;
   floodingActive?: boolean;
   appMode?: 'diagnose' | 'anticipate';
+  currentFrame?: SimulationFrame | null;
 }
 
 // Low-poly parked suburban vehicle (Sedan / SUV)
@@ -304,6 +307,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
   showUndergroundOnly = false,
   floodingActive = true,
   appMode = 'diagnose',
+  currentFrame,
 }) => {
   // Houses Layout across all neighborhood zones
   const houses = useMemo(() => {
@@ -614,37 +618,12 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
         </group>
       </group>
 
-      {/* 7. Street Surface Ponding Puddle at Low Point INLET-D07 */}
-      {floodingActive && (
-        <group position={[40, 11.02, 0]}>
-          {/* Street Surface Water Pool */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[8.5, 32]} />
-            <meshStandardMaterial
-              color="#0f766e"
-              roughness={0.08}
-              metalness={0.5}
-              transparent
-              opacity={0.82}
-            />
-          </mesh>
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[8.2, 8.8, 32]} />
-            <meshBasicMaterial color="#f43f5e" transparent opacity={0.65} />
-          </mesh>
-          {/* Surface Ponding Warning Tag */}
-          <group position={[0, 4.0, 0]}>
-            <Text
-              fontSize={1.3}
-              color="#fb7185"
-              anchorX="center"
-              anchorY="bottom"
-            >
-              ⚠ 地表滞积淹水洼地 (Bypass Ponding: ~686 m³)
-            </Text>
-          </group>
-        </group>
-      )}
+      {/* 7. Dynamic Street Surface Ponding Water Animation (Physically rises with runoff) */}
+      <PondingWaterAnimation
+        currentFrame={currentFrame}
+        floodingActive={Boolean(floodingActive)}
+        appMode={appMode}
+      />
 
       {/* 8. 3D Floating Neighborhood Badges (Matching the Mockup Exactly) */}
       <group position={[0, 0, 0]}>
