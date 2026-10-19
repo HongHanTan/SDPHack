@@ -1,4 +1,5 @@
 import { LandUse, type Grid } from '../src/sim/types';
+import type { DrainNode } from '../src/sim/types';
 
 export function makeGrid(
   nx: number,
@@ -33,4 +34,8 @@ export function sum(a: ArrayLike<number>): number {
   let s = 0;
   for (let k = 0; k < a.length; k++) s += a[k];
   return s;
+}
+
+export function makeNode(id: string, cell: number, invert = 0, maxDepth = 1.5, inletPerimeter = 2): DrainNode {
+  return { id, x: 0, y: 0, cell, invert, area: 1, maxDepth, inletPerimeter };
 }
