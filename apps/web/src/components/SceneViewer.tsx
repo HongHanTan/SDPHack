@@ -11,6 +11,7 @@ import {
   Position3D,
   SimulationFrame,
 } from '../types';
+import { InspectorAvatar } from './InspectorAvatar';
 
 // Convert local coordinates {x (East), y (North), z (Elevation)} to Three.js [x, z, -y]
 // per Section 6.1 of md/TEAM_WORKFLOW.md
@@ -26,6 +27,8 @@ interface SceneViewerProps {
   selectedAssetId?: string | null;
   onSelectAsset: (asset: { type: 'node' | 'inlet' | 'conduit'; id: string; data: unknown }) => void;
   showUndergroundOnly?: boolean;
+  onOpenDebrisLab?: () => void;
+  isDebrisLabOpen?: boolean;
 }
 
 // 3D Node Mesh with physical chamber drop from ground down to invert
@@ -309,6 +312,8 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   selectedAssetId,
   onSelectAsset,
   showUndergroundOnly = false,
+  onOpenDebrisLab,
+  isDebrisLabOpen = false,
 }) => {
   const controlsRef = useRef<any>(null);
 
@@ -391,6 +396,13 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           className="px-2.5 py-1 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
         >
           上游源头 (J01/J02)
+        </button>
+        <div className="h-3 w-px bg-slate-700 mx-1" />
+        <button
+          onClick={onOpenDebrisLab}
+          className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition cursor-pointer font-medium flex items-center gap-1 shadow-sm"
+        >
+          <span>★ 进水口虚拟实验室</span>
         </button>
       </div>
 
@@ -509,6 +521,13 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
             />
           );
         })}
+
+        {/* Field Inspector Avatar (Azman - Field Unit A) positioned at INLET-D07 */}
+        <InspectorAvatar
+          position={[43.0, 11.0, 2.5]}
+          onOpenDebrisLab={onOpenDebrisLab || (() => {})}
+          active={isDebrisLabOpen}
+        />
 
         {/* Axis Orientation Gizmo */}
         <GizmoHelper alignment="bottom-right" margin={[80, 80]}>

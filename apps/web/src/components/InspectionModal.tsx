@@ -137,6 +137,21 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
             />
           </div>
 
+          <div>
+            <label className="text-slate-400 block mb-1">现场照片证据附录 (Photo Evidence Attachment)</label>
+            <div className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-950 border border-slate-800">
+              <div className="w-16 h-12 rounded bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-cyan-400 font-mono">
+                [现场照片]
+              </div>
+              <div className="flex-1 text-[11px] text-slate-400">
+                <span className="text-slate-200 font-medium block">
+                  IMG_20261018_INLET_D07_THROAT.jpg
+                </span>
+                <span>包含高精度现场时间戳、经纬度与现场巡检员电子防伪水印</span>
+              </div>
+            </div>
+          </div>
+
           <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-amber-400" />
             <div>

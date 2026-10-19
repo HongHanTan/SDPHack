@@ -8,6 +8,7 @@ import {
   SimulationFramesResponse,
   SimulationMetricsResponse,
   SimulationRun,
+  SourceType,
   StormPreset,
   TownshipAssetsResponse,
 } from '../types';
@@ -28,6 +29,7 @@ export type DataMode = 'mock' | 'api';
 
 const STORAGE_KEY_MODE = 'floodops_data_mode';
 const STORAGE_KEY_BASE_URL = 'floodops_api_base_url';
+const STORAGE_KEY_INSPECTIONS = 'floodops_local_inspections';
 
 export class ApiClient {
   private mode: DataMode;
@@ -125,15 +127,20 @@ export class ApiClient {
     return this.request<TownshipAssetsResponse>(`/api/townships/${townshipId}/assets`);
   }
 
-  public async createStorm(storm: Partial<StormPreset>): Promise<StormPreset> {
+  public async createStorm(storm: {
+    name: string;
+    intensity_mmh: number;
+    duration_s: number;
+    source_type?: SourceType;
+  }): Promise<StormPreset> {
     if (this.mode === 'mock') {
       return {
         storm_id: `mock-storm-${Date.now()}`,
         name: storm.name || 'Custom Mock Storm',
-        source_type: 'synthetic',
+        source_type: storm.source_type || 'synthetic',
         parameters: {
-          intensity_mmh: storm.parameters?.intensity_mmh || 80,
-          duration_s: storm.parameters?.duration_s || 3600,
+          intensity_mmh: storm.intensity_mmh || 80,
+          duration_s: storm.duration_s || 3600,
           pattern: 'constant',
         },
       };
@@ -144,32 +151,54 @@ export class ApiClient {
     });
   }
 
+  // Load inspections from backend or local storage
   public async getInspections(assetId?: string): Promise<{ items: InspectionRecord[] }> {
     if (this.mode === 'mock') {
-      const filtered = assetId ? MOCK_INSPECTIONS.filter((i) => i.asset_id === assetId) : MOCK_INSPECTIONS;
+      let local: InspectionRecord[] = [];
+      try {
+        const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_INSPECTIONS) : null;
+        local = stored ? JSON.parse(stored) : [];
+      } catch {
+        local = [];
+      }
+      const combined = [...local, ...MOCK_INSPECTIONS];
+      const filtered = assetId ? combined.filter((i) => i.asset_id === assetId) : combined;
       return { items: filtered };
     }
+
     const query = assetId ? `?asset_id=${encodeURIComponent(assetId)}` : '';
     return this.request<{ items: InspectionRecord[] }>(`/api/inspections${query}`);
   }
 
   public async createInspection(data: Partial<InspectionRecord>): Promise<InspectionRecord> {
+    const item: InspectionRecord = {
+      inspection_id: `insp-${Date.now()}`,
+      asset_id: data.asset_id || 'INLET-D07',
+      timestamp: new Date().toISOString(),
+      inspector: data.inspector || 'Inspector Azman (Field Unit A)',
+      method: data.method || 'visual',
+      source_type: 'observed',
+      visible_grate_coverage_fraction: data.visible_grate_coverage_fraction ?? 0.65,
+      debris_category: data.debris_category || 'leaf_litter',
+      notes: data.notes || '',
+      media_urls: data.media_urls || ['/assets/mock_inlet_clogged.jpg'],
+    };
+
     if (this.mode === 'mock') {
-      const item: InspectionRecord = {
-        inspection_id: `mock-insp-${Date.now()}`,
-        asset_id: data.asset_id || 'INLET-D07',
-        timestamp: new Date().toISOString(),
-        inspector: data.inspector || 'Inspector (Mock Session)',
-        method: data.method || 'visual',
-        source_type: 'observed',
-        visible_grate_coverage_fraction: data.visible_grate_coverage_fraction ?? 0.4,
-        debris_category: data.debris_category || 'mixed',
-        notes: data.notes || '',
-        media_urls: data.media_urls || [],
-      };
+      try {
+        const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_INSPECTIONS) : null;
+        const local = stored ? JSON.parse(stored) : [];
+        local.unshift(item);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_KEY_INSPECTIONS, JSON.stringify(local));
+        }
+      } catch {
+        // Fallback
+      }
       MOCK_INSPECTIONS.unshift(item);
       return item;
     }
+
     return this.request<InspectionRecord>('/api/inspections', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -211,28 +240,33 @@ export class ApiClient {
   }
 
   public async getSimulation(runId: string): Promise<SimulationRun> {
-    if (this.mode === 'mock' || runId.startsWith('t1_')) {
+    if (this.mode === 'mock' || runId === 't1_baseline' || runId === 't1_stronger') {
       return runId === 't1_stronger' ? MOCK_RUN_STRONGER : MOCK_RUN_BASELINE;
     }
     return this.request<SimulationRun>(`/api/simulations/${runId}`);
   }
 
   public async getSimulationFrames(runId: string): Promise<SimulationFramesResponse> {
-    if (this.mode === 'mock' || runId.startsWith('t1_') || runId.includes('120mmh')) {
-      return runId.includes('stronger') || runId.includes('120mmh')
-        ? MOCK_FRAMES_STRONGER
-        : MOCK_FRAMES_BASELINE;
+    if (this.mode === 'mock' || runId === 't1_baseline' || runId === 't1_stronger') {
+      return runId === 't1_stronger' ? MOCK_FRAMES_STRONGER : MOCK_FRAMES_BASELINE;
     }
     return this.request<SimulationFramesResponse>(`/api/simulations/${runId}/frames`);
   }
 
   public async getSimulationMetrics(runId: string): Promise<SimulationMetricsResponse> {
-    if (this.mode === 'mock' || runId.startsWith('t1_') || runId.includes('120mmh')) {
-      return runId.includes('stronger') || runId.includes('120mmh')
-        ? MOCK_METRICS_STRONGER
-        : MOCK_METRICS_BASELINE;
+    if (this.mode === 'mock' || runId === 't1_baseline' || runId === 't1_stronger') {
+      return runId === 't1_stronger' ? MOCK_METRICS_STRONGER : MOCK_METRICS_BASELINE;
     }
     return this.request<SimulationMetricsResponse>(`/api/simulations/${runId}/metrics`);
+  }
+
+  // Explicit helper to get verified offline EPA SWMM 5.2.4 datasets
+  public getOfflineFrames(stormId: string): SimulationFramesResponse {
+    return stormId === 'synthetic_120mmh_60min' ? MOCK_FRAMES_STRONGER : MOCK_FRAMES_BASELINE;
+  }
+
+  public getOfflineMetrics(stormId: string): SimulationMetricsResponse {
+    return stormId === 'synthetic_120mmh_60min' ? MOCK_METRICS_STRONGER : MOCK_METRICS_BASELINE;
   }
 }
 

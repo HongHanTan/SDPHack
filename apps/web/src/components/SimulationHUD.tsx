@@ -33,6 +33,7 @@ interface SimulationHUDProps {
   onRunSimulation: () => void;
   onLoadVerifiedRun: (stormId: string) => void;
   isRunning: boolean;
+  runProgressMessage?: string;
   frames: SimulationFrame[];
   currentFrameIndex: number;
   onSeekFrame: (index: number) => void;
@@ -54,6 +55,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   onRunSimulation,
   onLoadVerifiedRun,
   isRunning,
+  runProgressMessage,
   frames,
   currentFrameIndex,
   onSeekFrame,
@@ -311,7 +313,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
             {isRunning ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>求解中...</span>
+                <span>{runProgressMessage || '求解中...'}</span>
               </>
             ) : (
               <>

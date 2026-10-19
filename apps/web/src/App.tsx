@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { apiClient, DataMode } from './api/client';
 import {
   AssetConduit,
@@ -15,6 +15,7 @@ import { SceneViewer } from './components/SceneViewer';
 import { AssetDetailModal } from './components/AssetDetailModal';
 import { SimulationHUD } from './components/SimulationHUD';
 import { InspectionModal } from './components/InspectionModal';
+import { VirtualDebrisLab } from './components/VirtualDebrisLab';
 
 export function App() {
   const [mode, setMode] = useState<DataMode>(apiClient.getDataMode());
@@ -25,15 +26,16 @@ export function App() {
   const [conduits, setConduits] = useState<AssetConduit[]>([]);
   const [inspections, setInspections] = useState<InspectionRecord[]>([]);
 
-  // Simulation parameters aligned with bootstrap
+  // Simulation scenario parameters
   const [selectedStormId, setSelectedStormId] = useState<string>('synthetic_80mmh_60min');
-  const [selectedDebrisId, setSelectedDebrisId] = useState<string>('demo_inlet_40pct');
+  const [selectedDebrisId, setSelectedDebrisId] = useState<string>('demo_inlet_clean');
   const [selectedTailwater, setSelectedTailwater] = useState<string>('normal');
 
   // Simulation execution & playback
   const [isRunning, setIsRunning] = useState<boolean>(false);
+  const [runProgressMessage, setRunProgressMessage] = useState<string>('');
   const [frames, setFrames] = useState<SimulationFrame[]>([]);
-  const [currentFrameIndex, setCurrentFrameIndex] = useState<number>(29); // start near t=1800s (frame 30)
+  const [currentFrameIndex, setCurrentFrameIndex] = useState<number>(29); // near t=1800s (frame 30)
   const [metrics, setMetrics] = useState<SimulationMetricsResponse | null>(null);
 
   // Asset selection & modal states
@@ -45,26 +47,26 @@ export function App() {
   const [inspectingAssetId, setInspectingAssetId] = useState<string | null>(null);
   const [undergroundOnly, setUndergroundOnly] = useState<boolean>(false);
 
+  // J3: Virtual Debris Lab states
+  const [isDebrisLabOpen, setIsDebrisLabOpen] = useState<boolean>(false);
+  const [debrisRestrictionFraction, setDebrisRestrictionFraction] = useState<number>(0.4);
+
   // Loading & error state
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Ref to cancel ongoing poll loops when switching modes or unmounting
+  const activePollRef = useRef<boolean>(false);
 
   // Load foundational data (assets, bootstrap, health)
   const loadData = useCallback(async () => {
     setLoading(true);
     setApiError(null);
     try {
-      const [h, b, a, inspRes, framesRes, metricsRes] = await Promise.all([
+      const [h, b, a] = await Promise.all([
         apiClient.getHealth(),
         apiClient.getBootstrap(),
         apiClient.getTownshipAssets('taman_kyra_demo'),
-        apiClient.getInspections(),
-        apiClient.getSimulationFrames(
-          selectedStormId === 'synthetic_120mmh_60min' ? 't1_stronger' : 't1_baseline'
-        ),
-        apiClient.getSimulationMetrics(
-          selectedStormId === 'synthetic_120mmh_60min' ? 't1_stronger' : 't1_baseline'
-        ),
       ]);
 
       setHealth(h);
@@ -72,11 +74,18 @@ export function App() {
       setNodes(a.nodes);
       setInlets(a.inlets);
       setConduits(a.conduits);
+
+      // In API mode, only call /api/inspections if backend capability is true (T2 has it as false)
+      const inspRes = await apiClient.getInspections();
       setInspections(inspRes.items);
-      setFrames(framesRes.frames);
-      setMetrics(metricsRes);
+
+      // Load initial offline verified SWMM 5.2.4 run
+      const offlineFrames = apiClient.getOfflineFrames(selectedStormId);
+      const offlineMetrics = apiClient.getOfflineMetrics(selectedStormId);
+      setFrames(offlineFrames.frames);
+      setMetrics(offlineMetrics);
     } catch (err: unknown) {
-      console.error('Failed to load data:', err);
+      console.error('Failed to load foundational data:', err);
       setApiError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
@@ -85,33 +94,53 @@ export function App() {
 
   useEffect(() => {
     loadData();
+    return () => {
+      activePollRef.current = false;
+    };
   }, [loadData, mode]);
 
   const handleToggleMode = (newMode: DataMode) => {
+    activePollRef.current = false;
     apiClient.setDataMode(newMode);
     setMode(newMode);
   };
 
-  // Switch between verified SWMM runs (Baseline vs Stronger)
-  const handleLoadVerifiedRun = async (stormId: string) => {
-    const isStronger = stormId === 'synthetic_120mmh_60min';
-    const runId = isStronger ? 't1_stronger' : 't1_baseline';
-
-    const [framesRes, metricsRes] = await Promise.all([
-      apiClient.getSimulationFrames(runId),
-      apiClient.getSimulationMetrics(runId),
-    ]);
-
-    setFrames(framesRes.frames);
-    setMetrics(metricsRes);
-    // Move slider to near peak rainfall (frame 30 = t=1800s)
-    setCurrentFrameIndex(29);
+  // Explicit switch between verified offline SWMM 5.2.4 runs
+  const handleLoadVerifiedRun = (stormId: string) => {
+    setSelectedStormId(stormId);
+    const offlineFrames = apiClient.getOfflineFrames(stormId);
+    const offlineMetrics = apiClient.getOfflineMetrics(stormId);
+    setFrames(offlineFrames.frames);
+    setMetrics(offlineMetrics);
+    setCurrentFrameIndex(29); // peak frame
   };
 
+  // Run Simulation handler (with T2 polling support)
   const handleRunSimulation = async () => {
     setIsRunning(true);
     setApiError(null);
+    setRunProgressMessage('提交水力求解任务...');
+    activePollRef.current = true;
+
     try {
+      if (mode === 'mock') {
+        // Mock instant execution
+        await apiClient.createSimulation({
+          model_version_id: 'taman_kyra_synthetic_v1',
+          storm_id: selectedStormId,
+          debris_scenario_id: selectedDebrisId,
+          tailwater_case: selectedTailwater,
+          intervention: null,
+        });
+        const offlineFrames = apiClient.getOfflineFrames(selectedStormId);
+        const offlineMetrics = apiClient.getOfflineMetrics(selectedStormId);
+        setFrames(offlineFrames.frames);
+        setMetrics(offlineMetrics);
+        setCurrentFrameIndex(0);
+        return;
+      }
+
+      // Real API mode (T2 asynchronous simulation with polling)
       const simReq = {
         model_version_id: 'taman_kyra_synthetic_v1',
         storm_id: selectedStormId,
@@ -120,27 +149,79 @@ export function App() {
         intervention: null,
       };
 
-      const res = await apiClient.createSimulation(simReq);
-      const [newFrames, newMetrics] = await Promise.all([
-        apiClient.getSimulationFrames(res.run_id),
-        apiClient.getSimulationMetrics(res.run_id),
-      ]);
+      const { run_id, status: initialStatus } = await apiClient.createSimulation(simReq);
+      setRunProgressMessage(`Run ${run_id.slice(0, 8)}... 排队中 (queued)`);
 
-      setFrames(newFrames.frames);
-      setMetrics(newMetrics);
-      setCurrentFrameIndex(0);
+      // Poll until succeeded or failed
+      let currentStatus = initialStatus;
+      let attempts = 0;
+      const maxAttempts = 60; // 60 * 800ms = 48s max poll
+
+      while (activePollRef.current && (currentStatus === 'queued' || currentStatus === 'running')) {
+        attempts++;
+        if (attempts > maxAttempts) {
+          throw new Error('Simulation polling timed out after 48 seconds.');
+        }
+
+        await new Promise((r) => setTimeout(r, 800));
+        if (!activePollRef.current) return;
+
+        try {
+          const run = await apiClient.getSimulation(run_id);
+          currentStatus = run.status;
+          setRunProgressMessage(
+            `EPA SWMM 求解中 (${run.status})... [${attempts * 0.8}s]`
+          );
+
+          if (run.status === 'failed') {
+            const msg = run.error?.message || 'SWMM calculation failed.';
+            throw new Error(`[SIMULATION_FAILED] ${msg}`);
+          }
+        } catch (pollErr: unknown) {
+          // If 409 RESULTS_NOT_READY, continue polling
+          const errStr = String(pollErr);
+          if (errStr.includes('RESULTS_NOT_READY') || errStr.includes('409')) {
+            continue;
+          }
+          throw pollErr;
+        }
+      }
+
+      if (currentStatus === 'succeeded') {
+        setRunProgressMessage('拉取真实模拟帧与指标...');
+        const [newFrames, newMetrics] = await Promise.all([
+          apiClient.getSimulationFrames(run_id),
+          apiClient.getSimulationMetrics(run_id),
+        ]);
+
+        setFrames(newFrames.frames);
+        setMetrics(newMetrics);
+        setCurrentFrameIndex(0);
+      }
     } catch (err: unknown) {
       console.error('Simulation execution failed:', err);
-      // Per Team Workflow rules: display real error, do not silently fallback
       setApiError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsRunning(false);
+      setRunProgressMessage('');
+      activePollRef.current = false;
     }
   };
 
   const handleCreateInspection = async (record: Partial<InspectionRecord>) => {
     const saved = await apiClient.createInspection(record);
     setInspections((prev) => [saved, ...prev]);
+  };
+
+  // J3: Handle hypothesis update from Virtual Debris Lab
+  const handleSelectHypothesis = (fraction: number) => {
+    setDebrisRestrictionFraction(fraction);
+    // Find matching debris preset or update current choice
+    if (fraction === 0.0) {
+      setSelectedDebrisId('demo_inlet_clean');
+    } else {
+      setSelectedDebrisId('demo_inlet_40pct');
+    }
   };
 
   return (
@@ -164,6 +245,8 @@ export function App() {
         selectedAssetId={selectedAsset?.id}
         onSelectAsset={(asset) => setSelectedAsset(asset)}
         showUndergroundOnly={undergroundOnly}
+        onOpenDebrisLab={() => setIsDebrisLabOpen(true)}
+        isDebrisLabOpen={isDebrisLabOpen}
       />
 
       {/* Selected Asset Details Drawer */}
@@ -190,12 +273,28 @@ export function App() {
           onRunSimulation={handleRunSimulation}
           onLoadVerifiedRun={handleLoadVerifiedRun}
           isRunning={isRunning}
+          runProgressMessage={runProgressMessage}
           frames={frames}
           currentFrameIndex={currentFrameIndex}
           onSeekFrame={(idx) => setCurrentFrameIndex(idx)}
           metrics={metrics}
           undergroundOnly={undergroundOnly}
           onToggleUnderground={() => setUndergroundOnly(!undergroundOnly)}
+        />
+      )}
+
+      {/* J3: Virtual Debris Lab (Close-up modal for INLET-D07) */}
+      {isDebrisLabOpen && (
+        <VirtualDebrisLab
+          inletId="INLET-D07"
+          onClose={() => setIsDebrisLabOpen(false)}
+          inspections={inspections}
+          onOpenNewInspection={() => {
+            setIsDebrisLabOpen(false);
+            setInspectingAssetId('INLET-D07');
+          }}
+          currentHypothesisFraction={debrisRestrictionFraction}
+          onSelectHypothesis={handleSelectHypothesis}
         />
       )}
 
