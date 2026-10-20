@@ -5,6 +5,7 @@ export class Player {
   private frames: Frame[] = [];
   private idx = 0;
   private playing = true;
+  private enabled = true;
 
   constructor(
     private readonly scrubber: HTMLInputElement,
@@ -36,7 +37,14 @@ export class Player {
     this.scrubber.max = String(this.frames.length - 1);
   }
 
+  /** While disabled the player neither advances nor draws (the other mode owns the view). Re-enabling redraws the current frame. */
+  setEnabled(on: boolean): void {
+    this.enabled = on;
+    if (on && this.frames.length) this.seek(Math.min(this.idx, this.frames.length - 1));
+  }
+
   private tick(): void {
+    if (!this.enabled) return;
     if (this.playing && this.idx < this.frames.length) {
       this.seek(this.idx);
       this.idx++;
