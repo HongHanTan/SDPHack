@@ -132,3 +132,19 @@ Plan: `docs/superpowers/plans/2026-10-23-taman-kyra-engine.md`
 | P5-8 | Retune with catchments; restore claims; cross-check; badges | ✅ done (3cfa486) — claims 1,3,4,6,7 pass; 2 (desilt) & 5 (tailwater) removed; cross-check report-only |
 | P5-9 | Grate capture for catchments; drop flap gate and pump | ✅ done (1796ac6) |
 | P5-10 | Retune; restore claim 2; badges | ✅ done (b1611f7) — claims 1,3,4,6,7 pass (homes margin 39 mm); claim 2 stays removed (desilt alone ≈ 0 while P07 saturated) |
+
+---
+
+# Phase 6: team integration, part 3 (team React UI driven by the engine)
+
+Plan: `docs/superpowers/plans/2026-10-23-team-ui-engine.md`
+
+| # | Task | Status |
+|---|---|---|
+| P6-1 | Engine prep: move runner and smoothing, pass options to the worker, layout visual fields, dashboard metrics | ✅ done (434f865) |
+| P6-2 | Web tests and pure adapters (visual ground, frame/metrics) | ✅ done (c4afe99) |
+| P6-3 | Engine data mode, three-way switch, engine-mode gating | ✅ done (a3d82eb) — follow-ups: engine-mode storm selector; gate handleSwitchAppMode offline load |
+| P6-4 | Scene: layout-driven houses and trees, dips, real water | ✅ done (0258471) |
+| P6-5 | Live toggle | ✅ done (d34d5d7) — plus engine storm selector and appMode gating |
+| P6-6 | Engine-backed dashboard, HUD metrics, docs | ✅ done (b05f5dd) |
+| P6-7 | Final review + fixes | ✅ done |
