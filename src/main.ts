@@ -66,6 +66,47 @@ pinsBtn.addEventListener('click', () => {
   applyPinVisibility();
 });
 
+const xrayBtn = $<HTMLButtonElement>('xray-toggle');
+let xrayOn = false;
+xrayBtn.addEventListener('click', () => {
+  xrayOn = !xrayOn;
+  xrayBtn.classList.toggle('active', xrayOn);
+  view.setXray(xrayOn);
+});
+
+const planOverlay = $('plan-overlay');
+const scaleBar = $('scalebar-bar');
+let planOn = false;
+const updateScaleBar = () => {
+  if (!planOn) return;
+  const px = 50 / Math.max(1e-6, view.planMetresPerPixel());
+  scaleBar.style.width = `${Math.round(Math.min(240, px))}px`;
+  requestAnimationFrame(updateScaleBar);
+};
+$('view-toggle').addEventListener('click', (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-view]');
+  if (!btn) return;
+  const v = btn.dataset.view as '3d' | 'plan';
+  $('view-toggle').querySelectorAll('button').forEach((b) => b.classList.toggle('active', b === btn));
+  view.setView(v);
+  planOn = v === 'plan';
+  planOverlay.hidden = !planOn;
+  if (planOn) requestAnimationFrame(updateScaleBar);
+});
+
+const qualityToggle = $('quality-toggle');
+const markQuality = (q: 'high' | 'low') =>
+  qualityToggle.querySelectorAll<HTMLButtonElement>('button').forEach((b) => b.classList.toggle('active', b.dataset.q === q));
+qualityToggle.addEventListener('click', (e) => {
+  const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-q]');
+  if (!btn) return;
+  const q = btn.dataset.q as 'high' | 'low';
+  markQuality(q);
+  view.setQuality(q);
+});
+view.onQualityAutoDrop(() => markQuality('low'));
+view.onNotice((text) => status(text));
+
 const draw = mountDrawPipes({
   view,
   selection,

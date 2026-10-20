@@ -64,6 +64,21 @@
         <p id="status" class="status"></p>
       </aside>
       <div id="viewport">
+        <div class="view-toolbar">
+          <button id="xray-toggle" class="tb">🩻 X-ray</button>
+          <div id="view-toggle" class="tb-seg">
+            <button data-view="3d" class="active">3D</button>
+            <button data-view="plan">Plan</button>
+          </div>
+          <div id="quality-toggle" class="tb-seg" title="Graphics quality">
+            <button data-q="high" class="active">High</button>
+            <button data-q="low">Low</button>
+          </div>
+        </div>
+        <div id="plan-overlay" class="plan-overlay" hidden>
+          <span class="north">N ↑</span>
+          <span class="scalebar"><i id="scalebar-bar"></i><b>50 m</b></span>
+        </div>
         <div class="legend">
           <div><i style="background: linear-gradient(90deg, #9fd3ff, #08306b)"></i>Water depth 0 → 1 m+</div>
           <div><i style="background: linear-gradient(90deg, #2ecc71, #f1c40f, #e74c3c)"></i>Pipe load 0 → full</div>

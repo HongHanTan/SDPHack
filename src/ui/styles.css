@@ -68,9 +68,13 @@ input.switch:checked::after { left: 16px; }
 input.switch:disabled { opacity: 0.5; cursor: default; }
 .iv-footer { display: flex; justify-content: space-between; margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--navy); color: #fff; font-size: 12.5px; }
 .pin { background: none; border: 0; padding: 0; cursor: pointer; pointer-events: auto; }
-.pin-head { width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #8a94a3; background: #ffffffd9; display: grid; place-items: center; box-shadow: 0 2px 6px #0003; }
-.pin-head > span { transform: rotate(45deg); font-size: 14px; }
-.pin.installed .pin-head { background: #0b62c4; border-color: #0b62c4; }
+.pin-head { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #2b8a8a; background: #fff; display: grid; place-items: center; box-shadow: 0 2px 6px #0003; position: relative; }
+.pin-head > span { font-size: 14px; line-height: 1; }
+.pin-head::after { content: ''; position: absolute; left: 50%; top: 100%; width: 2px; height: 10px; margin-left: -1px; background: #2b8a8a; }
+.pin.installed .pin-head { background: #2b8a8a; border-color: #2b8a8a; }
+#viewport.xray .pin-head { background: #0f1b2c; border-color: #19c3ff; }
+#viewport.xray .pin-head::after { background: #19c3ff; }
+#viewport.xray .pin.installed .pin-head { background: #19c3ff; border-color: #19c3ff; }
 .pin-popover { position: absolute; z-index: 5; width: 240px; background: #fff; border-radius: 10px; padding: 10px 12px; box-shadow: 0 6px 20px #0003; font-size: 12.5px; }
 .pin-popover h3 { margin: 0 0 4px; font-size: 14px; }
 .pin-popover .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
@@ -95,3 +99,17 @@ input.switch:disabled { opacity: 0.5; cursor: default; }
 .seg button { padding: 5px; border: 1px solid var(--line); border-radius: 6px; background: #fff; cursor: pointer; font: inherit; font-size: 12.5px; }
 .seg button.active { background: var(--navy); color: #fff; border-color: var(--navy); }
 #live-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.view-toolbar { position: absolute; left: 12px; top: 12px; z-index: 4; display: flex; gap: 6px; align-items: center; }
+.tb, .tb-seg button { font: inherit; font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--line); background: #ffffffdd; cursor: pointer; }
+.tb { border-radius: 8px; }
+.tb.active { background: #0f1b2c; color: #9fe6ff; border-color: #19c3ff; }
+.tb-seg { display: flex; }
+.tb-seg button:first-child { border-radius: 8px 0 0 8px; }
+.tb-seg button:last-child { border-radius: 0 8px 8px 0; border-left: 0; }
+.tb-seg button.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+.plan-overlay { position: absolute; left: 12px; bottom: 96px; z-index: 4; display: flex; gap: 10px; align-items: center; background: #ffffffdd; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
+.plan-overlay .north { font-weight: 700; }
+.scalebar { display: flex; align-items: center; gap: 6px; }
+.scalebar i { display: inline-block; height: 6px; border: 2px solid #2f3b4a; border-top: 0; width: 60px; }
+#viewport.xray .legend, #viewport.xray .rain-gauge, #viewport.xray .pins-toggle, #viewport.xray .plan-overlay, #viewport.xray .tb, #viewport.xray .tb-seg button:not(.active) { background: #0f1b2cdd; color: #cfe3f3; border-color: #2e4a6e; }
+#viewport.xray .scalebar i { border-color: #cfe3f3; }
