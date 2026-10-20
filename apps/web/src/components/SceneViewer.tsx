@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Grid, Text, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
@@ -504,6 +504,15 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
     }
     controlsRef.current.update();
   };
+
+  // A different site: move the 3D camera to its Overview pose (not on first mount).
+  const siteKeyRef = useRef(site.key);
+  useEffect(() => {
+    if (siteKeyRef.current === site.key) return;
+    siteKeyRef.current = site.key;
+    handlePreset('overview');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [site.key]);
 
   return (
     <div className="w-full h-full relative bg-slate-100">

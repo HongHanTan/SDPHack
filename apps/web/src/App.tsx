@@ -23,6 +23,7 @@ import { InspectionModal } from './components/InspectionModal';
 import { VirtualDebrisLab } from './components/VirtualDebrisLab';
 import { InterventionDashboard } from './components/InterventionDashboard';
 import { LiveTelemetryTicker } from './components/LiveTelemetryTicker';
+import { SiteImportPanel } from './site/SiteImportPanel';
 import { engineSource } from './engine/engineSource';
 import { useLiveEngine } from './engine/useLiveEngine';
 import { buildDashboardOptions, idsForOption } from './engine/dashboardOptions';
@@ -72,6 +73,7 @@ export function App() {
   const [twinViewMode, setTwinViewMode] = useState<TwinViewMode>('twin_highlight');
   const [xray, setXray] = useState<boolean>(false);
   const [viewDim, setViewDim] = useState<'3d' | '2d'>('3d');
+  const [isSiteImportOpen, setIsSiteImportOpen] = useState(false);
   const [rainEnabled, setRainEnabled] = useState<boolean>(true);
 
   // J3: Virtual Debris Lab states
@@ -177,6 +179,7 @@ export function App() {
     stopLive();
     engineSource.setSite(s);
     setSiteState(engineSource.getSite());
+    setViewDim('3d');
     setAppliedOptionId('baseline');
     setFrames([]);
     setMetrics(null);
@@ -187,7 +190,6 @@ export function App() {
     setSelectedDebrisId('engine_d07_40pct');
     void loadData();
   };
-  void applySite; // Task 6 (upload UI) calls this.
 
   const handleToggleMode = (newMode: DataMode) => {
     runTokenRef.current++;
@@ -663,6 +665,7 @@ export function App() {
         health={health}
         loading={loading}
         onRefresh={loadData}
+        onOpenSiteImport={engineMode ? () => setIsSiteImportOpen(true) : undefined}
         apiError={shownError}
       />
 
@@ -792,6 +795,10 @@ export function App() {
       )}
 
       {/* J3: Virtual Debris Lab (Close-up modal for INLET-D07) */}
+      {engineMode && isSiteImportOpen && (
+        <SiteImportPanel activeSite={site} onApply={applySite} onReset={() => applySite(null)} onClose={() => setIsSiteImportOpen(false)} />
+      )}
+
       {!engineMode && isDebrisLabOpen && (
         <VirtualDebrisLab
           inletId="INLET-D07"
