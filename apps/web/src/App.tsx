@@ -23,7 +23,9 @@ import { InspectionModal } from './components/InspectionModal';
 import { VirtualDebrisLab } from './components/VirtualDebrisLab';
 import { InterventionDashboard } from './components/InterventionDashboard';
 import { LiveTelemetryTicker } from './components/LiveTelemetryTicker';
-import { SiteImportPanel } from './site/SiteImportPanel';
+import { SiteImportPage } from './site/SiteImportPage';
+import { useSiteImport } from './site/useSiteImport';
+import { initialStage, stageOnModeSwitch, type Stage } from './site/siteFlow';
 import { engineSource } from './engine/engineSource';
 import { useLiveEngine } from './engine/useLiveEngine';
 import { buildDashboardOptions, idsForOption } from './engine/dashboardOptions';
@@ -74,7 +76,8 @@ export function App() {
   const [twinViewMode, setTwinViewMode] = useState<TwinViewMode>('twin_highlight');
   const [xray, setXray] = useState<boolean>(false);
   const [viewDim, setViewDim] = useState<'3d' | '2d'>('3d');
-  const [isSiteImportOpen, setIsSiteImportOpen] = useState(false);
+  const [stage, setStage] = useState<Stage>(initialStage(apiClient.getDataMode()));
+  const [siteChosen, setSiteChosen] = useState(false);
   const [rainEnabled, setRainEnabled] = useState<boolean>(true);
 
   // J3: Virtual Debris Lab states
@@ -208,6 +211,7 @@ export function App() {
     if (newMode !== 'engine') stopLive();
     apiClient.setDataMode(newMode);
     setMode(newMode);
+    setStage((cur) => stageOnModeSwitch(newMode, siteChosen, cur));
     if (newMode === 'engine') {
       setSelectedDebrisId('engine_d07_40pct');
       // Entering engine mode starts from the baseline network (loadData reloads the assets).
@@ -661,6 +665,30 @@ export function App() {
     }
   };
 
+  const imp = useSiteImport({ activeSiteKey: site.key, onApply: applySite });
+  const generateCity = (s: SiteSpec) => {
+    applySite(s);
+    setSiteChosen(true);
+    setStage('dashboard');
+  };
+  const useBuiltIn = () => {
+    applySite(null);
+    setSiteChosen(true);
+    setStage('dashboard');
+  };
+
+  if (engineMode && stage === 'import') {
+    return (
+      <SiteImportPage
+        imp={imp}
+        activeSite={site}
+        onGenerate={generateCity}
+        onUseBuiltIn={useBuiltIn}
+        onBack={siteChosen ? () => setStage('dashboard') : undefined}
+      />
+    );
+  }
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-100 select-none">
       {/* Top Header & Status Indicators */}
@@ -675,7 +703,7 @@ export function App() {
         health={health}
         loading={loading}
         onRefresh={loadData}
-        onOpenSiteImport={engineMode ? () => setIsSiteImportOpen(true) : undefined}
+        onOpenSiteImport={engineMode ? () => setStage('import') : undefined}
         apiError={shownError}
       />
 
@@ -805,10 +833,6 @@ export function App() {
       )}
 
       {/* J3: Virtual Debris Lab (Close-up modal for INLET-D07) */}
-      {engineMode && isSiteImportOpen && (
-        <SiteImportPanel activeSite={site} onApply={applySite} onReset={() => applySite(null)} onClose={() => setIsSiteImportOpen(false)} />
-      )}
-
       {!engineMode && isDebrisLabOpen && (
         <VirtualDebrisLab
           inletId="INLET-D07"
