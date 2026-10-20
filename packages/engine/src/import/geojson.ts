@@ -2,7 +2,7 @@ import { polygonCentroidArea, type Ring } from './geometry';
 
 export interface LayoutFeatures {
   buildings: Array<{ id: string | null; ring: Ring; rotationDeg?: number; props: Record<string, unknown> }>;
-  roads: Array<{ id: string | null; line: Ring; width: number; surfaceZ: number | null }>;
+  roads: Array<{ id: string | null; line: Ring; width: number; widthDefaulted: boolean; surfaceZ: number | null }>;
   roundabouts: Array<{ id: string | null; x: number; y: number; radius: number; surfaceZ: number | null }>;
   trees: Array<{ x: number; y: number; scale: number }>;
   ponds: Array<{ id: string | null; x: number; y: number; radius: number; waterLevel: number | null; bedZ: number | null }>;
@@ -52,7 +52,7 @@ export function parseLayoutGeoJson(text: string): { features: LayoutFeatures; er
         if (want('Polygon')) features.buildings.push({ id, ring: ring(), rotationDeg: numOr(p.rotation_deg, null) ?? undefined, props: p });
         break;
       case 'road':
-        if (want('LineString')) features.roads.push({ id, line: line(), width: numOr(p.width_m, 8)!, surfaceZ: numOr(p.surface_z, null) });
+        if (want('LineString')) features.roads.push({ id, line: line(), width: numOr(p.width_m, 8)!, widthDefaulted: numOr(p.width_m, null) === null, surfaceZ: numOr(p.surface_z, null) });
         break;
       case 'roundabout':
         if (want('Point')) features.roundabouts.push({ id, x: point()[0], y: point()[1], radius: numOr(p.radius_m, 10)!, surfaceZ: numOr(p.surface_z, null) });

@@ -71,4 +71,32 @@ describe('buildSiteFromFiles', () => {
     expect(site!.gridSpec.dx).toBeGreaterThan(2);
     expect(report.warnings.join(' ')).toMatch(/coarsened/);
   });
+  it('treats malformed numbers as errors', () => {
+    const r = buildSiteFromFiles(files(inp().replace('P1 J1 J2 50', 'P1 J1 J2 abc')));
+    expect(r.site).toBeUndefined();
+    expect(r.report.errors.join(' ')).toMatch(/conduit P1 has an invalid length/);
+  });
+  it('errors, without crashing, when there are no junctions', () => {
+    const text = `[OUTFALLS]
+O1 9.0 FIXED 9.2 NO
+[CONDUITS]
+[XSECTIONS]
+[COORDINATES]
+O1 500000 300100
+`;
+    const r = buildSiteFromFiles(files(text));
+    expect(r.report.errors.join(' ')).toMatch(/no junctions/);
+  });
+  it('ignores a hotspot that is not a junction, with a warning and a fallback', () => {
+    const geo = JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [500000, 300100] }, properties: { kind: 'hotspot', node_id: 'O1' } }] });
+    const { site, report } = buildSiteFromFiles({ ...files(inp()), geojson: { name: 'l.geojson', text: geo } });
+    expect(site!.hotspotNodeId).toBe('J2');
+    expect(report.warnings.join(' ')).toMatch(/Hotspot O1/);
+    expect(report.assumptions.join(' ')).toMatch(/Hotspot: J2/);
+  });
+  it('errors on longitude/latitude layout coordinates', () => {
+    const geo = JSON.stringify({ type: 'FeatureCollection', features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [101.6, 3.1] }, properties: { kind: 'tree' } }] });
+    const r = buildSiteFromFiles({ ...files(inp()), geojson: { name: 'l.geojson', text: geo } });
+    expect(r.report.errors.join(' ')).toMatch(/Layout coordinates look like longitude/);
+  });
 });

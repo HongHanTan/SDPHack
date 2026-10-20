@@ -68,16 +68,32 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
     ids.add(id);
   }
   const nodeIds = new Set([...m.junctions.map((j) => j.id), ...m.outfalls.map((o) => o.id)]);
+  if (!m.junctions.length) errors.push('SWMM file: no junctions.');
   if (!m.outfalls.length) errors.push('SWMM file: no outfall.');
-  for (const id of nodeIds) if (!m.coordinates.has(id)) errors.push(`SWMM file: node ${id} has no [COORDINATES] entry.`);
+  for (const o of m.outfalls) {
+    if (!Number.isFinite(o.invert)) errors.push(`SWMM file: outfall ${o.id} has an invalid invert elevation.`);
+    if (o.type === 'FIXED' && !Number.isFinite(o.stage)) errors.push(`SWMM file: outfall ${o.id} has an invalid fixed stage.`);
+  }
+  for (const id of nodeIds) {
+    const c = m.coordinates.get(id);
+    if (!c) errors.push(`SWMM file: node ${id} has no [COORDINATES] entry.`);
+    else if (!(Number.isFinite(c[0]) && Number.isFinite(c[1]))) errors.push(`SWMM file: node ${id} has invalid coordinates.`);
+  }
   for (const j of m.junctions) if (!(Number.isFinite(j.invert) && j.maxDepth > 0)) errors.push(`SWMM file: junction ${j.id} needs an invert and a positive max depth.`);
   for (const c of m.conduits) {
     for (const end of [c.from, c.to]) if (!nodeIds.has(end)) errors.push(`SWMM file: conduit ${c.id} refers to unknown node ${end}.`);
+    if (!(Number.isFinite(c.length) && c.length > 0)) errors.push(`SWMM file: conduit ${c.id} has an invalid length.`);
+    if (!(Number.isFinite(c.n) && c.n > 0)) errors.push(`SWMM file: conduit ${c.id} has an invalid roughness.`);
     if (!m.xsections.has(c.id)) errors.push(`SWMM file: conduit ${c.id} has no [XSECTIONS] entry.`);
+    else if (!(Number.isFinite(m.xsections.get(c.id)!.geom1) && m.xsections.get(c.id)!.geom1 > 0)) errors.push(`SWMM file: conduit ${c.id} has an invalid diameter.`);
     else if (m.xsections.get(c.id)!.shape !== 'CIRCULAR') warnings.push(`SWMM file: conduit ${c.id} is ${m.xsections.get(c.id)!.shape}; modelled as circular with diameter = Geom1.`);
     if (c.inOffset || c.outOffset) warnings.push(`SWMM file: conduit ${c.id} offsets are ignored.`);
   }
-  for (const s of m.subcatchments) if (!nodeIds.has(s.outlet)) errors.push(`SWMM file: subcatchment ${s.id} drains to unknown node ${s.outlet}.`);
+  for (const s of m.subcatchments) {
+    if (!nodeIds.has(s.outlet)) errors.push(`SWMM file: subcatchment ${s.id} drains to unknown node ${s.outlet}.`);
+    if (!(Number.isFinite(s.areaHa) && s.areaHa > 0)) errors.push(`SWMM file: subcatchment ${s.id} has an invalid area.`);
+    if (!(Number.isFinite(s.imperviousPercent) && s.imperviousPercent >= 0 && s.imperviousPercent <= 100)) errors.push(`SWMM file: subcatchment ${s.id} has an invalid % impervious.`);
+  }
   // Every node must reach an outfall through conduits.
   const outIds = new Set(m.outfalls.map((o) => o.id));
   const down = new Map<string, string[]>();
@@ -136,6 +152,10 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
       ]
     : [];
   const polyPts = [...m.polygons.values()].flat();
+  if (layoutPts.length && layoutPts.every(([x, y]) => Math.abs(x) <= 180 && Math.abs(y) <= 90)) {
+    errors.push('Layout coordinates look like longitude/latitude: export in the same projected metric CRS as the SWMM model.');
+    return { report: report() };
+  }
   let minX: number;
   let minY: number;
   let nx: number;
@@ -156,12 +176,29 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
     dx = asc.cellsize * k;
     nx = Math.floor(asc.ncols / k);
     ny = Math.floor(asc.nrows / k);
+    if (k > 1) {
+      for (const id of nodeIds) {
+        const [x, y] = m.coordinates.get(id)!;
+        if (x > asc.xll + nx * dx || y > asc.yll + ny * dx) errors.push(`Node ${id} lies outside the coarsened height grid.`);
+      }
+      if (errors.length) return { report: report() };
+    }
   } else {
     const all = [...coords, ...layoutPts, ...polyPts];
-    minX = Math.min(...all.map((p) => p[0])) - MARGIN_M;
-    minY = Math.min(...all.map((p) => p[1])) - MARGIN_M;
-    const w = Math.max(...all.map((p) => p[0])) + MARGIN_M - minX;
-    const h = Math.max(...all.map((p) => p[1])) + MARGIN_M - minY;
+    let loX = Infinity;
+    let loY = Infinity;
+    let hiX = -Infinity;
+    let hiY = -Infinity;
+    for (const [x, y] of all) {
+      if (x < loX) loX = x;
+      if (x > hiX) hiX = x;
+      if (y < loY) loY = y;
+      if (y > hiY) hiY = y;
+    }
+    minX = loX - MARGIN_M;
+    minY = loY - MARGIN_M;
+    const w = hiX + MARGIN_M - minX;
+    const h = hiY + MARGIN_M - minY;
     while (Math.ceil(w / (DEFAULT_DX * k)) * Math.ceil(h / (DEFAULT_DX * k)) > MAX_CELLS) k++;
     dx = DEFAULT_DX * k;
     nx = Math.ceil(w / dx);
@@ -256,7 +293,9 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
   const ponds: SitePond[] = [];
   const rivers: SiteRiver[] = [];
   const pondBed = TK_MEDIAN_GROUND - POND_BED_BELOW_MEDIAN_M;
-  const riverBed = Math.min(...nodes.filter((n) => n.node_type === 'outfall').map((n) => n.invert_elevation_m)) - RIVER_BED_BELOW_OUTFALL_M;
+  let lowOutfall = Infinity;
+  for (const n of nodes) if (n.node_type === 'outfall' && n.invert_elevation_m < lowOutfall) lowOutfall = n.invert_elevation_m;
+  const riverBed = lowOutfall - RIVER_BED_BELOW_OUTFALL_M;
   if (layout) {
     const segs = (line: Ring) => line.slice(1).map((b, s) => [line[s], b] as const);
     layout.roads.forEach((r, ri) =>
@@ -275,7 +314,7 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
         } as RoadStraight);
       }),
     );
-    if (layout.roads.some((r) => r.width === DEFAULT_ROAD_WIDTH_M)) assumptions.push(`Roads without width_m are ${DEFAULT_ROAD_WIDTH_M} m wide.`);
+    if (layout.roads.some((r) => r.widthDefaulted)) assumptions.push(`Roads without width_m are ${DEFAULT_ROAD_WIDTH_M} m wide.`);
     layout.roundabouts.forEach((r, i) => {
       const p = T(r.x, r.y);
       roads.push({ id: r.id ?? `roundabout-${i + 1}`, kind: 'circle', x: p.x, y: p.y, radius: r.radius, ...(r.surfaceZ !== null ? { surfaceZ: Z(r.surfaceZ) } : {}) } as RoadCircle);
@@ -331,12 +370,16 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
 
   // 8. Hotspot, focus inlet, tailwater, catchments.
   const lowest = nodes.filter((n) => n.node_type === 'junction').sort((a, b) => a.ground_elevation_m - b.ground_elevation_m)[0];
-  const hotspotNodeId = layout?.hotspots.find((h) => nodeById.has(h.nodeId))?.nodeId ?? lowest.node_id;
-  if (!layout?.hotspots.length) assumptions.push(`Hotspot: ${hotspotNodeId}, the junction with the lowest ground.`);
+  const isJunction = (id: string) => nodeById.get(id)?.node_type === 'junction';
+  for (const h of layout?.hotspots ?? []) if (!isJunction(h.nodeId)) warnings.push(`Hotspot ${h.nodeId} is not a junction in the SWMM file and was ignored.`);
+  const hotspotFromLayout = layout?.hotspots.find((h) => isJunction(h.nodeId))?.nodeId;
+  const hotspotNodeId = hotspotFromLayout ?? lowest.node_id;
+  if (!hotspotFromLayout) assumptions.push(`Hotspot: ${hotspotNodeId}, the junction with the lowest ground.`);
   const focusInletId = inlets.find((i) => i.node_id === hotspotNodeId)?.inlet_id ?? inlets[0]?.inlet_id ?? null;
   const o0 = m.outfalls[0];
   const normal = Z(o0.stage ?? o0.invert);
   if (o0.stage === null) assumptions.push(`Outfall ${o0.id} has no FIXED stage: normal tailwater at its invert.`);
+  if (m.outfalls.length > 1) assumptions.push(`Tailwater is taken from outfall ${o0.id}; other outfalls use the same river level.`);
   assumptions.push(`High tailwater = normal + ${HIGH_RISE_M} m.`);
   assumptions.push("Inlet capture curve: Tay Zheheng's illustrative curve (80% of approach flow up to 0.20 m³/s); catchment lag 60 s.");
   const subcatchments = m.subcatchments.map((s) => {
