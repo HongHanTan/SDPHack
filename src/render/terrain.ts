@@ -67,8 +67,3 @@ export function createTerrain(grid: Grid, textureSize = 2048): TerrainView {
     },
   };
 }
-
-/** Compatibility wrapper used by scene.ts until the conductor rewrite (Task 5). */
-export function createTerrainMesh(grid: Grid): THREE.Mesh {
-  return createTerrain(grid).mesh;
-}
