@@ -198,3 +198,32 @@ Changes (scenario layer only; the physics core is untouched):
 - **Story claim 5, restated:** under high tailwater, the J08 street peak depth exceeds the normal-tailwater J08 peak, and `flap-gate` and `pump` each reduce the J08 peak against the high-tailwater baseline.
 
 All other claims are unchanged. The same honesty rule applies: if a claim still can't be met within the tunables, remove it and document why.
+
+## 14. Amendment: SWMM-style catchment loading (2026-10-23)
+
+After §13, too little water reaches the pipes:
+- no houses flood;
+- the tailwater claims are inert;
+- the SWMM gap is 35–68%.
+
+The user chose to add catchment loading modelled on Tay's `models/illustrative_taman_kyra/hydrology.json`.
+
+- **Catchments:**
+  - For each subcatchment (CATCH-D01/D02/D04/D07, 1 ha each, 80% impervious, outlets J01/J02/J04/J07), take the `area_ha` worth of grid cells nearest its outlet node.
+  - Cells are assigned to their nearest outlet first, and RIVER/POND cells are excluded.
+- **Rain split** on catchment cells:
+  - `impervious_percent/100` of the rain goes to a per-catchment linear reservoir (lag `CATCHMENT.lagS`, default 300 s, tunable 60–1200 s), which drains into the outlet node.
+  - The rest lands on the 2D surface as before.
+- **Overflow:** a full node spills the excess onto the street through the existing overflow.
+- **Engine change** (the one physics-core change, with its own tests):
+  - `Scenario.catchments?: Catchment[]`, with the rain step updated;
+  - the catchment stores count in `totalStorage`, so the water balance holds;
+  - `patchEngine` keeps the stores.
+- **Option:** `ScenarioOptions.catchments` (default true) can disable it for comparisons.
+- **After the change:**
+  - retune within the bounds of §8, §13 and `CATCHMENT.lagS`;
+  - try to restore claim 1 (homes) and the §13 claim 5 (J08 tailwater);
+  - try to enforce the SWMM cross-check;
+  - regenerate the effect badges.
+
+  The same honesty rule applies.

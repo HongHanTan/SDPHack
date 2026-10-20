@@ -1528,3 +1528,258 @@ Import `FUNNEL` from `./config`, and remove the now-unused `idw` and `ground` co
 git add packages/engine docs/tuning.md
 git commit -m "fix(engine): grate funnels, plane surface and outfall chamber; retune the Taman Kyra story"
 ```
+
+---
+
+### Task 7: SWMM-style catchment loading (spec §14)
+
+**Files:**
+- Modify: `packages/engine/src/sim/types.ts`, `packages/engine/src/sim/engine.ts` (the authorised physics-core change), `packages/engine/src/scenario/config.ts`, `packages/engine/src/scenario/index.ts`, `packages/engine/tests/scenario/township.test.ts`, `apps/legacy/src/ui/assumptions.ts`
+- Create: `packages/engine/src/scenario/catchments.ts`, `packages/engine/tests/sim/catchment.test.ts`
+
+- [ ] **Step 1: Write the failing engine tests**
+
+Create `packages/engine/tests/sim/catchment.test.ts`:
+
+```ts
+import { describe, expect, it } from 'vitest';
+import { balanceError, createEngine, patchEngine, runSimulation, stepEngine } from '../../src/sim/engine';
+import type { Scenario } from '../../src/sim/types';
+import { makeScenario } from '../helpers';
+
+function withCatchment(sc: Scenario, lagS = 60): Scenario {
+  const cells: number[] = [];
+  for (let j = 14; j <= 17; j++) for (let i = 4; i <= 16; i++) cells.push(j * sc.grid.nx + i);
+  return { ...sc, catchments: [{ id: 'C1', node: 'A', cells: Int32Array.from(cells), directFraction: 0.8, lagS }] };
+}
+
+const peakLoad = (sc: Scenario) => Math.max(...runSimulation(sc).frames.map((f) => f.pipeLoad[0]));
+
+describe('catchment loading', () => {
+  it('closes the water balance', () => {
+    expect(runSimulation(withCatchment(makeScenario({ rainMmHr: 150 }))).metrics.balance.error).toBeLessThan(0.01);
+  });
+  it('delivers runoff into the outlet node', () => {
+    expect(peakLoad(withCatchment(makeScenario({ rainMmHr: 150 })))).toBeGreaterThan(peakLoad(makeScenario({ rainMmHr: 150 })));
+  });
+  it('is deterministic', () => {
+    const a = runSimulation(withCatchment(makeScenario())).metrics.peakDepth;
+    const b = runSimulation(withCatchment(makeScenario())).metrics.peakDepth;
+    expect(Array.from(a)).toEqual(Array.from(b));
+  });
+  it('keeps catchment stores across a mid-run patch', () => {
+    const sc = withCatchment(makeScenario({ rainMmHr: 150 }), 600);
+    const st = createEngine(sc);
+    for (let k = 0; k < 400; k++) stepEngine(sc, st);
+    const before = st.catchStore[0];
+    expect(before).toBeGreaterThan(0);
+    const next = withCatchment(makeScenario({ rainMmHr: 150, diameter: 0.6 }), 600);
+    patchEngine(sc, st, next);
+    expect(st.catchStore[0]).toBe(before);
+    for (let k = 0; k < 400; k++) stepEngine(next, st);
+    expect(balanceError(next, st).error).toBeLessThan(0.01);
+  });
+});
+```
+
+Run: `npm -w @floodops/engine exec vitest run tests/sim/catchment.test.ts`
+Expected: FAIL. `catchments` isn't on `Scenario`, and `catchStore` is undefined.
+
+- [ ] **Step 2: Types**
+
+In `packages/engine/src/sim/types.ts`, add before `Scenario`:
+
+```ts
+/** Lumped SWMM-style catchment: on its cells, `directFraction` of the rain feeds a linear reservoir (lag `lagS`) that drains into `node`. */
+export interface Catchment {
+  id: string;
+  node: string;
+  cells: Int32Array;
+  directFraction: number;
+  lagS: number;
+}
+```
+
+and add `catchments?: Catchment[];` to the `Scenario` interface.
+
+- [ ] **Step 3: Engine**
+
+In `packages/engine/src/sim/engine.ts`:
+
+1. `EngineState`: add the fields `catchStore: Float64Array; // m3 per catchment` and `catchOf: Int16Array; // cell -> catchment index, -1 none`.
+2. `totalStorage`: change the second parameter type to `{ surf: SurfaceState; net: NetworkState; catchStore?: Float64Array }`, and before `return s;` add `if (st.catchStore) for (const v of st.catchStore) s += v;`.
+3. `createEngine`: before `const st: EngineState = {`, add:
+
+```ts
+  const catchOf = new Int16Array(sc.grid.nx * sc.grid.ny).fill(-1);
+  sc.catchments?.forEach((ct, k) => {
+    for (const c of ct.cells) catchOf[c] = k;
+  });
+```
+
+   and add `catchStore: new Float64Array(sc.catchments?.length ?? 0), catchOf,` to the object literal.
+4. `stepEngine`: replace the rain loop and the `st.rainVol` line with:
+
+```ts
+  const rain = rainRate(sc, st.t) * dt;
+  const cats = sc.catchments;
+  for (const c of st.landCells) {
+    let r = rain;
+    const k = st.catchOf[c];
+    if (k >= 0 && cats) {
+      const d = r * cats[k].directFraction;
+      st.catchStore[k] += d * area;
+      r -= d;
+    }
+    const wet = h[c] + r;
+    const loss = Math.min(wet, grid.infil[c] * dt);
+    h[c] = wet - loss;
+    st.infilVol += loss * area;
+  }
+  st.rainVol += rain * area * st.landCells.length;
+  if (cats) {
+    for (let k = 0; k < cats.length; k++) {
+      const q = st.catchStore[k] * (1 - Math.exp(-dt / cats[k].lagS));
+      if (!(q > 0)) continue;
+      st.catchStore[k] -= q;
+      const j = st.net.index.get(cats[k].node);
+      if (j === undefined) st.surf.h[cats[k].cells[0]] += q / area;
+      else st.net.vol[j] += q;
+    }
+  }
+```
+
+   This sits where the old rain loop was, before the surface sub-steps, so overflow is spilled later in the same step.
+5. `validate`: add a loop that throws `SimError` with the message `Invalid catchment store <value> at <k>` if any `st.catchStore[k]` is not finite or is `< -1e-9`.
+6. `patchEngine`: after `st.net = next;`, rebuild the cell map from the new scenario and keep the stores. If the catchment count changed, spill the old stores onto the surface:
+
+```ts
+  const nNew = newSc.catchments?.length ?? 0;
+  if (nNew !== st.catchStore.length) {
+    oldSc.catchments?.forEach((ct, k) => {
+      if (st.catchStore[k] > 0) st.surf.h[ct.cells[0]] += st.catchStore[k] / area;
+    });
+    st.catchStore = new Float64Array(nNew);
+  }
+  st.catchOf.fill(-1);
+  newSc.catchments?.forEach((ct, k) => {
+    for (const c of ct.cells) st.catchOf[c] = k;
+  });
+```
+
+Run: `npm -w @floodops/engine exec vitest run tests/sim/catchment.test.ts`
+Expected: PASS, 4 tests. Also run `npm -w @floodops/engine test`; all existing tests stay green, since scenarios without catchments are unchanged.
+
+- [ ] **Step 4: Scenario layer**
+
+Add to `packages/engine/src/scenario/config.ts`:
+
+```ts
+/** SWMM-style catchment reservoir lag (s); tunable 60-1200. Catchment areas/imperviousness come from Tay's hydrology.json. */
+export const CATCHMENT = { lagS: 300 };
+```
+
+Create `packages/engine/src/scenario/catchments.ts`:
+
+```ts
+import hydrology from '../../../../models/illustrative_taman_kyra/hydrology.json';
+import { LandUse, type Catchment, type Grid } from '../sim/types';
+import { CATCHMENT } from './config';
+import { nodeSite } from './network';
+
+interface Sub { subcatchment_id: string; outlet_node_id: string; area_ha: number; impervious_percent: number }
+
+/** Tay's four 1 ha subcatchments: the area_ha worth of non-water cells nearest each outlet node (nearest-outlet assignment). */
+export function buildCatchments(grid: Grid): Catchment[] {
+  const subs = (hydrology as unknown as { subcatchments: Sub[] }).subcatchments;
+  const sites = subs.map((s) => nodeSite(s.outlet_node_id));
+  const lists: Array<Array<{ c: number; d: number }>> = subs.map(() => []);
+  for (let c = 0; c < grid.nx * grid.ny; c++) {
+    const land = grid.land[c];
+    if (land === LandUse.RIVER || land === LandUse.POND) continue;
+    const x = ((c % grid.nx) + 0.5) * grid.dx;
+    const y = (Math.floor(c / grid.nx) + 0.5) * grid.dx;
+    let best = 0;
+    let bestD = Infinity;
+    sites.forEach((s, k) => {
+      const d = Math.hypot(x - s.x, y - s.y);
+      if (d < bestD) {
+        bestD = d;
+        best = k;
+      }
+    });
+    lists[best].push({ c, d: bestD });
+  }
+  return subs.map((s, k) => {
+    const want = Math.round((s.area_ha * 1e4) / (grid.dx * grid.dx));
+    const cells = lists[k].sort((a, b) => a.d - b.d || a.c - b.c).slice(0, want).map((e) => e.c);
+    return { id: s.subcatchment_id, node: s.outlet_node_id, cells: Int32Array.from(cells), directFraction: s.impervious_percent / 100, lagS: CATCHMENT.lagS };
+  });
+}
+```
+
+In `packages/engine/src/scenario/index.ts`:
+- add `catchments?: boolean; // default true: SWMM-style catchment loading (spec section 14)` to `ScenarioOptions`;
+- import `buildCatchments` from `./catchments`;
+- in `buildScenario`'s returned object, add `catchments: opts.catchments === false ? undefined : buildCatchments(grid),`;
+- in `scenarioKey`, append `'|' + (opts.catchments === false ? 'nocatch' : 'catch')` to the returned string.
+
+Append to `packages/engine/tests/scenario/township.test.ts`:
+
+```ts
+describe('SWMM-style catchments (Tay hydrology.json)', () => {
+  const sc = buildScenario([], 'synthetic_80mmh_60min');
+  it('builds four disjoint 1 ha catchments at J01/J02/J04/J07', () => {
+    expect(sc.catchments!.map((c) => c.node)).toEqual(['NODE-J01', 'NODE-J02', 'NODE-J04', 'NODE-J07']);
+    for (const c of sc.catchments!) {
+      expect(c.cells.length).toBe(2500);
+      expect(c.directFraction).toBe(0.8);
+    }
+    const all = sc.catchments!.flatMap((c) => Array.from(c.cells));
+    expect(new Set(all).size).toBe(all.length);
+  });
+  it('can be disabled', () => {
+    expect(buildScenario([], 'synthetic_80mmh_60min', [], { catchments: false }).catchments).toBeUndefined();
+  });
+});
+```
+
+- [ ] **Step 5: Assumptions row (legacy)**
+
+In `apps/legacy/src/ui/assumptions.ts`, add before the `Costs` row:
+
+```ts
+    ['Catchments', 'SWMM-style: on four 1 ha catchments (Tay, hydrology.json; 80% impervious) the impervious share of rain drains into J01/J02/J04/J07 via a linear reservoir; the rest flows over the 2D surface.'],
+```
+
+- [ ] **Step 6: Verify and commit**
+
+Run: `npm test` and `npm -w @floodops/engine run typecheck` and `npm -w legacy run typecheck`
+Expected: all pass. Story, effects and cross-check results will change; Task 8 handles them.
+
+```bash
+git add packages/engine apps/legacy/src/ui/assumptions.ts
+git commit -m "feat(engine): SWMM-style catchment loading for Taman Kyra" -m "Catchment areas and imperviousness from models/illustrative_taman_kyra/hydrology.json by Tay Zheheng."
+```
+
+---
+
+### Task 8: Retune with catchments; restore claims; cross-check; badges
+
+**Files:** `packages/engine/src/scenario/config.ts` (tunables only), `packages/engine/tests/story.test.ts`, `packages/engine/tests/swmm.crosscheck.test.ts` (the `ENFORCED` flag only), `packages/engine/src/scenario/effects.json`, `docs/tuning.md`, `docs/swmm-crosscheck.md`
+
+- [ ] **Step 1: Restore claims 1 and 5.** In `tests/story.test.ts`, re-add claim 1 exactly as in Task 2 Step 9, and the J08-based claim 5 exactly as in Task 4b Step 4 (with `j08Peak` in `run`).
+- [ ] **Step 2: Retune.** Re-run `npm run tune`, then tune within the Task 4, Task 4b (`FUNNEL`) and `CATCHMENT.lagS` (60–1200 s) bounds until the story test passes. If claim 1 or 5 still can't be met honestly, remove it again and record the new evidence.
+- [ ] **Step 3: Cross-check.** Set `ENFORCED = true` in `tests/swmm.crosscheck.test.ts` and run it.
+  - If it passes, keep it enforced.
+  - If not, set it back to `false` and update the cross-check section of `docs/tuning.md` with the new table and reasons.
+  - Don't change the tolerances. Remember the engine's full-bore cap on P07 and P08.
+- [ ] **Step 4: Badges.** Run `npm run effects`, then the drift test (both in the background, about 10 min each).
+- [ ] **Step 5: Record and commit.**
+  - Update `docs/tuning.md` with a "Pass 3: catchments" section: the table, the changes, the claims, the cross-check status.
+  - Run `npm test`, which must be green.
+
+```bash
+git add packages/engine docs/tuning.md docs/swmm-crosscheck.md
+git commit -m "chore(engine): retune Taman Kyra with catchment loading; refresh badges and SWMM cross-check" -m "Reference results: EPA SWMM 5.2.4 run by Tay Zheheng (data/validation/t1)."
+```
