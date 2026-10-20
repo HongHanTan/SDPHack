@@ -1,55 +1,53 @@
 import { describe, expect, it } from 'vitest';
-import { buildScenario } from '../src/scenario/index';
-import { INTERVENTIONS, totalCost, type InterventionId } from '../src/scenario/interventions';
+import { buildScenario, type ScenarioOptions } from '../src/scenario/index';
+import type { InterventionId } from '../src/scenario/interventions';
 import { runSimulation } from '../src/sim/engine';
-import type { Metrics } from '../src/sim/types';
 
-// Acceptance criteria for the demo story (docs/tuning.md). Every number below is produced by the model;
-// nothing is special-cased. ~10 full 3-hour runs, so this takes a few minutes.
-const run = (ids: InterventionId[]): Metrics => runSimulation(buildScenario(ids, '100yr')).metrics;
+const STORM = 'synthetic_80mmh_60min';
 
-describe('demo story (100-yr storm)', () => {
+function run(ids: InterventionId[], opts: ScenarioOptions = {}) {
+  const sc = buildScenario(ids, STORM, [], opts);
+  const { frames, metrics } = runSimulation(sc);
+  const p07 = sc.network.pipes.findIndex((p) => p.id === 'PIPE-P07');
+  const p07Max = Math.max(...frames.map((f) => f.pipeLoad[p07]));
+  return { m: metrics, p07Max };
+}
+
+describe('Taman Kyra demo story (80 mm/h, team storm)', () => {
   const base = run([]);
-  const single = new Map(INTERVENTIONS.map((iv) => [iv.id, run([iv.id])] as const));
-  const upsize = single.get('upsize-trunk')!;
-  const flap = single.get('flap-gate')!;
-  const combo = run(['detention-tank', 'flap-gate']);
-  const drained = run(['sag-inlets', 'pump']);
-  const all = [base, ...single.values(), combo, drained];
+  const desilt = run(['desilt-d07']);
+  const upsize = run(['upsize-p07']);
+  const combined = run(['desilt-d07', 'upsize-p07']);
+  const highBase = run([], { tailwater: 'high' });
+  const highFlap = run(['flap-gate'], { tailwater: 'high' });
+  const highPump = run(['pump'], { tailwater: 'high' });
+  const tank = run(['storage-tank']);
+  const lake = run(['lake-overflow']);
 
-  it('baseline floods the sag to a plausible depth and floods homes', () => {
-    expect(base.peakSagDepth).toBeGreaterThanOrEqual(0.4);
-    expect(base.peakSagDepth).toBeLessThanOrEqual(1.2);
-    expect(base.homesFlooded).toBeGreaterThanOrEqual(5);
+  it('1. baseline floods the J07 junction and homes', () => {
+    expect(base.m.peakSagDepth).toBeGreaterThanOrEqual(0.15);
+    expect(base.m.homesFlooded).toBeGreaterThanOrEqual(2);
   });
-
-  it.each(INTERVENTIONS.map((iv) => [iv.id]))('preset %s alone changes the outcome (no dead toggles)', (id) => {
-    const m = single.get(id as InterventionId)!;
-    const dSag = Math.abs(m.peakSagDepth - base.peakSagDepth);
-    const dHomes = Math.abs(m.homesFlooded - base.homesFlooded);
-    expect(dSag >= 0.03 || dHomes >= 1).toBe(true);
+  it('2. desilting D07 helps but P07 still runs full', () => {
+    expect(desilt.m.peakSagDepth).toBeLessThan(base.m.peakSagDepth);
+    expect(desilt.p07Max).toBeGreaterThanOrEqual(0.99);
   });
-
-  it('upsizing the trunk alone only modestly helps (backflow-limited)', () => {
-    expect(upsize.homesFlooded).toBeGreaterThanOrEqual(Math.ceil(base.homesFlooded * 0.7));
+  it('3. upsizing P07 helps', () => {
+    expect(upsize.m.peakSagDepth).toBeLessThan(base.m.peakSagDepth);
   });
-
-  it('flap gate + tank beats the upsize, for less money', () => {
-    expect(combo.peakSagDepth).toBeLessThan(upsize.peakSagDepth);
-    expect(combo.homesFlooded).toBeLessThan(upsize.homesFlooded);
-    expect(totalCost(['detention-tank', 'flap-gate'])).toBeLessThan(totalCost(['upsize-trunk']));
+  it('4. combined beats either alone', () => {
+    expect(combined.m.peakSagDepth).toBeLessThan(desilt.m.peakSagDepth);
+    expect(combined.m.peakSagDepth).toBeLessThan(upsize.m.peakSagDepth);
   });
-
-  it('the tank contributes: tank + flap is strictly better than the flap alone', () => {
-    expect(combo.peakSagDepth).toBeLessThan(flap.peakSagDepth);
+  it('5. under high tailwater, flap gate and pump each help', () => {
+    expect(highFlap.m.peakSagDepth).toBeLessThan(highBase.m.peakSagDepth);
+    expect(highPump.m.peakSagDepth).toBeLessThan(highBase.m.peakSagDepth);
   });
-
-  it('extra inlets + pump drain the sag so roads are passable within the hour', () => {
-    expect(drained.minutesToPassable).not.toBeNull();
-    expect(drained.minutesToPassable!).toBeLessThanOrEqual(60);
+  it('6. tank and lake overflow are not dead toggles', () => {
+    expect(Math.abs(tank.m.peakSagDepth - base.m.peakSagDepth)).toBeGreaterThanOrEqual(0.03);
+    expect(Math.abs(lake.m.peakSagDepth - base.m.peakSagDepth)).toBeGreaterThanOrEqual(0.03);
   });
-
-  it('every run closes its water balance', () => {
-    for (const m of all) expect(m.balance.error).toBeLessThan(0.01);
+  it('7. every run closes its water balance', () => {
+    for (const r of [base, desilt, upsize, combined, highBase, highFlap, highPump, tank, lake]) expect(r.m.balance.error).toBeLessThan(0.01);
   });
 });

@@ -59,6 +59,7 @@ export interface Storm {
   blockS: number;
   intensity: number[]; // m/s per block
   provisional: boolean;
+  peakMinute: number; // minute of peak rain (live-mode jump target)
 }
 
 export interface RiverStage {

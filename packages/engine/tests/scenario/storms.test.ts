@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alternatingBlock, designStorm, IDF, idfIntensity, rainIntensityAt, STORMS } from '../../src/scenario/storms';
+import { alternatingBlock, constantStorm, DEFAULT_STORM, designStorm, IDF, idfIntensity, rainIntensityAt, STORMS } from '../../src/scenario/storms';
 
 describe('idfIntensity', () => {
   it('follows i = λT^κ / (d + θ)^η', () => {
@@ -48,5 +48,17 @@ describe('rainIntensityAt', () => {
   it('is zero before the start and after the storm ends', () => {
     expect(rainIntensityAt(s, -1)).toBe(0);
     expect(rainIntensityAt(s, 7200)).toBe(0);
+  });
+});
+
+describe('constantStorm', () => {
+  it('matches the team synthetic storms', () => {
+    const s = STORMS.synthetic_80mmh_60min;
+    expect(s.intensity.length).toBe(12);
+    expect(s.intensity.every((v) => Math.abs(v * 3.6e6 - 80) < 1e-9)).toBe(true);
+    expect(s.peakMinute).toBe(30);
+    expect(STORMS['100yr'].peakMinute).toBe(60);
+    expect(DEFAULT_STORM).toBe('synthetic_80mmh_60min');
+    expect(constantStorm('x', 'x', 120, 60).intensity[0] * 3.6e6).toBeCloseTo(120, 9);
   });
 });

@@ -1,9 +1,8 @@
 import { MANNING_N } from '../sim/pipes';
 import type { DrainNode, Grid, Network, Pipe } from '../sim/types';
-import { COVER, MANHOLE, NODE_INLETS, NODE_LAYOUT, OUTFALL_DROP, PIPE_D } from './config';
+import { COVER, MANHOLE } from './config';
+import { ASSETS, toLocal } from './layout';
 import { cellAt } from './terrain';
-
-export const OUTFALL_RIVER_POINT = { x: 82, y: 10 };
 
 export function makeNode(
   grid: Grid,
@@ -22,8 +21,8 @@ export function makeNode(
     cell,
     invert,
     area: opts.area ?? MANHOLE.area,
-    maxDepth: opts.maxDepth ?? ground - invert,
-    inletPerimeter: opts.inletPerimeter ?? MANHOLE.inletPerimeter,
+    maxDepth: opts.maxDepth ?? Math.max(0.3, ground - invert),
+    inletPerimeter: opts.inletPerimeter ?? 0,
   };
 }
 
@@ -32,36 +31,41 @@ export function makePipe(a: DrainNode, b: DrainNode, diameter: number): Pipe {
   return { id: `${a.id}-${b.id}`, from: a.id, to: b.id, diameter, length, slope: (a.invert - b.invert) / length, n: MANNING_N };
 }
 
-type Kind = 'trunk' | 'branch' | 'local';
-const LINKS: Array<[string, string, Kind]> = [
-  ['T0', 'T1', 'trunk'], ['T1', 'T2', 'trunk'], ['T2', 'T3', 'trunk'], ['T3', 'T4', 'trunk'],
-  ['T4', 'T5', 'trunk'], ['T5', 'T6', 'trunk'], ['T6', 'T7', 'trunk'], ['T7', 'T8', 'trunk'],
-  ['T8', 'S0', 'trunk'], ['S0', 'S1', 'trunk'], ['S1', 'S2', 'trunk'], ['S2', 'S3', 'trunk'], ['S3', 'O', 'trunk'],
-  ['W0', 'W1', 'branch'], ['W1', 'W2', 'branch'], ['W2', 'T3', 'branch'],
-  ['E0', 'E1', 'branch'], ['E1', 'E2', 'branch'], ['E2', 'T5', 'branch'],
-  ['SL0', 'S3', 'local'], ['SL1', 'S2', 'local'],
-];
+/** Grid-local position of an asset node. */
+export function nodeSite(id: string): { x: number; y: number } {
+  const nd = ASSETS.nodes.find((n) => n.node_id === id);
+  if (!nd) throw new Error(`Unknown asset node ${id}`);
+  return toLocal(nd.position_m.x, nd.position_m.y);
+}
 
-export const TRUNK_PIPE_IDS: string[] = LINKS.filter((l) => l[2] === 'trunk').map(([a, b]) => `${a}-${b}`);
-export const SAG_NODE_IDS = ['S0', 'S1', 'S2', 'S3', 'SL0', 'SL1', 'O'];
+/** Effective weir edge of a square grate (m), reduced by the blocked fraction. */
+export function inletPerimeter(grateAreaM2: number, blockage = 0): number {
+  return 4 * Math.sqrt(grateAreaM2) * (1 - Math.min(1, Math.max(0, blockage)));
+}
 
-export function buildNetwork(grid: Grid): Network {
-  const nodes = NODE_LAYOUT.map(([id, x, y]) =>
-    makeNode(grid, id, x, y, {
-      ...(id in NODE_INLETS ? { inletPerimeter: NODE_INLETS[id] } : {}),
-      ...(id === 'O' ? { invert: grid.z[cellAt(x, y)] - COVER - OUTFALL_DROP } : {}),
-    }),
-  );
+/** Tay's Taman Kyra network on the grid; blockage maps inlet_id → blocked fraction. */
+export function buildNetwork(grid: Grid, blockage: Record<string, number> = {}): Network {
+  const inletByNode = new Map(ASSETS.inlets.map((i) => [i.node_id, i]));
+  const nodes: DrainNode[] = ASSETS.nodes.map((nd) => {
+    const p = toLocal(nd.position_m.x, nd.position_m.y);
+    const inlet = inletByNode.get(nd.node_id);
+    return makeNode(grid, nd.node_id, p.x, p.y, {
+      invert: nd.invert_elevation_m,
+      inletPerimeter: inlet ? inletPerimeter(inlet.grate_area_m2, blockage[inlet.inlet_id] ?? 0) : 0,
+    });
+  });
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const pipes = LINKS.map(([a, b, kind]) =>
-    makePipe(byId.get(a)!, byId.get(b)!, kind === 'trunk' ? PIPE_D.trunk : kind === 'branch' ? PIPE_D.branch : PIPE_D.local),
-  );
+  const pipes: Pipe[] = ASSETS.conduits.map((cd) => {
+    const a = byId.get(cd.from_node_id)!;
+    const b = byId.get(cd.to_node_id)!;
+    return { id: cd.conduit_id, from: a.id, to: b.id, diameter: cd.diameter_m, length: cd.length_m, slope: (a.invert - b.invert) / cd.length_m, n: cd.manning_n };
+  });
+  const outfall = nodes.find((n) => ASSETS.nodes.find((a) => a.node_id === n.id)!.node_type === 'outfall')!;
+  const lastPipe = pipes.find((p) => p.to === outfall.id)!;
   return {
     nodes,
     pipes,
-    outfalls: [
-      { node: 'O', riverCell: cellAt(OUTFALL_RIVER_POINT.x, OUTFALL_RIVER_POINT.y), area: (Math.PI * PIPE_D.trunk ** 2) / 4, flapGate: false },
-    ],
+    outfalls: [{ node: outfall.id, riverCell: outfall.cell, area: (Math.PI * lastPipe.diameter ** 2) / 4, flapGate: false }],
     pumps: [],
   };
 }

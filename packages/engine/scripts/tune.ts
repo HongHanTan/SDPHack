@@ -5,14 +5,14 @@ import { runSimulation } from '../src/sim/engine';
 const combos: Array<[string, InterventionId[]]> = [
   ['baseline', []],
   ...INTERVENTIONS.map((iv, k): [string, InterventionId[]] => [`#${k + 1} ${iv.name}`, [iv.id]]),
-  ['#3 + #5 tank + flap', ['detention-tank', 'flap-gate']],
-  ['#2 + #6 relief + inlets', ['relief-pond', 'sag-inlets']],
-  ['#6 + #7 inlets + pump', ['sag-inlets', 'pump']],
+  ['tank + flap', ['storage-tank', 'flap-gate']],
+  ['desilt + upsize', ['desilt-d07', 'upsize-p07']],
+  ['desilt + pump', ['desilt-d07', 'pump']],
 ];
 
 const rows = combos.map(([name, ids]) => {
   const t0 = performance.now();
-  const m = runSimulation(buildScenario(ids, '100yr')).metrics;
+  const m = runSimulation(buildScenario(ids, 'synthetic_80mmh_60min')).metrics;
   return {
     scenario: name,
     'sag peak (m)': m.peakSagDepth.toFixed(3),

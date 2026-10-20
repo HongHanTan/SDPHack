@@ -60,11 +60,32 @@ export function designStorm(returnPeriod: number, c: IdfCoefficients = IDF): Sto
     blockS: BLOCK_S,
     intensity: alternatingBlock(c, returnPeriod, STORM_DURATION_S, BLOCK_S).map((mmhr) => mmhr / 3.6e6),
     provisional: c.provisional,
+    peakMinute: STORM_DURATION_S / 120,
   };
 }
 
-export const STORMS = { '10yr': designStorm(10), '100yr': designStorm(100) };
+/** Constant-intensity storm in 5-minute blocks (the team's synthetic SWMM storms). */
+export function constantStorm(id: string, label: string, mmhr: number, minutes: number): Storm {
+  const blocks = Math.round((minutes * 60) / BLOCK_S);
+  return {
+    id,
+    label,
+    returnPeriod: 0,
+    blockS: BLOCK_S,
+    intensity: new Array<number>(blocks).fill(mmhr / 3.6e6),
+    provisional: false,
+    peakMinute: minutes / 2,
+  };
+}
+
+export const STORMS = {
+  synthetic_80mmh_60min: constantStorm('synthetic_80mmh_60min', 'Constant 80 mm/h, 60 min (team SWMM storm)', 80, 60),
+  synthetic_120mmh_60min: constantStorm('synthetic_120mmh_60min', 'Constant 120 mm/h, 60 min (team SWMM storm)', 120, 60),
+  '10yr': designStorm(10),
+  '100yr': designStorm(100),
+};
 export type StormId = keyof typeof STORMS;
+export const DEFAULT_STORM: StormId = 'synthetic_80mmh_60min';
 
 /** Rain intensity in mm/hr at storm time t (s); 0 before the start and after the storm ends. */
 export function rainIntensityAt(storm: Storm, t: number): number {

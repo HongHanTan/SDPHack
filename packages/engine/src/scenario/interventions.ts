@@ -1,21 +1,14 @@
 import { LandUse, type DrainNode, type Grid, type Network } from '../sim/types';
-import { BIOSWALE, GRID, INFILTRATION_MMHR, MANHOLE, MMHR, PIPE_D, POND, PUMP_RATE, TANK } from './config';
-import { makeNode, makePipe, OUTFALL_RIVER_POINT, SAG_NODE_IDS, TRUNK_PIPE_IDS } from './network';
-import { cellAt } from './terrain';
+import { LAKE, LAKE_OVERFLOW, P07_UPSIZED_D, PUMP, TANK } from './config';
+import { ASSETS, LAYOUT, toLocal } from './layout';
+import { inletPerimeter, makeNode, makePipe } from './network';
 
 export interface Township {
   grid: Grid;
   network: Network;
 }
 
-export type InterventionId =
-  | 'upsize-trunk'
-  | 'relief-pond'
-  | 'detention-tank'
-  | 'bioswales'
-  | 'flap-gate'
-  | 'sag-inlets'
-  | 'pump';
+export type InterventionId = 'desilt-d07' | 'upsize-p07' | 'flap-gate' | 'storage-tank' | 'lake-overflow' | 'pump';
 
 export interface Intervention {
   id: InterventionId;
@@ -23,6 +16,7 @@ export interface Intervention {
   description: string;
   costRM: number; // INDICATIVE PLACEHOLDER — replace with SDP quantity-surveyor rates
   disruption: 'Low' | 'Medium' | 'High';
+  teamRating?: string; // team InterventionDashboard cost rating / lead time
   apply(t: Township): void;
 }
 
@@ -34,78 +28,33 @@ export function findNode(t: Township, id: string): DrainNode {
 
 export const INTERVENTIONS: Intervention[] = [
   {
-    id: 'upsize-trunk',
-    name: 'Upsize trunk drain',
-    description: 'Main trunk and sag collector 600 → 900 mm',
-    costRM: 4_500_000,
-    disruption: 'High',
-    apply(t) {
-      for (const p of t.network.pipes) if (TRUNK_PIPE_IDS.includes(p.id)) p.diameter = PIPE_D.trunkUpsized;
-      for (const o of t.network.outfalls) o.area = (Math.PI * PIPE_D.trunkUpsized ** 2) / 4;
-    },
-  },
-  {
-    id: 'relief-pond',
-    name: 'Relief pipe to pond',
-    description: '900 mm relief pipe from the sag to the retention pond',
-    costRM: 1_800_000,
-    disruption: 'Medium',
-    apply(t) {
-      // The pipe discharges into the pond. A node with no outlet would block after its first 0.5 m³, so the
-      // pond's live storage (normal level → +reliefRise, measured on the grid) is modelled as storage at node P;
-      // if that ever fills, the excess spills onto the pond surface.
-      const g = t.grid;
-      const cellArea = g.dx * g.dx;
-      const lo = POND.initialLevel;
-      const hi = POND.initialLevel + POND.reliefRise;
-      let live = 0;
-      for (let c = 0; c < g.z.length; c++) {
-        if (g.land[c] === LandUse.POND) live += (Math.max(0, hi - g.z[c]) - Math.max(0, lo - g.z[c])) * cellArea;
-      }
-      const ground = g.z[cellAt(POND.x, POND.y)];
-      const p = makeNode(g, 'P', POND.x, POND.y, { invert: ground, area: live / POND.reliefRise, maxDepth: POND.reliefRise, inletPerimeter: 0 });
-      t.network.nodes.push(p);
-      t.network.pipes.push(makePipe(findNode(t, 'S3'), p, 0.9));
-    },
-  },
-  {
-    id: 'detention-tank',
-    name: 'Underground detention tank',
-    description: `${TANK.area * TANK.depth} m³ tank fed from the trunk, slow release to the outfall`,
-    costRM: 2_500_000,
-    disruption: 'Medium',
-    apply(t) {
-      const o = findNode(t, 'O');
-      const tk = makeNode(t.grid, 'TK', TANK.x, TANK.y, { invert: o.invert + 0.3, area: TANK.area, maxDepth: TANK.depth, inletPerimeter: 0 });
-      t.network.nodes.push(tk);
-      t.network.pipes.push(makePipe(findNode(t, TANK.feedNode), tk, TANK.inflowD), makePipe(tk, o, TANK.outflowD));
-    },
-  },
-  {
-    id: 'bioswales',
-    name: 'Bioswales on the sag approach street',
-    description: 'Planted, lowered verges either side of the street above the sag, intercepting runoff across the slope',
-    costRM: 800_000,
+    id: 'desilt-d07',
+    name: 'Emergency desilting of INLET-D07',
+    description: 'Remove leaf litter and sediment from INLET-D07, restoring full grate capacity',
+    costRM: 15_000,
     disruption: 'Low',
+    teamRating: 'LOW · < 24 hours',
     apply(t) {
-      const g = t.grid;
-      for (const j of [BIOSWALE.roadJ - 1, BIOSWALE.roadJ + 1]) {
-        for (let i = 0; i < GRID.nx; i++) {
-          if ((i + 0.5) * GRID.dx > BIOSWALE.xMax) break;
-          const c = j * GRID.nx + i;
-          if (g.land[c] === LandUse.ROAD) continue; // cross streets stay open
-          g.land[c] = LandUse.PARK;
-          g.infil[c] = INFILTRATION_MMHR.BIOSWALE * MMHR;
-          g.z[c] -= BIOSWALE.depth;
-          g.building[c] = -1;
-        }
-      }
+      const d07 = ASSETS.inlets.find((i) => i.inlet_id === 'INLET-D07')!;
+      findNode(t, d07.node_id).inletPerimeter = inletPerimeter(d07.grate_area_m2, 0);
+    },
+  },
+  {
+    id: 'upsize-p07',
+    name: 'Upsize PIPE-P07 to Ø750',
+    description: 'Replace trunk conduit PIPE-P07 (NODE-J07 → NODE-J08) Ø600 with Ø750 RCP',
+    costRM: 1_200_000,
+    disruption: 'High',
+    teamRating: 'HIGH · 3–6 months',
+    apply(t) {
+      const p = t.network.pipes.find((pp) => pp.id === 'PIPE-P07')!;
+      p.diameter = P07_UPSIZED_D;
     },
   },
   {
     id: 'flap-gate',
-    name: 'Flap gate on outfall',
-    description: 'Non-return valve stops river backflow into the drains',
+    name: 'One-way valve at OUT01',
+    description: 'Non-return flap gate stops canal backflow into the drains',
     costRM: 150_000,
     disruption: 'Low',
     apply(t) {
@@ -113,23 +62,50 @@ export const INTERVENTIONS: Intervention[] = [
     },
   },
   {
-    id: 'sag-inlets',
-    name: 'Extra inlets in the sag',
-    description: 'Add two gully grates at every sag manhole, including the low point',
-    costRM: 300_000,
-    disruption: 'Low',
+    id: 'storage-tank',
+    name: 'Underground storage tank near J07',
+    description: `${TANK.area * TANK.depth} m³ off-line tank fed from NODE-J05, slow release to NODE-J08`,
+    costRM: 2_500_000,
+    disruption: 'Medium',
     apply(t) {
-      for (const id of SAG_NODE_IDS) findNode(t, id).inletPerimeter += 2 * MANHOLE.inletPerimeter;
+      const p = toLocal(TANK.x, TANK.y);
+      const tk = makeNode(t.grid, 'TK', p.x, p.y, { invert: TANK.invert, area: TANK.area, maxDepth: TANK.depth, inletPerimeter: 0 });
+      t.network.nodes.push(tk);
+      t.network.pipes.push(
+        { ...makePipe(findNode(t, TANK.feedNode), tk, TANK.inflowD), id: 'PIPE-TK-IN' },
+        { ...makePipe(tk, findNode(t, TANK.outNode), TANK.outflowD), id: 'PIPE-TK-OUT' },
+      );
+    },
+  },
+  {
+    id: 'lake-overflow',
+    name: 'Overflow from J04 to Maple Grove pond',
+    description: 'Relief pipe diverts the J04 branch into the retention pond',
+    costRM: 1_800_000,
+    disruption: 'Medium',
+    apply(t) {
+      const g = t.grid;
+      const cellArea = g.dx * g.dx;
+      let live = 0;
+      for (let c = 0; c < g.z.length; c++) {
+        if (g.land[c] === LandUse.POND) {
+          live += (Math.max(0, LAKE.waterLevel + LAKE.liveRise - g.z[c]) - Math.max(0, LAKE.waterLevel - g.z[c])) * cellArea;
+        }
+      }
+      const p = toLocal(LAYOUT.lake.x, LAYOUT.lake.y);
+      const lk = makeNode(g, 'LK', p.x, p.y, { invert: LAKE.waterLevel, area: live / LAKE.liveRise, maxDepth: LAKE.liveRise, inletPerimeter: 0 });
+      t.network.nodes.push(lk);
+      t.network.pipes.push({ ...makePipe(findNode(t, LAKE_OVERFLOW.fromNode), lk, LAKE_OVERFLOW.diameter), id: 'PIPE-LK' });
     },
   },
   {
     id: 'pump',
-    name: 'Pump station at the sag',
-    description: `${PUMP_RATE} m³/s pump from the outfall chamber to the river`,
+    name: 'Pump station at J08',
+    description: `${PUMP.rate} m³/s pump from NODE-J08 to the outfall canal`,
     costRM: 3_000_000,
     disruption: 'Medium',
     apply(t) {
-      t.network.pumps.push({ node: 'O', rate: PUMP_RATE, riverCell: cellAt(OUTFALL_RIVER_POINT.x, OUTFALL_RIVER_POINT.y) });
+      t.network.pumps.push({ node: PUMP.node, rate: PUMP.rate, riverCell: t.network.outfalls[0].riverCell });
     },
   },
 ];

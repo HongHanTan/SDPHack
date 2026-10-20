@@ -44,7 +44,7 @@ describe('LiveSession', () => {
   });
 
   it('removing the tank mid-storm loses no water', () => {
-    const s = new LiveSession('100yr', ['detention-tank'], []);
+    const s = new LiveSession('100yr', ['storage-tank'], []);
     s.advance(1200);
     s.patch([], []);
     s.advance(10);

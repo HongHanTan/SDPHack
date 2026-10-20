@@ -1,107 +1,85 @@
 import { describe, expect, it } from 'vitest';
-import { BUND, GRID, INFILTRATION_MMHR, INLET_SUMP, MMHR, PIPE_D, RIVER_ROWS } from '../../src/scenario/config';
-import { buildScenario, buildTownship, scenarioKey } from '../../src/scenario/index';
-import { applyInterventions, INTERVENTIONS, type InterventionId } from '../../src/scenario/interventions';
-import { buildNetwork, TRUNK_PIPE_IDS } from '../../src/scenario/network';
+import { GRID, P07_UPSIZED_D, TAILWATER } from '../../src/scenario/config';
+import { buildScenario, buildTownship, hotspotCell, scenarioKey } from '../../src/scenario/index';
+import { INTERVENTIONS, type InterventionId } from '../../src/scenario/interventions';
+import { ASSETS, toLocal } from '../../src/scenario/layout';
+import { inletPerimeter, nodeSite } from '../../src/scenario/network';
 import { buildTerrain, cellAt } from '../../src/scenario/terrain';
 import { runSimulation } from '../../src/sim/engine';
 import { LandUse } from '../../src/sim/types';
 
 const grid = buildTerrain();
+const at = (x: number, y: number) => {
+  const p = toLocal(x, y);
+  return cellAt(p.x, p.y);
+};
 
-describe('terrain', () => {
-  it('has river rows along the south edge', () => {
-    for (let c = 0; c < RIVER_ROWS * GRID.nx; c++) expect(grid.land[c]).toBe(LandUse.RIVER);
-    expect(grid.land[RIVER_ROWS * GRID.nx + 64]).not.toBe(LandUse.RIVER);
+describe('Taman Kyra terrain', () => {
+  it('has the agreed grid', () => {
+    expect([grid.nx, grid.ny, grid.dx]).toEqual([GRID.nx, GRID.ny, GRID.dx]);
+    expect([GRID.nx, GRID.ny, GRID.dx]).toEqual([125, 145, 2]);
   });
-
-  it('has a sag lower than its surroundings', () => {
-    expect(grid.z[cellAt(100, 64)]).toBeLessThan(grid.z[cellAt(250, 64)] - 0.9);
+  it('places roads, houses, pond, park and canal from the layout', () => {
+    expect(grid.land[at(0, 0)]).toBe(LandUse.ROAD); // main avenue
+    expect(grid.land[at(40, 60)]).toBe(LandUse.ROAD); // drainage boulevard
+    expect(grid.land[at(-20, 138)]).toBe(LandUse.ROOF); // house H01
+    expect(grid.building[at(-20, 138)]).toBe(0);
+    expect(grid.land[at(130, 30)]).toBe(LandUse.POND);
+    expect(grid.h0[at(130, 30)]).toBeGreaterThan(0);
+    expect(grid.land[at(130, 56)]).toBe(LandUse.PARK);
+    expect(grid.land[at(40, -100)]).toBe(LandUse.RIVER);
   });
-
-  it('encloses the sag catchment with a ridge above its upslope swale and the sag side', () => {
-    const crest = grid.z[cellAt(140, 120)]; // on the diagonal ridge
-    expect(crest).toBeGreaterThan(grid.z[cellAt(140, 128)] + 0.3); // diversion swale, just upslope
-    expect(crest).toBeGreaterThan(grid.z[cellAt(140, 104)] + 0.2); // polder side
-    expect(grid.land[cellAt(140, 128)]).toBe(LandUse.PARK); // grassed swale, no houses
-  });
-
-  it('sets inlets in gully sumps below the street', () => {
-    expect(grid.z[cellAt(258, 202)]).toBeCloseTo(grid.z[cellAt(258, 206)] - 0.08 - INLET_SUMP, 4);
-  });
-
-  it('protects the sag frontage with a bund', () => {
-    expect(grid.z[cellAt(100, 26)]).toBeGreaterThanOrEqual(BUND.z);
-  });
-
-  it('has roads, many buildings, and an initially wet pond', () => {
-    expect(grid.land.filter((l) => l === LandUse.ROAD).length).toBeGreaterThan(1000);
-    expect(new Set(Array.from(grid.building).filter((b) => b >= 0)).size).toBeGreaterThan(50);
-    expect(grid.h0[cellAt(430, 60)]).toBeGreaterThan(0);
+  it('dips at the J07 junction', () => {
+    expect(grid.z[at(40, 0)]).toBeLessThan(grid.z[at(80, 0)]);
   });
 });
 
-describe('network', () => {
-  const net = buildNetwork(grid);
-
-  it('drains every node to the outfall', () => {
-    const next = new Map(net.pipes.map((p) => [p.from, p.to]));
-    for (const n of net.nodes) {
-      let cur = n.id;
-      for (let hops = 0; cur !== 'O' && hops < 50; hops++) cur = next.get(cur)!;
-      expect(cur).toBe('O');
+describe('Taman Kyra network', () => {
+  const t = buildTownship([]);
+  it('uses every asset node and conduit exactly', () => {
+    expect(t.network.nodes.map((n) => n.id)).toEqual(ASSETS.nodes.map((n) => n.node_id));
+    for (const cd of ASSETS.conduits) {
+      const p = t.network.pipes.find((pp) => pp.id === cd.conduit_id)!;
+      expect([p.from, p.to, p.diameter, p.length, p.n]).toEqual([cd.from_node_id, cd.to_node_id, cd.diameter_m, cd.length_m, cd.manning_n]);
     }
+    for (const nd of ASSETS.nodes) expect(t.network.nodes.find((n) => n.id === nd.node_id)!.invert).toBe(nd.invert_elevation_m);
   });
-
-  it('has 13 trunk pipes at baseline diameter', () => {
-    expect(TRUNK_PIPE_IDS.length).toBe(13);
-    for (const id of TRUNK_PIPE_IDS) expect(net.pipes.find((p) => p.id === id)!.diameter).toBe(PIPE_D.trunk);
+  it('applies the D07 baseline blockage and only asset grates', () => {
+    const d07 = ASSETS.inlets.find((i) => i.inlet_id === 'INLET-D07')!;
+    expect(t.network.nodes.find((n) => n.id === 'NODE-J07')!.inletPerimeter).toBeCloseTo(inletPerimeter(d07.grate_area_m2, 0.4), 12);
+    expect(t.network.nodes.find((n) => n.id === 'NODE-J01')!.inletPerimeter).toBeCloseTo(inletPerimeter(0.6, 0), 12);
+    expect(t.network.nodes.find((n) => n.id === 'NODE-J03')!.inletPerimeter).toBe(0);
+    expect(buildTownship([], [], { blockage: {} }).network.nodes.find((n) => n.id === 'NODE-J07')!.inletPerimeter).toBeCloseTo(inletPerimeter(0.6, 0), 12);
   });
-});
-
-describe('interventions', () => {
-  const base = buildTownship([]);
-  const only = (id: InterventionId) => applyInterventions(base, [id]);
-
-  it('does not mutate the base township', () => {
-    applyInterventions(base, INTERVENTIONS.map((i) => i.id));
-    expect(base.network.outfalls[0].flapGate).toBe(false);
-    expect(base.network.nodes.length).toBe(22);
-  });
-
-  it('applies each preset', () => {
-    expect(only('upsize-trunk').network.pipes.find((p) => p.id === 'S3-O')!.diameter).toBe(PIPE_D.trunkUpsized);
-    expect(only('relief-pond').network.pipes.some((p) => p.id === 'S3-P')).toBe(true);
-    const tank = only('detention-tank').network;
-    expect(tank.nodes.find((n) => n.id === 'TK')!.area).toBe(1500);
-    expect(tank.pipes.map((p) => p.id)).toEqual(expect.arrayContaining(['T8-TK', 'TK-O']));
-    const swale = only('bioswales').grid;
-    const c = cellAt(50, 78); // verge just south of the sag approach street (road row j = 20)
-    expect(swale.land[c]).toBe(LandUse.PARK);
-    expect(swale.infil[c]).toBeCloseTo(INFILTRATION_MMHR.BIOSWALE * MMHR, 12);
-    expect(only('flap-gate').network.outfalls[0].flapGate).toBe(true);
-    expect(base.network.nodes.find((n) => n.id === 'S3')!.inletPerimeter).toBe(0); // solid cover at the low point
-    expect(only('sag-inlets').network.nodes.find((n) => n.id === 'S3')!.inletPerimeter).toBe(4);
-    expect(only('sag-inlets').network.nodes.find((n) => n.id === 'SL1')!.inletPerimeter).toBe(6);
-    expect(only('pump').network.pumps.length).toBe(1);
-  });
-
-  it('builds a stable cache key regardless of selection order', () => {
-    expect(scenarioKey(['pump', 'flap-gate'], '100yr')).toBe(scenarioKey(['flap-gate', 'pump'], '100yr'));
-  });
-
-  it('adds custom pipes', () => {
-    const t = buildTownship([], [{ from: 'SL0', to: 'O', diameter: 0.45 }]);
-    expect(t.network.pipes.some((p) => p.id === 'custom-0' && p.from === 'SL0')).toBe(true);
+  it('drains to OUT01 in the canal', () => {
+    expect(t.network.outfalls[0].node).toBe('NODE-OUT01');
+    expect(grid.land[t.network.outfalls[0].riverCell]).toBe(LandUse.RIVER);
   });
 });
 
-describe('water balance on the real township (short storm)', () => {
-  const cases: InterventionId[][] = [...INTERVENTIONS.map((i) => [i.id]), INTERVENTIONS.map((i) => i.id)];
+describe('interventions and scenario options', () => {
+  const only = (id: InterventionId) => buildTownship([id]).network;
+  it('applies each intervention', () => {
+    expect(only('desilt-d07').nodes.find((n) => n.id === 'NODE-J07')!.inletPerimeter).toBeCloseTo(inletPerimeter(0.6, 0), 12);
+    expect(only('upsize-p07').pipes.find((p) => p.id === 'PIPE-P07')!.diameter).toBe(P07_UPSIZED_D);
+    expect(only('flap-gate').outfalls[0].flapGate).toBe(true);
+    expect(only('storage-tank').pipes.map((p) => p.id)).toEqual(expect.arrayContaining(['PIPE-TK-IN', 'PIPE-TK-OUT']));
+    expect(only('lake-overflow').pipes.find((p) => p.id === 'PIPE-LK')!.slope).toBeGreaterThan(0);
+    expect(only('pump').pumps[0].node).toBe('NODE-J08');
+  });
+  it('sets the tailwater stage and the J07 hotspot', () => {
+    expect(buildScenario([], 'synthetic_80mmh_60min', [], { tailwater: 'high' }).river.levels[0]).toBe(TAILWATER.high);
+    const j07 = nodeSite('NODE-J07');
+    expect(hotspotCell()).toBe(cellAt(j07.x, j07.y));
+    expect(scenarioKey([], 'synthetic_80mmh_60min', [], { tailwater: 'high' })).not.toBe(scenarioKey([], 'synthetic_80mmh_60min'));
+  });
+});
+
+describe('water balance (short storm)', () => {
+  const cases: InterventionId[][] = [[], ...INTERVENTIONS.map((i) => [i.id]), INTERVENTIONS.map((i) => i.id)];
   it.each(cases)('within 1%%: %s', (...ids) => {
-    const sc = buildScenario(ids, '100yr');
-    const short = { ...sc, storm: { ...sc.storm, intensity: sc.storm.intensity.slice(10, 14) }, recessionS: 0 };
-    const { metrics } = runSimulation(short);
-    expect(metrics.balance.error).toBeLessThan(0.01);
+    const sc = buildScenario(ids, 'synthetic_80mmh_60min');
+    const short = { ...sc, storm: { ...sc.storm, intensity: sc.storm.intensity.slice(0, 3) }, recessionS: 0 };
+    expect(runSimulation(short).metrics.balance.error).toBeLessThan(0.01);
   });
 });

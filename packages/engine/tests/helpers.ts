@@ -72,6 +72,7 @@ export function makeScenario(
       blockS: 60,
       intensity: new Array(10).fill((opts.rainMmHr ?? 100) / 3.6e6),
       provisional: false,
+      peakMinute: 5,
     },
     river: { times: [0, 600], levels: opts.riverLevels ?? [0.5, 0.5] },
     dt: 0.5,
