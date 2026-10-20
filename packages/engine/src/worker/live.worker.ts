@@ -25,7 +25,7 @@ function fail(err: unknown): void {
 
 function startSession(seekMinute: number): void {
   if (!current) return;
-  session = new LiveSession(current.stormId, current.interventions, current.custom);
+  session = new LiveSession(current.stormId, current.interventions, current.custom, current.opts ?? {});
   endedSent = false;
   if (seekMinute > 0) session.advance(seekMinute * 60);
   last = performance.now();

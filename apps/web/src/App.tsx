@@ -24,11 +24,14 @@ import { VirtualDebrisLab } from './components/VirtualDebrisLab';
 import { InterventionDashboard } from './components/InterventionDashboard';
 import { LiveTelemetryTicker } from './components/LiveTelemetryTicker';
 import { engineSource } from './engine/engineSource';
+import { useLiveEngine } from './engine/useLiveEngine';
 import { rainIntensityAt, STORMS, type StormId } from '@floodops/engine/scenario/storms';
 
 export function App() {
   const [mode, setMode] = useState<DataMode>(apiClient.getDataMode());
   const engineMode = mode === 'engine';
+  const live = useLiveEngine();
+  const liveActive = engineMode && live.on;
   const [appMode, setAppMode] = useState<AppMode>('diagnose');
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [bootstrap, setBootstrap] = useState<BootstrapResponse | null>(null);
@@ -130,8 +133,35 @@ export function App() {
     };
   }, [loadData, mode]);
 
+  // Engine Live: one continuous storm in a worker with the current scenario settings.
+  const startLive = (stormId: string) => {
+    live.start(stormId as StormId, engineSource.getInterventions(), {
+      tailwater: selectedTailwater === 'high' ? 'high' : 'normal',
+      blockage: engineSource.blockageForDebris(selectedDebrisId),
+    });
+  };
+
+  const stopLive = () => {
+    if (!live.on) return;
+    live.setOn(false);
+    live.stop();
+  };
+
+  const handleToggleLive = (on: boolean) => {
+    if (on) {
+      live.setOn(true);
+      setHasSimulationStarted(true);
+      // Live drives its own clock; keep his frame playback timer idle underneath.
+      setIsPlaying(false);
+      startLive(selectedStormId);
+    } else {
+      stopLive();
+    }
+  };
+
   const handleToggleMode = (newMode: DataMode) => {
     activePollRef.current = false;
+    if (newMode !== 'engine') stopLive();
     apiClient.setDataMode(newMode);
     setMode(newMode);
     if (newMode === 'engine') {
@@ -410,21 +440,27 @@ export function App() {
     setHasSimulationStarted(false);
     setIsPlaying(false);
     setCurrentFrameIndex(0);
+    // Engine mode: switching workflow resets playback, so the Live storm stops too.
+    if (engineMode) stopLive();
     if (newMode === 'idle') {
       // Idle mode: calm clear weather, field patrol inspection active, live telemetry streaming
       setRainEnabled(false);
-      handleLoadVerifiedRun('synthetic_80mmh_60min');
+      if (!engineMode) handleLoadVerifiedRun('synthetic_80mmh_60min');
     } else if (newMode === 'diagnose') {
       // Historical diagnosis: focus on INLET-D07 restriction under baseline event
       setRainEnabled(true);
-      handleLoadVerifiedRun('synthetic_80mmh_60min');
-      setSelectedDebrisId('demo_inlet_40pct');
+      if (!engineMode) {
+        handleLoadVerifiedRun('synthetic_80mmh_60min');
+        setSelectedDebrisId('demo_inlet_40pct');
+      }
       setDebrisRestrictionFraction(0.4);
     } else {
       // Forward anticipation: projected 120 mm/h monsoon storm with antecedent blockage
       setRainEnabled(true);
-      handleLoadVerifiedRun('synthetic_120mmh_60min');
-      setSelectedDebrisId('demo_inlet_40pct');
+      if (!engineMode) {
+        handleLoadVerifiedRun('synthetic_120mmh_60min');
+        setSelectedDebrisId('demo_inlet_40pct');
+      }
       setDebrisRestrictionFraction(0.4);
     }
   };
@@ -486,12 +522,18 @@ export function App() {
   };
 
   const currentTimestamp = frames[currentFrameIndex]?.timestamp_s ?? 0;
+  // Engine Live overrides what the scene shows, without touching his `frames` state.
+  const sceneFrame = liveActive ? live.frame : frames[currentFrameIndex] || null;
+  const sceneTimestamp = liveActive ? live.t : currentTimestamp;
   const stormIntensity = engineMode
-    ? rainIntensityAt(STORMS[selectedStormId as StormId] ?? STORMS.synthetic_80mmh_60min, currentTimestamp)
+    ? rainIntensityAt(STORMS[selectedStormId as StormId] ?? STORMS.synthetic_80mmh_60min, sceneTimestamp)
     : selectedStormId === 'synthetic_120mmh_60min' ? 120 : 80;
-  const isRainActive = engineMode
+  const isRainActive = liveActive
+    ? rainEnabled && !live.paused && stormIntensity > 0
+    : engineMode
     ? rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && stormIntensity > 0
     : rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && currentTimestamp <= 3600;
+  const shownError = liveActive && live.error ? live.error : apiError;
 
   const handleSelectTab = (tab: 'dashboard' | 'map' | 'assets' | 'analytics' | 'reports') => {
     if (tab === 'dashboard') {
@@ -554,7 +596,7 @@ export function App() {
         health={health}
         loading={loading}
         onRefresh={loadData}
-        apiError={apiError}
+        apiError={shownError}
       />
 
       {/* Main 3D WebGL Digital Twin Canvas */}
@@ -562,7 +604,7 @@ export function App() {
         nodes={nodes}
         inlets={inlets}
         conduits={conduits}
-        currentFrame={frames[currentFrameIndex] || null}
+        currentFrame={sceneFrame}
         selectedAssetId={selectedAsset?.id}
         onSelectAsset={(asset) => setSelectedAsset(asset)}
         showUndergroundOnly={twinViewMode === 'underground_only'}
@@ -579,7 +621,7 @@ export function App() {
         onSelectInspector={handleSelectInspector}
         selectedInspectorId={selectedInspectorId}
         showInspectors={!engineMode}
-        engineDepth={engineMode ? engineSource.surfaceAt(currentTimestamp) : undefined}
+        engineDepth={liveActive ? live.depth : engineMode ? engineSource.surfaceAt(currentTimestamp) : undefined}
       />
 
       {/* Selected Asset Details Drawer with Live Site Photos, CCTV, and Blockage Slider */}
@@ -589,7 +631,7 @@ export function App() {
         inspections={inspections}
         onOpenInspect={(assetId) => setInspectingAssetId(assetId)}
         onOpenInterventions={() => setIsInterventionDashboardOpen(true)}
-        currentFrame={frames[currentFrameIndex] || null}
+        currentFrame={sceneFrame}
         blockageFraction={
           selectedAsset
             ? customBlockages[selectedAsset.id] ?? 0.0
@@ -610,7 +652,10 @@ export function App() {
         <SimulationHUD
           storms={bootstrap.storms}
           selectedStormId={selectedStormId}
-          onSelectStorm={(id) => setSelectedStormId(id)}
+          onSelectStorm={(id) => {
+            setSelectedStormId(id);
+            if (liveActive) startLive(id);
+          }}
           debrisScenarios={bootstrap.debris_scenarios}
           selectedDebrisId={selectedDebrisId}
           onSelectDebris={(id) => setSelectedDebrisId(id)}
@@ -620,6 +665,17 @@ export function App() {
           onRunSimulation={handleRunSimulation}
           onLoadVerifiedRun={engineMode ? () => {} : handleLoadVerifiedRun}
           hideVerifiedRun={engineMode}
+          engineStorms={engineMode ? bootstrap.storms.map((st) => ({ id: st.storm_id, label: st.name })) : undefined}
+          intensityMmh={engineMode ? stormIntensity : undefined}
+          liveAvailable={engineMode}
+          liveOn={live.on}
+          onToggleLive={handleToggleLive}
+          liveSpeed={live.speed}
+          onLiveSpeed={live.setSpeed}
+          livePaused={live.paused}
+          onLivePause={live.togglePause}
+          onLiveSeek={live.seek}
+          liveTimeS={live.t}
           isRunning={isRunning}
           runProgressMessage={runProgressMessage}
           hasSimulationStarted={hasSimulationStarted}

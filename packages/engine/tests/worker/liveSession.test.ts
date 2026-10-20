@@ -59,4 +59,12 @@ describe('LiveSession', () => {
     b.advance(60);
     expect(Array.from(a.snapshot().frame.depth)).toEqual(Array.from(b.snapshot().frame.depth));
   });
+
+  it('passes scenario options through, including on patch', () => {
+    const s = new LiveSession('100yr', [], [], { tailwater: 'high' });
+    expect(s.scenario.river.levels[0]).toBe(9.4);
+    s.patch(['desilt-d07'], []);
+    expect(s.scenario.river.levels[0]).toBe(9.4);
+    expect(new LiveSession('100yr', [], []).scenario.river.levels[0]).toBe(8.2);
+  });
 });

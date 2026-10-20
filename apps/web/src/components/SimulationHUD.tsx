@@ -61,6 +61,20 @@ interface SimulationHUDProps {
   onChangeAppMode?: (mode: AppMode) => void;
   /** Engine mode: hide the verified-SWMM-run storm slider (it loads offline SWMM fixtures). */
   hideVerifiedRun?: boolean;
+  /** Engine mode: storms offered by a compact selector (replaces the hidden verified-run slider). */
+  engineStorms?: { id: string; label: string }[];
+  /** Engine mode: rain intensity at the displayed time, replacing the fixed SWMM storm figure. */
+  intensityMmh?: number;
+  /** Engine mode: Live toggle and its playback controls. Absent: unchanged playback UI. */
+  liveAvailable?: boolean;
+  liveOn?: boolean;
+  onToggleLive?: (on: boolean) => void;
+  liveSpeed?: number;
+  onLiveSpeed?: (s: number) => void;
+  livePaused?: boolean;
+  onLivePause?: () => void;
+  onLiveSeek?: (t: 'start' | 'peak' | 'end') => void;
+  liveTimeS?: number;
 }
 
 export const SimulationHUD: React.FC<SimulationHUDProps> = ({
@@ -98,7 +112,19 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   appMode,
   onChangeAppMode,
   hideVerifiedRun,
+  engineStorms,
+  intensityMmh,
+  liveAvailable,
+  liveOn,
+  onToggleLive,
+  liveSpeed = 1,
+  onLiveSpeed,
+  livePaused = false,
+  onLivePause,
+  onLiveSeek,
+  liveTimeS = 0,
 }) => {
+  const liveActive = !!liveAvailable && !!liveOn;
   const [localIsPlaying, setLocalIsPlaying] = useState(false);
   const isPlaying = isPlayingProp !== undefined ? isPlayingProp : localIsPlaying;
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
@@ -171,7 +197,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   };
 
   // Current storm intensity in mm/hr
-  const currentIntensity = selectedStormId === 'synthetic_120mmh_60min' ? 120 : selectedStormId === 'synthetic_80mmh_60min' ? 80 : 50;
+  const currentIntensity = intensityMmh !== undefined ? Math.round(intensityMmh) : selectedStormId === 'synthetic_120mmh_60min' ? 120 : selectedStormId === 'synthetic_80mmh_60min' ? 80 : 50;
 
   // Surcharge status calculation
   const hasFlooding = currentFrame?.node_states?.some((n) => n.status === 'flooding');
@@ -281,6 +307,25 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                   </div>
                 )}
 
+                {/* Engine mode: storm selector */}
+                {hideVerifiedRun && engineStorms && engineStorms.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-semibold text-slate-700 block">Storm</span>
+                    <select
+                      value={selectedStormId}
+                      onChange={(e) => onSelectStorm(e.target.value)}
+                      disabled={isRunning}
+                      className="w-full px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-medium text-slate-800 cursor-pointer focus:outline-none focus:border-red-400 disabled:opacity-50"
+                    >
+                      {engineStorms.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 {/* Workflow Mode Switcher (Idle, Diagnose, Anticipate) */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-semibold text-slate-700 block">Workflow Mode</span>
@@ -375,6 +420,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                     </button>
                   </div>
 
+                  {!liveActive && (
                   <button
                     onClick={() => {
                       if (!hasSimulationStarted && onStartSimulation) {
@@ -397,6 +443,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                       </>
                     )}
                   </button>
+                  )}
                 </div>
               </div>
             )}
@@ -498,7 +545,89 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
       {/* 2. BOTTOM CENTER: Minimalist Light Timeline Player Bar   */}
       {/* ======================================================== */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-xl bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl px-5 py-3 shadow-xl flex flex-col gap-2 pointer-events-auto text-slate-800">
-        {!hasSimulationStarted ? (
+        {liveAvailable && (
+          /* Engine mode: Playback | Live segmented control */
+          <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-[11px]">
+            <button
+              onClick={() => liveOn && onToggleLive?.(false)}
+              className={`py-1 rounded-lg font-medium transition cursor-pointer text-center ${
+                !liveOn ? 'bg-red-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Playback
+            </button>
+            <button
+              onClick={() => !liveOn && onToggleLive?.(true)}
+              disabled={isRunning}
+              className={`py-1 rounded-lg font-medium transition cursor-pointer text-center disabled:opacity-50 ${
+                liveOn ? 'bg-red-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Live
+            </button>
+          </div>
+        )}
+        {liveActive ? (
+          /* Live: continuous engine storm controls */
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <button
+              onClick={onLivePause}
+              className="p-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-medium transition cursor-pointer flex items-center justify-center shadow-md shadow-red-600/20"
+              title={livePaused ? 'Resume live storm' : 'Pause live storm'}
+            >
+              {livePaused ? <Play className="w-3.5 h-3.5 fill-white" /> : <Pause className="w-3.5 h-3.5" />}
+            </button>
+
+            <div className="flex items-center rounded-xl bg-slate-100 border border-slate-200 p-0.5">
+              {[0.5, 1, 2, 4].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => onLiveSpeed?.(s)}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-mono transition cursor-pointer ${
+                    liveSpeed === s ? 'bg-red-600 text-white font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {s === 0.5 ? '½' : s}x
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center rounded-xl bg-slate-100 border border-slate-200 p-0.5">
+              {([
+                ['start', 'Start'],
+                ['peak', 'Peak rain'],
+                ['end', 'Rain stops'],
+              ] as const).map(([target, label]) => (
+                <button
+                  key={target}
+                  onClick={() => onLiveSeek?.(target)}
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition cursor-pointer"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <span className="font-mono text-slate-800 font-bold text-xs bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+              {formatTime(Math.round(liveTimeS))}
+            </span>
+
+            <button
+              onClick={onToggleRain}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-mono transition cursor-pointer ${
+                isRainActive
+                  ? 'bg-cyan-50 border-cyan-200 text-cyan-800'
+                  : rainEnabled
+                  ? 'bg-amber-50 border-amber-200 text-amber-800'
+                  : 'bg-slate-100 border-slate-200 text-slate-500'
+              }`}
+              title="Toggle rain animation"
+            >
+              <CloudRain className={`w-3 h-3 ${isRainActive ? 'text-cyan-600 animate-pulse' : 'text-slate-400'}`} />
+              <span>{isRainActive ? `${currentIntensity} mm/h` : rainEnabled ? (livePaused ? 'Paused' : 'Dry') : 'Off'}</span>
+            </button>
+          </div>
+        ) : !hasSimulationStarted ? (
           /* Pre-Start State: Unified Start Button & Armed Rain Toggle */
           <div className="flex items-center justify-between text-xs py-0.5">
             <div className="flex items-center gap-3">
@@ -640,6 +769,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
         )}
 
         {/* Minimalist Range Slider */}
+        {!liveActive && (
         <div className="relative pt-0.5">
           <input
             type="range"
@@ -655,6 +785,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
             className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600"
           />
         </div>
+        )}
       </div>
     </>
   );

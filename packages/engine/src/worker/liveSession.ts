@@ -1,4 +1,4 @@
-import { buildScenario, type CustomPipe } from '../scenario/index';
+import { buildScenario, type CustomPipe, type ScenarioOptions } from '../scenario/index';
 import type { InterventionId } from '../scenario/interventions';
 import { rainIntensityAt, type StormId } from '../scenario/storms';
 import { balanceError, createEngine, makeFrame, patchEngine, stepEngine, type EngineState } from '../sim/engine';
@@ -42,8 +42,10 @@ export class LiveSession {
     readonly stormId: StormId,
     interventions: InterventionId[],
     custom: CustomPipe[],
+    /** Tailwater and blockage case; kept for the session's lifetime, including patches. */
+    readonly opts: ScenarioOptions = {},
   ) {
-    this.sc = buildScenario(interventions, stormId, custom);
+    this.sc = buildScenario(interventions, stormId, custom, opts);
     this.st = createEngine(this.sc);
     this.endT = this.sc.storm.intensity.length * this.sc.storm.blockS + this.sc.recessionS;
     this.indexHomes();
@@ -51,6 +53,11 @@ export class LiveSession {
 
   get t(): number {
     return this.st.t;
+  }
+
+  /** The scenario currently being simulated (read-only view). */
+  get scenario(): Readonly<Scenario> {
+    return this.sc;
   }
 
   get ended(): boolean {
@@ -93,7 +100,7 @@ export class LiveSession {
   }
 
   patch(interventions: InterventionId[], custom: CustomPipe[]): void {
-    const next = buildScenario(interventions, this.stormId, custom);
+    const next = buildScenario(interventions, this.stormId, custom, this.opts);
     patchEngine(this.sc, this.st, next);
     this.sc = next;
     this.indexHomes();
