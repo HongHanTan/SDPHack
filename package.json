@@ -4,7 +4,7 @@
   "workspaces": ["apps/*", "packages/*"],
   "overrides": { "vite": "^6.1.2" },
   "scripts": {
-    "test": "npm -w @floodops/engine test && npm -w legacy test",
+    "test": "npm -w @floodops/engine test && npm -w legacy test && npm -w township-floodops-web test",
     "story": "npm -w @floodops/engine run story",
     "effects": "npm -w @floodops/engine run effects",
     "tune": "npm -w @floodops/engine run tune",
