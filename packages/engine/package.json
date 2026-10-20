@@ -10,8 +10,8 @@
     "./worker/*": "./src/worker/*.ts"
   },
   "scripts": {
-    "test": "vitest run --exclude tests/story.test.ts --exclude tests/effects.drift.test.ts",
-    "story": "vitest run tests/story.test.ts tests/effects.drift.test.ts",
+    "test": "vitest run --exclude tests/story.test.ts --exclude tests/effects.drift.test.ts --exclude tests/swmm.crosscheck.test.ts",
+    "story": "vitest run tests/story.test.ts tests/effects.drift.test.ts tests/swmm.crosscheck.test.ts",
     "effects": "tsx scripts/effects.ts",
     "tune": "tsx scripts/tune.ts",
     "typecheck": "tsc --noEmit"

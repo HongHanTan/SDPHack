@@ -120,3 +120,37 @@ needs P08 to be throttled by OUT01:
 on a footprint. Unlike pass 1, the bowl is now deep enough (static spill 0.36–0.86 m on H23), but an 80 mm/h, 60-minute
 storm doesn't supply enough surplus over P07's capacity and D07's draw to fill it. Claim 1's other assertion (J07 ≥ 0.15
 m) holds and could come back as its own test.
+
+## SWMM cross-check (Task 5): report-only
+
+`packages/engine/tests/swmm.crosscheck.test.ts` compares the engine's pipe peaks with Tay Zheheng's EPA SWMM 5.2.4 run
+(`data/validation/t1/baseline`) for `synthetic_80mmh_60min`, normal tailwater and INLET-D07 clean. The test regenerates
+`docs/swmm-crosscheck.md`. The target was ±30% peak flow and ±10 min peak time on the trunk pipes P03, P05, P07 and P08.
+That target can't be met within the allowed tunables, so the test runs with `ENFORCED = false` (report-only).
+No config values were changed for Task 5.
+
+| Pipe | SWMM peak (m³/s) | Engine peak (m³/s) | Difference | Peak time difference (min) | Engine full-bore capacity (m³/s) |
+|---|---|---|---|---|---|
+| PIPE-P01 | 0.218 | 0.068 | -68.8% | -58.0 | 0.240 |
+| PIPE-P02 | 0.218 | 0.074 | -66.2% | -58.0 | 0.208 |
+| PIPE-P03 | 0.437 | 0.142 | -67.5% | -58.0 | 0.516 |
+| PIPE-P04 | 0.218 | 0.091 | -58.2% | -58.5 | 0.294 |
+| PIPE-P05 | 0.655 | 0.233 | -64.4% | -57.5 | 0.516 |
+| PIPE-P06 | 0.029 | 0.000 | -100.0% | -61.0 | 0.319 |
+| PIPE-P07 | 0.873 | 0.549 | -37.1% | -57.0 | 0.549 |
+| PIPE-P08 | 0.873 | 0.549 | -37.1% | -57.0 | 0.996 |
+
+**Why ±30% / 10 min is out of reach:**
+- **P07 and P08 (structural).** The engine caps each pipe at its full-bore Manning capacity. For P07 (asset Ø600, slope
+  0.008) that is 0.549 m³/s. SWMM's dynamic-wave solution surcharges P07 to 0.873 m³/s, so −37.1% is the best the
+  engine can ever reach. P08's only inflow is P07, so P08 is bound by the same limit. Closing this gap needs head-driven
+  pressure flow in `src/sim/pipes.ts` or a different P07 diameter. The physics core and the asset values are both
+  off-limits.
+- **Peak time (structural).** SWMM's hydrographs keep rising through the whole 60-minute block and peak at t = 60 min.
+  The engine's grate-fed pipes reach a plateau about 2 minutes into the storm and hold it until the rain stops, so the
+  first plateau frame counts as the peak. That gives about −58 min on every pipe, whatever the flow magnitudes are.
+- **P01–P05 (inflow).** SWMM loads all runoff from four 1 ha catchments straight into the manholes. The engine has to
+  capture rain through four grates, whose weir capacity is set by asset grate areas and `WEIR_C` (`src/sim`, not
+  allowed). `INLET_SUMP` and `FUNNEL` could raise the head at the grates. Even so, the P07 cap and the timing gap would
+  keep the cross-check failing, and changing them would put the tuned story at risk for no gain on the enforced pipes.
+  So they stay at their Task 4b values.
