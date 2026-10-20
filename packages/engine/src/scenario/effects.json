@@ -1,62 +1,130 @@
 {
-  "10yr": {
-    "upsize-trunk": {
-      "dSag": 0.111,
-      "dHomes": 1
+  "normal": {
+    "synthetic_80mmh_60min": {
+      "desilt-d07": {
+        "dSag": -0.022,
+        "dHomes": 0
+      },
+      "upsize-p07": {
+        "dSag": -0.109,
+        "dHomes": 0
+      },
+      "flap-gate": {
+        "dSag": 0,
+        "dHomes": 0
+      },
+      "storage-tank": {
+        "dSag": -0.109,
+        "dHomes": 0
+      },
+      "lake-overflow": {
+        "dSag": -0.109,
+        "dHomes": 0
+      },
+      "pump": {
+        "dSag": 0,
+        "dHomes": 0
+      }
     },
-    "relief-pond": {
-      "dSag": -0.079,
-      "dHomes": -1
+    "synthetic_120mmh_60min": {
+      "desilt-d07": {
+        "dSag": 0,
+        "dHomes": 0
+      },
+      "upsize-p07": {
+        "dSag": -0.357,
+        "dHomes": 0
+      },
+      "flap-gate": {
+        "dSag": 0,
+        "dHomes": 0
+      },
+      "storage-tank": {
+        "dSag": -0.208,
+        "dHomes": 0
+      },
+      "lake-overflow": {
+        "dSag": -0.007,
+        "dHomes": 0
+      },
+      "pump": {
+        "dSag": 0,
+        "dHomes": 0
+      }
     },
-    "detention-tank": {
-      "dSag": -0.048,
-      "dHomes": -1
+    "10yr": {
+      "desilt-d07": {
+        "dSag": -0.002,
+        "dHomes": 0
+      },
+      "upsize-p07": {
+        "dSag": -0.185,
+        "dHomes": 0
+      },
+      "flap-gate": {
+        "dSag": 0,
+        "dHomes": 0
+      },
+      "storage-tank": {
+        "dSag": -0.177,
+        "dHomes": 0
+      },
+      "lake-overflow": {
+        "dSag": -0.015,
+        "dHomes": 0
+      },
+      "pump": {
+        "dSag": 0,
+        "dHomes": 0
+      }
     },
-    "bioswales": {
-      "dSag": -0.056,
-      "dHomes": -1
-    },
-    "flap-gate": {
-      "dSag": -0.144,
-      "dHomes": -1
-    },
-    "sag-inlets": {
-      "dSag": -0.153,
-      "dHomes": -1
-    },
-    "pump": {
-      "dSag": -0.2,
-      "dHomes": -1
+    "100yr": {
+      "desilt-d07": {
+        "dSag": 0,
+        "dHomes": 0
+      },
+      "upsize-p07": {
+        "dSag": -0.037,
+        "dHomes": 0
+      },
+      "flap-gate": {
+        "dSag": 0,
+        "dHomes": 0
+      },
+      "storage-tank": {
+        "dSag": -0.033,
+        "dHomes": 0
+      },
+      "lake-overflow": {
+        "dSag": -0.001,
+        "dHomes": 0
+      },
+      "pump": {
+        "dSag": 0,
+        "dHomes": 0
+      }
     }
   },
-  "100yr": {
-    "upsize-trunk": {
-      "dSag": 0.06,
-      "dHomes": 2
+  "high": {
+    "synthetic_80mmh_60min": {
+      "flap-gate": {
+        "dSag": 0,
+        "dHomes": 0
+      },
+      "pump": {
+        "dSag": 0,
+        "dHomes": 0
+      }
     },
-    "relief-pond": {
-      "dSag": -0.063,
-      "dHomes": -1
-    },
-    "detention-tank": {
-      "dSag": -0.093,
-      "dHomes": -1
-    },
-    "bioswales": {
-      "dSag": -0.054,
-      "dHomes": 0
-    },
-    "flap-gate": {
-      "dSag": -0.109,
-      "dHomes": -1
-    },
-    "sag-inlets": {
-      "dSag": -0.146,
-      "dHomes": -2
-    },
-    "pump": {
-      "dSag": -0.155,
-      "dHomes": -2
+    "synthetic_120mmh_60min": {
+      "flap-gate": {
+        "dSag": 0,
+        "dHomes": 0
+      },
+      "pump": {
+        "dSag": 0,
+        "dHomes": 0
+      }
     }
   }
 }
