@@ -1,0 +1,2532 @@
+{
+ "type": "FeatureCollection",
+ "name": "taman_kyra_layout",
+ "description": "FloodOps synthetic sample layout (illustrative projected metres, not a real location). Derived from TEH JIA JIE's scene layout; inlets from Tay Zheheng's synthetic assets.",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      411972.5,
+      336120
+     ],
+     [
+      412117.5,
+      336120
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "road",
+    "id": "north_street",
+    "width_m": 13,
+    "surface_z": 12.15
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      412012.5,
+      336080
+     ],
+     [
+      412117.5,
+      336080
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "road",
+    "id": "mid_street",
+    "width_m": 11,
+    "surface_z": 11.85
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      411967.5,
+      336000
+     ],
+     [
+      412122.5,
+      336000
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "road",
+    "id": "main_avenue",
+    "width_m": 15,
+    "surface_z": 10.98
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      412040,
+      336132.5
+     ],
+     [
+      412040,
+      335937.5
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "road",
+    "id": "drainage_boulevard",
+    "width_m": 13,
+    "surface_z": 11.2
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      412051.412,
+      336073.588
+     ],
+     [
+      412118.588,
+      336006.412
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "road",
+    "id": "east_connector",
+    "width_m": 10,
+    "surface_z": 11.5
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412120,
+     336080
+    ]
+   },
+   "properties": {
+    "kind": "roundabout",
+    "id": "cul-de-sac",
+    "radius_m": 10.5,
+    "surface_z": 11.86
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411972.808,
+       336130.86
+      ],
+      [
+       411987.193,
+       336130.86
+      ],
+      [
+       411987.193,
+       336145.14
+      ],
+      [
+       411972.808,
+       336145.14
+      ],
+      [
+       411972.808,
+       336130.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H01",
+    "rotation_deg": 0,
+    "sceneY": 12.2,
+    "roof": "#1e293b",
+    "wall": "#fef3c7",
+    "hasCar": true,
+    "carColor": "#1e293b"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411990.808,
+       336130.86
+      ],
+      [
+       412005.193,
+       336130.86
+      ],
+      [
+       412005.193,
+       336145.14
+      ],
+      [
+       411990.808,
+       336145.14
+      ],
+      [
+       411990.808,
+       336130.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H02",
+    "rotation_deg": 0,
+    "sceneY": 12.2,
+    "roof": "#7c2d12",
+    "wall": "#f1f5f9",
+    "hasCar": true,
+    "carColor": "#dc2626"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412008.808,
+       336130.86
+      ],
+      [
+       412023.193,
+       336130.86
+      ],
+      [
+       412023.193,
+       336145.14
+      ],
+      [
+       412008.808,
+       336145.14
+      ],
+      [
+       412008.808,
+       336130.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H03",
+    "rotation_deg": 0,
+    "sceneY": 12.2,
+    "roof": "#334155",
+    "wall": "#f1f5f9",
+    "hasCar": true,
+    "carColor": "#dc2626"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412026.808,
+       336130.86
+      ],
+      [
+       412041.193,
+       336130.86
+      ],
+      [
+       412041.193,
+       336145.14
+      ],
+      [
+       412026.808,
+       336145.14
+      ],
+      [
+       412026.808,
+       336130.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H04",
+    "rotation_deg": 0,
+    "sceneY": 12.2,
+    "roof": "#1e293b",
+    "wall": "#fef3c7",
+    "hasCar": true,
+    "carColor": "#f8fafc"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412044.808,
+       336130.86
+      ],
+      [
+       412059.193,
+       336130.86
+      ],
+      [
+       412059.193,
+       336145.14
+      ],
+      [
+       412044.808,
+       336145.14
+      ],
+      [
+       412044.808,
+       336130.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H05",
+    "rotation_deg": 0,
+    "sceneY": 12.2,
+    "roof": "#475569",
+    "wall": "#e2e8f0",
+    "hasCar": true,
+    "carColor": "#ca8a04"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412062.808,
+       336130.86
+      ],
+      [
+       412077.193,
+       336130.86
+      ],
+      [
+       412077.193,
+       336145.14
+      ],
+      [
+       412062.808,
+       336145.14
+      ],
+      [
+       412062.808,
+       336130.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H06",
+    "rotation_deg": 0,
+    "sceneY": 12.2,
+    "roof": "#991b1b",
+    "wall": "#f8fafc",
+    "hasCar": true,
+    "carColor": "#2563eb"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412080.808,
+       336130.86
+      ],
+      [
+       412095.193,
+       336130.86
+      ],
+      [
+       412095.193,
+       336145.14
+      ],
+      [
+       412080.808,
+       336145.14
+      ],
+      [
+       412080.808,
+       336130.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H07",
+    "rotation_deg": 0,
+    "sceneY": 12.2,
+    "roof": "#0369a1",
+    "wall": "#f1f5f9",
+    "hasCar": true,
+    "carColor": "#1e293b"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411996.85,
+       336108.8
+      ],
+      [
+       411983.15,
+       336108.8
+      ],
+      [
+       411983.15,
+       336095.2
+      ],
+      [
+       411996.85,
+       336095.2
+      ],
+      [
+       411996.85,
+       336108.8
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H08",
+    "rotation_deg": 180,
+    "sceneY": 12,
+    "roof": "#1e293b",
+    "wall": "#fef3c7",
+    "hasCar": false,
+    "carColor": "#1e293b"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412014.85,
+       336108.8
+      ],
+      [
+       412001.15,
+       336108.8
+      ],
+      [
+       412001.15,
+       336095.2
+      ],
+      [
+       412014.85,
+       336095.2
+      ],
+      [
+       412014.85,
+       336108.8
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H09",
+    "rotation_deg": 180,
+    "sceneY": 12,
+    "roof": "#7c2d12",
+    "wall": "#f1f5f9",
+    "hasCar": false,
+    "carColor": "#dc2626"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412032.85,
+       336108.8
+      ],
+      [
+       412019.15,
+       336108.8
+      ],
+      [
+       412019.15,
+       336095.2
+      ],
+      [
+       412032.85,
+       336095.2
+      ],
+      [
+       412032.85,
+       336108.8
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H10",
+    "rotation_deg": 180,
+    "sceneY": 12,
+    "roof": "#1e293b",
+    "wall": "#fef3c7",
+    "hasCar": false,
+    "carColor": "#f8fafc"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412050.85,
+       336108.8
+      ],
+      [
+       412037.15,
+       336108.8
+      ],
+      [
+       412037.15,
+       336095.2
+      ],
+      [
+       412050.85,
+       336095.2
+      ],
+      [
+       412050.85,
+       336108.8
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H11",
+    "rotation_deg": 180,
+    "sceneY": 12,
+    "roof": "#475569",
+    "wall": "#e2e8f0",
+    "hasCar": false,
+    "carColor": "#2563eb"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412068.85,
+       336108.8
+      ],
+      [
+       412055.15,
+       336108.8
+      ],
+      [
+       412055.15,
+       336095.2
+      ],
+      [
+       412068.85,
+       336095.2
+      ],
+      [
+       412068.85,
+       336108.8
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H12",
+    "rotation_deg": 180,
+    "sceneY": 12,
+    "roof": "#0369a1",
+    "wall": "#f8fafc",
+    "hasCar": false,
+    "carColor": "#1e293b"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412086.85,
+       336108.8
+      ],
+      [
+       412073.15,
+       336108.8
+      ],
+      [
+       412073.15,
+       336095.2
+      ],
+      [
+       412086.85,
+       336095.2
+      ],
+      [
+       412086.85,
+       336108.8
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H13",
+    "rotation_deg": 180,
+    "sceneY": 12,
+    "roof": "#334155",
+    "wall": "#f1f5f9",
+    "hasCar": false,
+    "carColor": "#475569"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411962.808,
+       336014.86
+      ],
+      [
+       411977.193,
+       336014.86
+      ],
+      [
+       411977.193,
+       336029.14
+      ],
+      [
+       411962.808,
+       336029.14
+      ],
+      [
+       411962.808,
+       336014.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H14",
+    "rotation_deg": 0,
+    "sceneY": 11,
+    "roof": "#475569",
+    "wall": "#fdf4ff",
+    "hasCar": false,
+    "carColor": "#ca8a04"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411980.808,
+       336014.86
+      ],
+      [
+       411995.193,
+       336014.86
+      ],
+      [
+       411995.193,
+       336029.14
+      ],
+      [
+       411980.808,
+       336029.14
+      ],
+      [
+       411980.808,
+       336014.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H15",
+    "rotation_deg": 0,
+    "sceneY": 11,
+    "roof": "#7c2d12",
+    "wall": "#f1f5f9",
+    "hasCar": false,
+    "carColor": "#1e293b"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411998.808,
+       336014.86
+      ],
+      [
+       412013.193,
+       336014.86
+      ],
+      [
+       412013.193,
+       336029.14
+      ],
+      [
+       411998.808,
+       336029.14
+      ],
+      [
+       411998.808,
+       336014.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H16",
+    "rotation_deg": 0,
+    "sceneY": 11,
+    "roof": "#334155",
+    "wall": "#f8fafc",
+    "hasCar": false,
+    "carColor": "#2563eb"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412016.808,
+       336014.86
+      ],
+      [
+       412031.193,
+       336014.86
+      ],
+      [
+       412031.193,
+       336029.14
+      ],
+      [
+       412016.808,
+       336029.14
+      ],
+      [
+       412016.808,
+       336014.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H17",
+    "rotation_deg": 0,
+    "sceneY": 11,
+    "roof": "#7c2d12",
+    "wall": "#fef3c7",
+    "hasCar": false,
+    "carColor": "#1e293b"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412052.808,
+       336014.86
+      ],
+      [
+       412067.193,
+       336014.86
+      ],
+      [
+       412067.193,
+       336029.14
+      ],
+      [
+       412052.808,
+       336029.14
+      ],
+      [
+       412052.808,
+       336014.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H18",
+    "rotation_deg": 0,
+    "sceneY": 11,
+    "roof": "#991b1b",
+    "wall": "#f8fafc",
+    "hasCar": false,
+    "carColor": "#2563eb"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412070.808,
+       336014.86
+      ],
+      [
+       412085.193,
+       336014.86
+      ],
+      [
+       412085.193,
+       336029.14
+      ],
+      [
+       412070.808,
+       336029.14
+      ],
+      [
+       412070.808,
+       336014.86
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H19",
+    "rotation_deg": 0,
+    "sceneY": 11,
+    "roof": "#0369a1",
+    "wall": "#f1f5f9",
+    "hasCar": false,
+    "carColor": "#1e293b"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411977.193,
+       335985.14
+      ],
+      [
+       411962.808,
+       335985.14
+      ],
+      [
+       411962.808,
+       335970.86
+      ],
+      [
+       411977.193,
+       335970.86
+      ],
+      [
+       411977.193,
+       335985.14
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H20",
+    "rotation_deg": 180,
+    "sceneY": 10.9,
+    "roof": "#991b1b",
+    "wall": "#f8fafc",
+    "hasCar": true,
+    "carColor": "#ca8a04"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411995.193,
+       335985.14
+      ],
+      [
+       411980.808,
+       335985.14
+      ],
+      [
+       411980.808,
+       335970.86
+      ],
+      [
+       411995.193,
+       335970.86
+      ],
+      [
+       411995.193,
+       335985.14
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H21",
+    "rotation_deg": 180,
+    "sceneY": 10.9,
+    "roof": "#475569",
+    "wall": "#fdf4ff",
+    "hasCar": true,
+    "carColor": "#1e293b"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412013.193,
+       335985.14
+      ],
+      [
+       411998.808,
+       335985.14
+      ],
+      [
+       411998.808,
+       335970.86
+      ],
+      [
+       412013.193,
+       335970.86
+      ],
+      [
+       412013.193,
+       335985.14
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H22",
+    "rotation_deg": 180,
+    "sceneY": 10.9,
+    "roof": "#1e293b",
+    "wall": "#fef3c7",
+    "hasCar": true,
+    "carColor": "#2563eb"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412031.193,
+       335985.14
+      ],
+      [
+       412016.808,
+       335985.14
+      ],
+      [
+       412016.808,
+       335970.86
+      ],
+      [
+       412031.193,
+       335970.86
+      ],
+      [
+       412031.193,
+       335985.14
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H23",
+    "rotation_deg": 180,
+    "sceneY": 10.9,
+    "roof": "#475569",
+    "wall": "#fdf4ff",
+    "hasCar": true,
+    "carColor": "#f8fafc"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412067.193,
+       335985.14
+      ],
+      [
+       412052.808,
+       335985.14
+      ],
+      [
+       412052.808,
+       335970.86
+      ],
+      [
+       412067.193,
+       335970.86
+      ],
+      [
+       412067.193,
+       335985.14
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H24",
+    "rotation_deg": 180,
+    "sceneY": 10.9,
+    "roof": "#0369a1",
+    "wall": "#f1f5f9",
+    "hasCar": true,
+    "carColor": "#dc2626"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412085.193,
+       335985.14
+      ],
+      [
+       412070.808,
+       335985.14
+      ],
+      [
+       412070.808,
+       335970.86
+      ],
+      [
+       412085.193,
+       335970.86
+      ],
+      [
+       412085.193,
+       335985.14
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H25",
+    "rotation_deg": 180,
+    "sceneY": 10.9,
+    "roof": "#334155",
+    "wall": "#fdf4ff",
+    "hasCar": true,
+    "carColor": "#f8fafc"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411978.8,
+       336078.15
+      ],
+      [
+       411978.8,
+       336091.85
+      ],
+      [
+       411965.2,
+       336091.85
+      ],
+      [
+       411965.2,
+       336078.15
+      ],
+      [
+       411978.8,
+       336078.15
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H26",
+    "rotation_deg": 90,
+    "sceneY": 11.3,
+    "roof": "#1e293b",
+    "wall": "#fef3c7",
+    "hasCar": true,
+    "carColor": "#f8fafc"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411978.8,
+       336058.15
+      ],
+      [
+       411978.8,
+       336071.85
+      ],
+      [
+       411965.2,
+       336071.85
+      ],
+      [
+       411965.2,
+       336058.15
+      ],
+      [
+       411978.8,
+       336058.15
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H27",
+    "rotation_deg": 90,
+    "sceneY": 11.3,
+    "roof": "#7c2d12",
+    "wall": "#f1f5f9",
+    "hasCar": true,
+    "carColor": "#dc2626"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411978.8,
+       336038.15
+      ],
+      [
+       411978.8,
+       336051.85
+      ],
+      [
+       411965.2,
+       336051.85
+      ],
+      [
+       411965.2,
+       336038.15
+      ],
+      [
+       411978.8,
+       336038.15
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H28",
+    "rotation_deg": 90,
+    "sceneY": 11.3,
+    "roof": "#334155",
+    "wall": "#e2e8f0",
+    "hasCar": true,
+    "carColor": "#475569"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411978.8,
+       336018.15
+      ],
+      [
+       411978.8,
+       336031.85
+      ],
+      [
+       411965.2,
+       336031.85
+      ],
+      [
+       411965.2,
+       336018.15
+      ],
+      [
+       411978.8,
+       336018.15
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H29",
+    "rotation_deg": 90,
+    "sceneY": 11.3,
+    "roof": "#0369a1",
+    "wall": "#fdf4ff",
+    "hasCar": true,
+    "carColor": "#f8fafc"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411978.8,
+       335998.15
+      ],
+      [
+       411978.8,
+       336011.85
+      ],
+      [
+       411965.2,
+       336011.85
+      ],
+      [
+       411965.2,
+       335998.15
+      ],
+      [
+       411978.8,
+       335998.15
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H30",
+    "rotation_deg": 90,
+    "sceneY": 11.3,
+    "roof": "#991b1b",
+    "wall": "#fef3c7",
+    "hasCar": true,
+    "carColor": "#dc2626"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411978.8,
+       335978.15
+      ],
+      [
+       411978.8,
+       335991.85
+      ],
+      [
+       411965.2,
+       335991.85
+      ],
+      [
+       411965.2,
+       335978.15
+      ],
+      [
+       411978.8,
+       335978.15
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H31",
+    "rotation_deg": 90,
+    "sceneY": 11.3,
+    "roof": "#475569",
+    "wall": "#fef3c7",
+    "hasCar": true,
+    "carColor": "#dc2626"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       411978.8,
+       335958.15
+      ],
+      [
+       411978.8,
+       335971.85
+      ],
+      [
+       411965.2,
+       335971.85
+      ],
+      [
+       411965.2,
+       335958.15
+      ],
+      [
+       411978.8,
+       335958.15
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H32",
+    "rotation_deg": 90,
+    "sceneY": 11.3,
+    "roof": "#991b1b",
+    "wall": "#fdf4ff",
+    "hasCar": true,
+    "carColor": "#f8fafc"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412058.15,
+       335923.2
+      ],
+      [
+       412071.85,
+       335923.2
+      ],
+      [
+       412071.85,
+       335936.8
+      ],
+      [
+       412058.15,
+       335936.8
+      ],
+      [
+       412058.15,
+       335923.2
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H33",
+    "rotation_deg": 0,
+    "sceneY": 10.5,
+    "roof": "#991b1b",
+    "wall": "#e2e8f0",
+    "hasCar": true,
+    "carColor": "#dc2626"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412076.15,
+       335923.2
+      ],
+      [
+       412089.85,
+       335923.2
+      ],
+      [
+       412089.85,
+       335936.8
+      ],
+      [
+       412076.15,
+       335936.8
+      ],
+      [
+       412076.15,
+       335923.2
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H34",
+    "rotation_deg": 0,
+    "sceneY": 10.5,
+    "roof": "#0369a1",
+    "wall": "#f8fafc",
+    "hasCar": true,
+    "carColor": "#ca8a04"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Polygon",
+    "coordinates": [
+     [
+      [
+       412094.15,
+       335923.2
+      ],
+      [
+       412107.85,
+       335923.2
+      ],
+      [
+       412107.85,
+       335936.8
+      ],
+      [
+       412094.15,
+       335936.8
+      ],
+      [
+       412094.15,
+       335923.2
+      ]
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "building",
+    "id": "H35",
+    "rotation_deg": 0,
+    "sceneY": 10.5,
+    "roof": "#334155",
+    "wall": "#fef3c7",
+    "hasCar": true,
+    "carColor": "#1e293b"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411975,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.9
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411989,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.8
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412003,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412017,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.2
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412031,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412045,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412059,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.2
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412073,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412087,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412101,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.2
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412115,
+     336128
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411965,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.8
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411965,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.6
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411977,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.8
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411977,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.6
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411989,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.8
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411989,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.6
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412001,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412001,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.05
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412013,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412013,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.05
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412025,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412025,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.05
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412037,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412037,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.05
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412049,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412049,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.05
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412061,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412061,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.05
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412073,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412073,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.05
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412085,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412085,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.05
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412097,
+     336010
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412097,
+     335990
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.05
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412152,
+     336030
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.1
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412153.11,
+     336022.83
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.35
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412148.81,
+     336016.54
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.01
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412140.93,
+     336013.8
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.89
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412133.29,
+     336013.76
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.26
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412126.54,
+     336013.75
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.26
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412118.87,
+     336013.82
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.88
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412111.03,
+     336016.65
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.02
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412106.86,
+     336023.01
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.35
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412108.08,
+     336030.16
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.09
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412111.87,
+     336035.77
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.86
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412115.23,
+     336040.76
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.2
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412119.16,
+     336046.37
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.31
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412126.01,
+     336050.68
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.93
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412134.58,
+     336050.49
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.95
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412141.2,
+     336045.97
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.32
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412145,
+     336040.38
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.17
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412148.41,
+     336035.41
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 0.85
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411985,
+     336150
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.3
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     411985,
+     335965
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.25
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412007,
+     336150
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.3
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412007,
+     335965
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.25
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412029,
+     336150
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.3
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412029,
+     335965
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.25
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412051,
+     336150
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.3
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412051,
+     335965
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.25
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412073,
+     336150
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.3
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412073,
+     335965
+    ]
+   },
+   "properties": {
+    "kind": "tree",
+    "scale": 1.25
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412130,
+     336030
+    ]
+   },
+   "properties": {
+    "kind": "pond",
+    "id": "maple_grove_pond",
+    "radius_m": 20,
+    "water_level_m": 9.8,
+    "bed_m": 9.2
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "LineString",
+    "coordinates": [
+     [
+      412040,
+      335872.5
+     ],
+     [
+      412040,
+      335947.5
+     ]
+    ]
+   },
+   "properties": {
+    "kind": "river",
+    "id": "east_outfall_canal",
+    "width_m": 15.6,
+    "bed_m": 7.6
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412000,
+     336120
+    ]
+   },
+   "properties": {
+    "kind": "inlet",
+    "inlet_id": "INLET-D01",
+    "node_id": "NODE-J01",
+    "grate_area_m2": 0.6
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412080,
+     336120
+    ]
+   },
+   "properties": {
+    "kind": "inlet",
+    "inlet_id": "INLET-D02",
+    "node_id": "NODE-J02",
+    "grate_area_m2": 0.6
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412120,
+     336080
+    ]
+   },
+   "properties": {
+    "kind": "inlet",
+    "inlet_id": "INLET-D04",
+    "node_id": "NODE-J04",
+    "grate_area_m2": 0.6
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412040,
+     336000
+    ]
+   },
+   "properties": {
+    "kind": "inlet",
+    "inlet_id": "INLET-D07",
+    "node_id": "NODE-J07",
+    "grate_area_m2": 0.6
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     412040,
+     336000
+    ]
+   },
+   "properties": {
+    "kind": "hotspot",
+    "node_id": "NODE-J07"
+   }
+  }
+ ]
+}
