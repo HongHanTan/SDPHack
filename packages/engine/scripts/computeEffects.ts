@@ -12,7 +12,6 @@ const round3 = (x: number) => Math.round(x * 1000) / 1000;
 /** Which (tailwater, storm, interventions) cells get a badge. */
 export const EFFECT_MATRIX: Array<{ tailwater: TailwaterCase; storms: StormId[]; ids: InterventionId[] }> = [
   { tailwater: 'normal', storms: Object.keys(STORMS) as StormId[], ids: INTERVENTIONS.map((i) => i.id) },
-  { tailwater: 'high', storms: ['synthetic_80mmh_60min', 'synthetic_120mmh_60min'], ids: ['flap-gate', 'pump'] },
 ];
 
 /** Baseline + single-intervention runs for every matrix cell; returns the change vs that cell's baseline. */

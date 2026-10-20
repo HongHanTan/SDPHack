@@ -62,10 +62,8 @@ describe('interventions and scenario options', () => {
   it('applies each intervention', () => {
     expect(only('desilt-d07').nodes.find((n) => n.id === 'NODE-J07')!.inletPerimeter).toBeCloseTo(inletPerimeter(0.6, 0), 12);
     expect(only('upsize-p07').pipes.find((p) => p.id === 'PIPE-P07')!.diameter).toBe(P07_UPSIZED_D);
-    expect(only('flap-gate').outfalls[0].flapGate).toBe(true);
     expect(only('storage-tank').pipes.map((p) => p.id)).toEqual(expect.arrayContaining(['PIPE-TK-IN', 'PIPE-TK-OUT']));
     expect(only('lake-overflow').pipes.find((p) => p.id === 'PIPE-LK')!.slope).toBeGreaterThan(0);
-    expect(only('pump').pumps[0].node).toBe('NODE-J08');
   });
   it('sets the tailwater stage and the J07 hotspot', () => {
     expect(buildScenario([], 'synthetic_80mmh_60min', [], { tailwater: 'high' }).river.levels[0]).toBe(TAILWATER.high);

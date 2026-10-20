@@ -62,6 +62,18 @@ export function createEngine(sc: Scenario): EngineState {
   return st;
 }
 
+function interpCurve(curve: Array<[number, number]>, x: number): number {
+  if (x <= curve[0][0]) return curve[0][1];
+  for (let i = 1; i < curve.length; i++) {
+    if (x <= curve[i][0]) {
+      const [x0, y0] = curve[i - 1];
+      const [x1, y1] = curve[i];
+      return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0);
+    }
+  }
+  return curve[curve.length - 1][1];
+}
+
 function rainRate(sc: Scenario, t: number): number {
   const k = Math.floor(t / sc.storm.blockS);
   return k < sc.storm.intensity.length ? sc.storm.intensity[k] : 0;
@@ -92,12 +104,17 @@ export function stepEngine(sc: Scenario, st: EngineState): number {
   st.rainVol += rain * area * st.landCells.length;
   if (cats) {
     for (let k = 0; k < cats.length; k++) {
-      const q = st.catchStore[k] * (1 - Math.exp(-dt / cats[k].lagS));
+      const ct = cats[k];
+      const q = st.catchStore[k] * (1 - Math.exp(-dt / ct.lagS)); // m3 released this step
       if (!(q > 0)) continue;
       st.catchStore[k] -= q;
-      const j = st.net.index.get(cats[k].node);
-      if (j === undefined) st.surf.h[cats[k].cells[0]] += q / area;
-      else st.net.vol[j] += q;
+      const j = st.net.index.get(ct.node);
+      const rate = q / dt;
+      const capturedRate = ct.captureCurve ? Math.min(rate, interpCurve(ct.captureCurve, rate)) * (1 - (ct.captureLoss ?? 0)) : rate;
+      const captured = j === undefined ? 0 : capturedRate * dt;
+      const bypass = q - captured;
+      if (j !== undefined) st.net.vol[j] += captured;
+      if (bypass > 0) st.surf.h[j === undefined ? ct.cells[0] : sc.network.nodes[j].cell] += bypass / area;
     }
   }
 

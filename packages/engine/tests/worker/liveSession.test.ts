@@ -37,7 +37,7 @@ describe('LiveSession', () => {
     const s = new LiveSession('100yr', [], []);
     s.advance(600);
     const before = Array.from(s.snapshot().frame.depth);
-    s.patch(['flap-gate'], []);
+    s.patch(['desilt-d07'], []);
     expect(Array.from(s.snapshot().frame.depth)).toEqual(before);
     s.advance(60);
     expect(s.snapshot().readouts.balanceError).toBeLessThan(0.01);
@@ -52,8 +52,8 @@ describe('LiveSession', () => {
   });
 
   it('is deterministic', () => {
-    const a = new LiveSession('100yr', ['pump'], []);
-    const b = new LiveSession('100yr', ['pump'], []);
+    const a = new LiveSession('100yr', ['upsize-p07'], []);
+    const b = new LiveSession('100yr', ['upsize-p07'], []);
     a.advance(120);
     b.advance(60);
     b.advance(60);

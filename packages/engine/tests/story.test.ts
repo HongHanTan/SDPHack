@@ -23,8 +23,6 @@ describe('Taman Kyra demo story (80 mm/h, team storm)', () => {
   const upsize = run(['upsize-p07']);
   const combined = run(['desilt-d07', 'upsize-p07']);
   const highBase = run([], { tailwater: 'high' });
-  const highFlap = run(['flap-gate'], { tailwater: 'high' });
-  const highPump = run(['pump'], { tailwater: 'high' });
   const tank = run(['storage-tank']);
   const lake = run(['lake-overflow']);
 
@@ -45,12 +43,12 @@ describe('Taman Kyra demo story (80 mm/h, team storm)', () => {
   });
   // Claim 5 (J08 under high tailwater) was removed again in the Task 8 retune: P07 still delivers at most 0.549 m³/s, which
   // OUT01's 2 m chamber passes below its crown at the 9.4 m stage, so P08 is never throttled and the J08 street stays dry
-  // (≤ 1 mm) in the normal, high, flap and pump runs. See docs/tuning.md ("Pass 3").
+  // (≤ 1 mm) in the normal and high runs. See docs/tuning.md ("Pass 3").
   it('6. tank and lake overflow are not dead toggles', () => {
     expect(Math.abs(tank.m.peakSagDepth - base.m.peakSagDepth)).toBeGreaterThanOrEqual(0.03);
     expect(Math.abs(lake.m.peakSagDepth - base.m.peakSagDepth)).toBeGreaterThanOrEqual(0.03);
   });
   it('7. every run closes its water balance', () => {
-    for (const r of [base, desilt, upsize, combined, highBase, highFlap, highPump, tank, lake]) expect(r.m.balance.error).toBeLessThan(0.01);
+    for (const r of [base, desilt, upsize, combined, highBase, tank, lake]) expect(r.m.balance.error).toBeLessThan(0.01);
   });
 });

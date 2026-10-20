@@ -25,7 +25,6 @@ export type TailwaterCase = keyof typeof TAILWATER;
 /** Off-line storage tank near J07: fed from J05, slow release to J08. Positions in team datum. */
 export const TANK = { x: 60, y: 20, invert: 8.9, area: 2000, depth: 2.0, feedNode: 'NODE-J05', outNode: 'NODE-J08', inflowD: 0.9, outflowD: 0.15 };
 export const LAKE_OVERFLOW = { fromNode: 'NODE-J04', diameter: 0.6 };
-export const PUMP = { node: 'NODE-J08', rate: 0.5 }; // m³/s to the canal
 export const P07_UPSIZED_D = 0.75;
 
 export const THRESHOLDS: Thresholds = { road: 0.15, home: 0.3 };

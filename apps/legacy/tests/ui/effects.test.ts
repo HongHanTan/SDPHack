@@ -4,14 +4,13 @@ import { effectOf } from '../../src/ui/effects';
 
 describe('effectOf', () => {
   it('returns null for unknown storms or tailwater instead of crashing', () => {
-    expect(effectOf('500yr' as StormId, 'pump')).toBeNull();
-    expect(effectOf('synthetic_80mmh_60min', 'pump', 'flood' as never)).toBeNull();
+    expect(effectOf('500yr' as StormId, 'upsize-p07')).toBeNull();
+    expect(effectOf('synthetic_80mmh_60min', 'upsize-p07', 'flood' as never)).toBeNull();
   });
   it('has badges for every intervention on the default storm', () => {
-    for (const id of ['desilt-d07', 'upsize-p07', 'flap-gate', 'storage-tank', 'lake-overflow', 'pump'] as const) {
+    for (const id of ['desilt-d07', 'upsize-p07', 'storage-tank', 'lake-overflow'] as const) {
       expect(effectOf('synthetic_80mmh_60min', id)).not.toBeNull();
     }
-    expect(effectOf('synthetic_80mmh_60min', 'flap-gate', 'high')).not.toBeNull();
   });
   it('returns finite numbers whenever an entry exists', () => {
     const e = effectOf('synthetic_80mmh_60min', 'desilt-d07');

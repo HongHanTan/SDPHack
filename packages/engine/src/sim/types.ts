@@ -79,6 +79,10 @@ export interface Catchment {
   cells: Int32Array;
   directFraction: number;
   lagS: number;
+  /** Optional capture curve [approach flow m3/s, captured m3/s] (linear interpolation, flat beyond the last point). */
+  captureCurve?: Array<[number, number]>;
+  /** Blocked fraction of the outlet grate (0..1); captured = curve(Q) × (1 − captureLoss). */
+  captureLoss?: number;
 }
 
 export interface Scenario {

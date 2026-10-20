@@ -19,15 +19,11 @@ export interface InterventionDisplay {
   site: { x: number; y: number }; // township metres: x east, y north
 }
 
-const OUT01 = nodeSite('NODE-OUT01');
-
 export const DISPLAY: Record<InterventionId, InterventionDisplay> = {
   'desilt-d07': { label: 'Desilt grate D07', short: 'desilt D07', icon: '🧹', group: 'Get water into the drains', site: nodeSite('NODE-J07') },
   'upsize-p07': { label: 'Bigger pipe P07 (Ø750)', short: 'upsize P07', icon: '⬇️', group: 'Move water out faster', site: (() => { const a = nodeSite('NODE-J07'); const b = nodeSite('NODE-J08'); return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; })() },
-  'flap-gate': { label: 'One-way valve at the outfall', short: 'valve', icon: '🚪', group: 'Stop the river coming back', site: OUT01 },
   'storage-tank': { label: 'Underground storage tank', short: 'tank', icon: '🛢️', group: 'Store water for later', site: toLocal(TANK.x, TANK.y) },
   'lake-overflow': { label: 'Overflow to Maple Grove pond', short: 'lake overflow', icon: '↪️', group: 'Store water for later', site: toLocal(LAYOUT.lake.x, LAYOUT.lake.y) },
-  pump: { label: 'Pump station at J08', short: 'pump', icon: '⚡', group: 'Move water out faster', site: nodeSite('NODE-J08') },
 };
 
 export interface Combo {
@@ -38,7 +34,7 @@ export interface Combo {
 
 export const COMBOS: Combo[] = [
   { label: 'Combined desilt + upsize', hint: 'team option 3', ids: ['desilt-d07', 'upsize-p07'] },
-  { label: 'High-river defence', hint: 'valve + pump', ids: ['flap-gate', 'pump'] },
+  { label: 'Store the peak', hint: 'tank + lake', ids: ['storage-tank', 'lake-overflow'] },
 ];
 
 export function costScale(costRM: number): 1 | 2 | 3 | 4 {

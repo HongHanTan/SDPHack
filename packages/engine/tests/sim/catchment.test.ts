@@ -36,3 +36,23 @@ describe('catchment loading', () => {
     expect(balanceError(next, st).error).toBeLessThan(0.01);
   });
 });
+
+describe('catchment grate capture', () => {
+  const capped = (loss: number): Scenario => {
+    const sc = withCatchment(makeScenario({ rainMmHr: 150 }));
+    return { ...sc, catchments: sc.catchments!.map((c) => ({ ...c, captureCurve: [[0, 0], [0.02, 0.01], [10, 0.01]] as Array<[number, number]>, captureLoss: loss })) };
+  };
+  it('limits what enters the node and puts the bypass on the street, conserving water', () => {
+    const free = peakLoad(withCatchment(makeScenario({ rainMmHr: 150 })));
+    const lim = runSimulation(capped(0));
+    expect(Math.max(...lim.frames.map((f) => f.pipeLoad[0]))).toBeLessThan(free);
+    expect(lim.metrics.balance.error).toBeLessThan(0.01);
+  });
+  it('a fully blocked grate sends everything to the street', () => {
+    const sc = capped(1);
+    const st = createEngine(sc);
+    for (let k = 0; k < 600; k++) stepEngine(sc, st);
+    expect(st.net.vol[0]).toBeLessThan(1e-6 + st.net.vmax[0]); // node only gets surface inlet water
+    expect(balanceError(sc, st).error).toBeLessThan(0.01);
+  });
+});

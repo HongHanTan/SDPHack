@@ -7,36 +7,36 @@ describe('Selection', () => {
     const s = new Selection();
     const labels: string[] = [];
     s.subscribe((_st, label) => labels.push(label));
-    s.set('flap-gate', true);
-    s.set('flap-gate', true);
-    s.set('flap-gate', false);
-    expect(labels).toEqual(['+ valve', '− valve']);
+    s.set('storage-tank', true);
+    s.set('storage-tank', true);
+    s.set('storage-tank', false);
+    expect(labels).toEqual(['+ tank', '− tank']);
   });
 
   it('orders interventions like INTERVENTIONS regardless of click order', () => {
     const s = new Selection();
-    s.set('pump', true);
+    s.set('lake-overflow', true);
     s.set('upsize-p07', true);
-    expect(s.state.interventions).toEqual(['upsize-p07', 'pump']);
+    expect(s.state.interventions).toEqual(['upsize-p07', 'lake-overflow']);
   });
 
   it('applying a combo replaces interventions and keeps custom pipes', () => {
     const s = new Selection();
     s.set('upsize-p07', true);
     s.addPipe({ from: 'NODE-J06', to: 'NODE-J08', diameter: 0.6 });
-    s.applyCombo(['flap-gate', 'storage-tank'], 'Cheapest fix');
-    expect(s.state.interventions).toEqual(['flap-gate', 'storage-tank']);
+    s.applyCombo(['storage-tank', 'lake-overflow'], 'Cheapest fix');
+    expect(s.state.interventions).toEqual(['storage-tank', 'lake-overflow']);
     expect(s.state.custom).toEqual([{ from: 'NODE-J06', to: 'NODE-J08', diameter: 0.6 }]);
   });
 
   it('applyCombo with an unchanged set emits nothing', () => {
     const s = new Selection();
-    s.applyCombo(['flap-gate', 'storage-tank'], 'Cheapest fix');
+    s.applyCombo(['storage-tank', 'lake-overflow'], 'Cheapest fix');
     const labels: string[] = [];
     s.subscribe((_st, label) => labels.push(label));
-    s.applyCombo(['storage-tank', 'flap-gate'], 'Cheapest fix');
+    s.applyCombo(['lake-overflow', 'storage-tank'], 'Cheapest fix');
     expect(labels).toEqual([]);
-    s.applyCombo(['flap-gate'], 'Less');
+    s.applyCombo(['storage-tank'], 'Less');
     expect(labels).toEqual(['Less']);
   });
 
@@ -52,7 +52,7 @@ describe('Selection', () => {
     let n = 0;
     const off = s.subscribe(() => n++);
     off();
-    s.set('pump', true);
+    s.set('lake-overflow', true);
     expect(n).toBe(0);
   });
 });
@@ -65,7 +65,7 @@ describe('activePipes / selectionCost', () => {
   });
 
   it('costs interventions plus active pipes', () => {
-    expect(selectionCost({ interventions: ['flap-gate', 'pump'], custom: [] })).toBe(totalCost(['flap-gate', 'pump']));
+    expect(selectionCost({ interventions: ['storage-tank', 'lake-overflow'], custom: [] })).toBe(totalCost(['storage-tank', 'lake-overflow']));
     expect(selectionCost({ interventions: [], custom: [{ from: 'NODE-J06', to: 'NODE-J08', diameter: 0.6 }] })).toBeGreaterThan(0);
   });
 });

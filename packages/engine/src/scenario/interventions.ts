@@ -1,5 +1,5 @@
 import { LandUse, type DrainNode, type Grid, type Network } from '../sim/types';
-import { LAKE, LAKE_OVERFLOW, P07_UPSIZED_D, PUMP, TANK } from './config';
+import { LAKE, LAKE_OVERFLOW, P07_UPSIZED_D, TANK } from './config';
 import { ASSETS, LAYOUT, toLocal } from './layout';
 import { inletPerimeter, makeNode, makePipe } from './network';
 
@@ -8,7 +8,7 @@ export interface Township {
   network: Network;
 }
 
-export type InterventionId = 'desilt-d07' | 'upsize-p07' | 'flap-gate' | 'storage-tank' | 'lake-overflow' | 'pump';
+export type InterventionId = 'desilt-d07' | 'upsize-p07' | 'storage-tank' | 'lake-overflow';
 
 export interface Intervention {
   id: InterventionId;
@@ -52,16 +52,6 @@ export const INTERVENTIONS: Intervention[] = [
     },
   },
   {
-    id: 'flap-gate',
-    name: 'One-way valve at OUT01',
-    description: 'Non-return flap gate stops canal backflow into the drains',
-    costRM: 150_000,
-    disruption: 'Low',
-    apply(t) {
-      for (const o of t.network.outfalls) o.flapGate = true;
-    },
-  },
-  {
     id: 'storage-tank',
     name: 'Underground storage tank near J07',
     description: `${TANK.area * TANK.depth} m³ off-line tank fed from NODE-J05, slow release to NODE-J08`,
@@ -96,16 +86,6 @@ export const INTERVENTIONS: Intervention[] = [
       const lk = makeNode(g, 'LK', p.x, p.y, { invert: LAKE.waterLevel, area: live / LAKE.liveRise, maxDepth: LAKE.liveRise, inletPerimeter: 0 });
       t.network.nodes.push(lk);
       t.network.pipes.push({ ...makePipe(findNode(t, LAKE_OVERFLOW.fromNode), lk, LAKE_OVERFLOW.diameter), id: 'PIPE-LK' });
-    },
-  },
-  {
-    id: 'pump',
-    name: 'Pump station at J08',
-    description: `${PUMP.rate} m³/s pump from NODE-J08 to the outfall canal`,
-    costRM: 3_000_000,
-    disruption: 'Medium',
-    apply(t) {
-      t.network.pumps.push({ node: PUMP.node, rate: PUMP.rate, riverCell: t.network.outfalls[0].riverCell });
     },
   },
 ];

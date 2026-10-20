@@ -36,19 +36,19 @@ describe('SimRunner', () => {
     const w = new FakeWorker();
     const runner = new SimRunner(() => w);
     const seen: number[] = [];
-    const a = await runner.run(['flap-gate'], 'synthetic_80mmh_60min', (f) => seen.push(f.t));
-    const b = await runner.run(['flap-gate'], 'synthetic_80mmh_60min', (f) => seen.push(f.t));
+    const a = await runner.run(['desilt-d07'], 'synthetic_80mmh_60min', (f) => seen.push(f.t));
+    const b = await runner.run(['desilt-d07'], 'synthetic_80mmh_60min', (f) => seen.push(f.t));
     expect(w.posted.length).toBe(1);
     expect(b).toBe(a);
     expect(seen).toEqual([30, 30]);
-    expect(runner.isCached(['flap-gate'], 'synthetic_80mmh_60min')).toBe(true);
+    expect(runner.isCached(['desilt-d07'], 'synthetic_80mmh_60min')).toBe(true);
   });
 
   it('serialises runs in request order', async () => {
     const w = new FakeWorker();
     const runner = new SimRunner(() => w);
-    await Promise.all([runner.run([], 'synthetic_80mmh_60min'), runner.run(['pump'], 'synthetic_80mmh_60min')]);
-    expect(w.posted.map((m) => m.interventions)).toEqual([[], ['pump']]);
+    await Promise.all([runner.run([], 'synthetic_80mmh_60min'), runner.run(['upsize-p07'], 'synthetic_80mmh_60min')]);
+    expect(w.posted.map((m) => m.interventions)).toEqual([[], ['upsize-p07']]);
   });
 
   it('rejects with the failing step on a simulation error', async () => {
@@ -82,11 +82,9 @@ describe('SimRunner', () => {
 
   it('evicts the least recently used result beyond MAX_CACHE', async () => {
     const runner = new SimRunner(() => new FakeWorker());
-    const keys: Array<[InterventionId[], StormId]> = [
-      [['desilt-d07'], 'synthetic_80mmh_60min'], [['upsize-p07'], 'synthetic_80mmh_60min'], [['flap-gate'], 'synthetic_80mmh_60min'],
-      [['storage-tank'], 'synthetic_80mmh_60min'], [['lake-overflow'], 'synthetic_80mmh_60min'], [['pump'], 'synthetic_80mmh_60min'],
-      [['pump'], 'synthetic_120mmh_60min'],
-    ];
+    const keys: Array<[InterventionId[], StormId]> = (['desilt-d07', 'upsize-p07', 'storage-tank', 'lake-overflow'] as InterventionId[])
+      .flatMap((id) => (['synthetic_80mmh_60min', 'synthetic_120mmh_60min'] as StormId[]).map((s): [InterventionId[], StormId] => [[id], s]))
+      .slice(0, 7);
     for (const [ids, s] of keys) await runner.run(ids, s);
     expect(keys.length).toBe(MAX_CACHE + 1);
     expect(runner.isCached(keys[0][0], keys[0][1])).toBe(false);

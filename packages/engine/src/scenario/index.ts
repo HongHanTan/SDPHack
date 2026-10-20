@@ -78,8 +78,15 @@ export function buildScenario(
     frameEveryS: SIM.frameEveryS,
     thresholds: THRESHOLDS,
     sagCell: hotspotCell(),
-    catchments: opts.catchments === false ? undefined : buildCatchments(grid),
+    catchments: opts.catchments === false ? undefined : buildCatchments(grid, effectiveBlockage(ids, opts)),
   };
+}
+
+/** Blocked fractions after interventions (desilting clears INLET-D07 for both the grate and its catchment). */
+export function effectiveBlockage(ids: readonly InterventionId[], opts: ScenarioOptions = {}): Record<string, number> {
+  const b = { ...(opts.blockage ?? BASELINE_BLOCKAGE) };
+  if (ids.includes('desilt-d07')) b['INLET-D07'] = 0;
+  return b;
 }
 
 export function scenarioKey(

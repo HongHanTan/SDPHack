@@ -13,8 +13,6 @@ const combos: Array<[string, InterventionId[], ScenarioOptions]> = [
   ...INTERVENTIONS.map((iv): [string, InterventionId[], ScenarioOptions] => [iv.id, [iv.id], {}]),
   ['desilt + upsize', ['desilt-d07', 'upsize-p07'], {}],
   ['high: baseline', [], { tailwater: 'high' }],
-  ['high: flap-gate', ['flap-gate'], { tailwater: 'high' }],
-  ['high: pump', ['pump'], { tailwater: 'high' }],
 ];
 
 const only = process.argv.slice(2);
