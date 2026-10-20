@@ -13,7 +13,9 @@ import {
   AppMode,
   TwinViewMode,
 } from '../types';
-import { ViewLookProvider } from '../view/ViewLookContext';
+import { ViewLookProvider, useViewLook } from '../view/ViewLookContext';
+import { FlowRibbons } from '../view/FlowRibbons';
+import { XrayBloom } from '../view/XrayBloom';
 import { SceneLook } from '../view/SceneLook';
 import { FieldInspectorsManager } from './FieldInspectorsManager';
 import { TownshipEnvironment } from './TownshipEnvironment';
@@ -67,6 +69,7 @@ const NodeMesh: React.FC<{
   showUndergroundOnly: boolean;
   isTwinHighlight?: boolean;
 }> = ({ node, status, depthM = 0, isSelected, onClick, showUndergroundOnly, isTwinHighlight }) => {
+  const { ghost } = useViewLook();
   const [hovered, setHovered] = useState(false);
 
   // Bottom invert position
@@ -108,8 +111,8 @@ const NodeMesh: React.FC<{
               metalness={0.2}
               transparent
               opacity={showUndergroundOnly ? 0.95 : isTwinHighlight ? 0.9 : 0.75}
-              emissive={isSelected || hovered ? color : isTwinHighlight ? color : '#000000'}
-              emissiveIntensity={isSelected ? 0.7 : hovered ? 0.35 : isTwinHighlight ? 0.45 : 0}
+              emissive={ghost || isSelected || hovered ? color : isTwinHighlight ? color : '#000000'}
+              emissiveIntensity={ghost ? 0.8 : isSelected ? 0.7 : hovered ? 0.35 : isTwinHighlight ? 0.45 : 0}
             />
           </mesh>
 
@@ -713,6 +716,14 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           );
         })}
 
+        {/* X-ray / plan pipes (legacy viewer port) */}
+        <FlowRibbons
+          nodes={nodes}
+          conduits={conduits}
+          frame={currentFrame}
+          onSelect={(c) => onSelectAsset({ type: 'conduit', id: c.conduit_id, data: c })}
+        />
+
         {/* 3D Inlets */}
         {inlets.map((inlet) => {
           const node = nodeMap.get(inlet.node_id);
@@ -759,6 +770,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
           <GizmoViewport axisColors={['#f43f5e', '#10b981', '#38bdf8']} labelColor="#ffffff" />
         </GizmoHelper>
+        <XrayBloom />
         </ViewLookProvider>
       </Canvas>
     </div>
