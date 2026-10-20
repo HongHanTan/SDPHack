@@ -23,3 +23,11 @@ export function renderControls(stormSel: HTMLSelectElement, list: HTMLElement, o
     storm: (): StormId => stormSel.value as StormId,
   };
 }
+
+/** Fills the storm dropdown (default 100-yr) and returns a getter for the selected storm. */
+export function renderStormSelect(stormSel: HTMLSelectElement): () => StormId {
+  stormSel.innerHTML = (Object.keys(STORMS) as StormId[])
+    .map((id) => `<option value="${id}" ${id === '100yr' ? 'selected' : ''}>${STORMS[id].label}</option>`)
+    .join('');
+  return () => stormSel.value as StormId;
+}

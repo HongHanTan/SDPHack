@@ -45,3 +45,25 @@ dialog td { padding: 6px 0; border-bottom: 1px solid var(--line); }
 .custom-list li { display: flex; justify-content: space-between; padding: 3px 0; }
 .custom-list button { border: 0; background: none; color: var(--worse); cursor: pointer; }
 #draw.active { background: var(--navy); color: #fff; }
+
+.combos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.combo { font: inherit; font-size: 12px; padding: 4px 10px; border: 1px dashed #0b62c4; border-radius: 999px; background: #fff; color: #0b62c4; cursor: pointer; }
+.combo:disabled { opacity: 0.5; cursor: default; }
+.iv-group { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 10px 0 4px; }
+.iv-row { display: flex; align-items: center; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; cursor: pointer; }
+.iv-row.on { border-color: #0b62c4; background: #f0f6ff; }
+.iv-icon { width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; background: #eef2f6; flex: none; font-size: 15px; }
+.iv-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.iv-label { font-weight: 600; }
+.iv-sub { font-size: 11.5px; color: var(--muted); }
+.cost-scale { color: #b38600; letter-spacing: 1px; font-weight: 600; }
+.info { cursor: help; }
+.effect { font-size: 11px; padding: 1px 6px; border-radius: 999px; white-space: nowrap; background: #eef2f6; color: #44505e; }
+.effect.better { background: #e6f4ea; color: var(--better); }
+.effect.worse { background: #fde8e7; color: var(--worse); }
+input.switch { appearance: none; width: 32px; height: 18px; border-radius: 9px; background: #cfd6de; position: relative; flex: none; cursor: pointer; margin: 0; transition: background 0.15s; }
+input.switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left 0.15s; }
+input.switch:checked { background: #0b62c4; }
+input.switch:checked::after { left: 16px; }
+input.switch:disabled { opacity: 0.5; cursor: default; }
+.iv-footer { display: flex; justify-content: space-between; margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--navy); color: #fff; font-size: 12.5px; }
