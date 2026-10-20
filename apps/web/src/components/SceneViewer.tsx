@@ -13,6 +13,8 @@ import {
   AppMode,
   TwinViewMode,
 } from '../types';
+import { ViewLookProvider } from '../view/ViewLookContext';
+import { SceneLook } from '../view/SceneLook';
 import { FieldInspectorsManager } from './FieldInspectorsManager';
 import { TownshipEnvironment } from './TownshipEnvironment';
 import { EngineWater } from '../engine/EngineWater';
@@ -50,6 +52,9 @@ interface SceneViewerProps {
   engineDepth?: Float32Array | null;
   /** Engine mode hides the scripted field-inspector patrol. Default true. */
   showInspectors?: boolean;
+  /** X-ray look toggle (legacy viewer port). Absent handler: no X-ray button. */
+  xray?: boolean;
+  onToggleXray?: () => void;
 }
 
 // 3D Node Mesh with physical chamber drop from ground down to invert
@@ -379,8 +384,13 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   selectedInspectorId,
   engineDepth,
   showInspectors,
+  xray = false,
+  onToggleXray,
 }) => {
   const controlsRef = useRef<any>(null);
+  const ambientRef = useRef<THREE.AmbientLight>(null);
+  const keyLightRef = useRef<THREE.DirectionalLight>(null);
+  const fillLightRef = useRef<THREE.DirectionalLight>(null);
 
   // Local view mode fallback
   const [internalViewMode, setInternalViewMode] = useState<TwinViewMode>('twin_highlight');
@@ -495,6 +505,19 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           </button>
         </div>
 
+        {/* X-ray look (legacy viewer port): combines with any twin view */}
+        {onToggleXray && (
+          <button
+            onClick={onToggleXray}
+            className={`px-2.5 py-1 rounded-xl border text-[11px] font-medium transition cursor-pointer ${
+              xray ? 'bg-slate-900 text-cyan-300 border-slate-700 shadow-xs' : 'bg-slate-100 text-slate-600 border-slate-200 hover:text-slate-900'
+            }`}
+            title="X-ray: fade the surface and show glowing pipes and water"
+          >
+            🔬 X-ray
+          </button>
+        )}
+
         {/* 2. Rain FX Toggle */}
         <button
           onClick={handleToggleRain}
@@ -578,11 +601,13 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         camera={{ position: [60, 90, 130], fov: 45, near: 0.1, far: 1000 }}
         shadows
       >
+        <ViewLookProvider xray={xray} is2d={false}>
         <color attach="background" args={['#f1f5f9']} />
         <fog attach="fog" args={['#f1f5f9', 200, 480]} />
-        <ambientLight intensity={1.3} color="#ffffff" />
-        <directionalLight position={[90, 140, 70]} intensity={2.4} castShadow color="#ffffff" />
-        <directionalLight position={[-80, 60, -60]} intensity={0.8} color="#93c5fd" />
+        <ambientLight ref={ambientRef} intensity={1.3} color="#ffffff" />
+        <directionalLight ref={keyLightRef} position={[90, 140, 70]} intensity={2.4} castShadow color="#ffffff" />
+        <directionalLight ref={fillLightRef} position={[-80, 60, -60]} intensity={0.8} color="#93c5fd" />
+        <SceneLook ambient={ambientRef} keyLight={keyLightRef} fill={fillLightRef} />
 
         <OrbitControls
           ref={controlsRef}
@@ -596,6 +621,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
 
         {/* Spatial Metric Reference Grid */}
         <Grid
+          visible={!xray}
           args={[260, 260]}
           cellSize={10}
           cellThickness={0.5}
@@ -733,6 +759,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
           <GizmoViewport axisColors={['#f43f5e', '#10b981', '#38bdf8']} labelColor="#ffffff" />
         </GizmoHelper>
+        </ViewLookProvider>
       </Canvas>
     </div>
   );

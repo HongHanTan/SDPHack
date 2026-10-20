@@ -5,6 +5,8 @@ import { smoothDepth, WET } from '@floodops/engine/client/smoothDepth';
 import { baseTownship } from '@floodops/engine/scenario/index';
 import { toTeam } from '@floodops/engine/scenario/layout';
 import { LandUse } from '@floodops/engine/sim/types';
+import { useViewLook } from '../view/ViewLookContext';
+import { blendTheme, blendThemeInto } from '../view/xrayTheme';
 import { visualGround } from './visualGround';
 import { createWaterMaterial } from './waterMaterial';
 
@@ -44,12 +46,10 @@ export function EngineWater({ depth }: { depth: Float32Array | null }) {
     return { geom: g, base, mask, depthAttr };
   }, [grid, n, nx, ny, dx]);
   const smoothed = useMemo(() => new Float32Array(n), [n]);
-  const material = useMemo(() => {
-    const m = createWaterMaterial();
-    (m.uniforms.uShallow.value as THREE.Color).set('#bfe3ec');
-    (m.uniforms.uDeep.value as THREE.Color).set('#2b7fb8');
-    return m;
-  }, []);
+  const material = useMemo(() => createWaterMaterial(), []);
+  const { lookRef } = useViewLook();
+  const theme = useMemo(() => blendTheme(0), []);
+  const lastT = useRef(-1);
 
   useEffect(() => () => geom.dispose(), [geom]);
   useEffect(() => () => material.dispose(), [material]);
@@ -72,6 +72,15 @@ export function EngineWater({ depth }: { depth: Float32Array | null }) {
 
   useFrame(({ clock }) => {
     material.uniforms.uTime.value = clock.elapsedTime;
+    const t = lookRef.current.xrayT;
+    if (t === lastT.current) return;
+    lastT.current = t;
+    blendThemeInto(t, theme);
+    (material.uniforms.uShallow.value as THREE.Color).set(theme.waterShallow);
+    (material.uniforms.uDeep.value as THREE.Color).set(theme.waterDeep);
+    material.uniforms.uOpMin.value = theme.waterOpMin;
+    material.uniforms.uOpMax.value = theme.waterOpMax;
+    material.uniforms.uEmissive.value = theme.waterEmissive;
   });
 
   return <mesh geometry={geom} material={material} renderOrder={2} />;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 import layout from '../../../../data/synthetic/taman_kyra_layout.json';
@@ -6,6 +6,8 @@ import { SimulationFrame, AppMode } from '../types';
 import { PondingWaterAnimation } from './PondingWaterAnimation';
 import { displaceFlat } from '../engine/displaceFlat';
 import { bowlDrop, lawnHeight } from '../engine/visualGround';
+import { useViewLook } from '../view/ViewLookContext';
+import { applySurfaceLook } from '../view/surfaceLook';
 
 type HeightAt = (tx: number, ty: number) => number;
 
@@ -419,6 +421,12 @@ const TownshipEnvironmentInner: React.FC<TownshipEnvironmentProps> = ({
   currentFrame,
   engineMode = false,
 }) => {
+  // X-ray / plan view (legacy viewer port): ghost the surface, hide trees and (in 2D) labels.
+  const { ghost, is2d } = useViewLook();
+  const rootRef = useRef<THREE.Group>(null);
+  useLayoutEffect(() => {
+    if (rootRef.current) applySurfaceLook(rootRef.current, ghost, is2d);
+  });
   // Placement data extracted from this component's original loops (TEH JIA JIE) into data/synthetic/taman_kyra_layout.json
   // Houses Layout across all neighborhood zones
   const houses = useMemo(() => {
@@ -469,8 +477,8 @@ const TownshipEnvironmentInner: React.FC<TownshipEnvironmentProps> = ({
   if (showUndergroundOnly) {
     // Underground Highlight Mode: Show faint blueprint footprint
     return (
-      <group position={[0, 0, 0]}>
-        <mesh position={[50, 10.8, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <group ref={rootRef} position={[0, 0, 0]}>
+        <mesh position={[50, 10.8, 0]} rotation={[-Math.PI / 2, 0, 0]} userData={{ noGhost: true }}>
           <planeGeometry args={[240, 260]} />
           <meshBasicMaterial color="#0f172a" transparent opacity={0.35} wireframe />
         </mesh>
@@ -479,7 +487,7 @@ const TownshipEnvironmentInner: React.FC<TownshipEnvironmentProps> = ({
   }
 
   return (
-    <group position={[0, 0, 0]}>
+    <group ref={rootRef} position={[0, 0, 0]}>
       {/* 1. Base Neighborhood Lawn & Terrain Surface */}
       {lawnGeom ? (
         <mesh position={[45, 10.8, -10]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow geometry={lawnGeom}>
@@ -561,14 +569,15 @@ const TownshipEnvironmentInner: React.FC<TownshipEnvironmentProps> = ({
       ))}
 
       {/* 4. Lush Spherical Garden Trees */}
-      {trees.map((t, idx) => (
-        <LushTree
-          key={`tree-${idx}`}
-          position={t.pos}
-          scale={t.scale}
-          color={t.color}
-        />
-      ))}
+      {!(ghost || is2d) &&
+        trees.map((t, idx) => (
+          <LushTree
+            key={`tree-${idx}`}
+            position={t.pos}
+            scale={t.scale}
+            color={t.color}
+          />
+        ))}
 
       {/* 5. Maple Grove Retention Pond & Lake Park */}
       <group position={[130, 11.1, -30]}>
@@ -653,11 +662,13 @@ const TownshipEnvironmentInner: React.FC<TownshipEnvironmentProps> = ({
       {/* 7. Dynamic Street Surface Ponding Water Animation (Physically rises with runoff) */}
       {/* Engine mode: the engine water surface is rendered by SceneViewer beside this component, so Live frames don't re-render the township. */}
       {engineMode ? null : (
-        <PondingWaterAnimation
-          currentFrame={currentFrame}
-          floodingActive={Boolean(floodingActive)}
-          appMode={appMode}
-        />
+        <group userData={{ noGhost: true }}>
+          <PondingWaterAnimation
+            currentFrame={currentFrame}
+            floodingActive={Boolean(floodingActive)}
+            appMode={appMode}
+          />
+        </group>
       )}
 
       {/* 8. 3D Floating Neighborhood Badges (Matching the Mockup Exactly) */}
