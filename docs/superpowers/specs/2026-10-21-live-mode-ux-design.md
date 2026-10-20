@@ -71,7 +71,7 @@ The worker keeps one `EngineState`. A timer tick advances the simulation by `spe
 ## 4. Intervention panel
 
 ### 4.1 Content
-Each intervention gains display metadata alongside its definition: `label`, `icon`, `group`, `costScale` (1–4), and `site {x, y}`.
+Each intervention gains display metadata — `label`, `short`, `icon`, `group`, `site {x, y}` — kept in `src/ui/catalog.ts` (a UI concern, so `src/scenario/` stays presentation-free); `costScale` (1–4) is derived from `costRM`.
 
 | id | label | icon | group | site |
 |---|---|---|---|---|
@@ -149,7 +149,7 @@ A click replaces the current selection with the combo's interventions and keeps 
   ```
 
   Values are rounded to 0.001 m.
-- **Drift check:** `tests/effects.test.ts` re-runs the 16 scenarios and asserts each `dSag` is within 0.005 m of the stored value and each `dHomes` matches exactly.
+- **Drift check:** `tests/effects.drift.test.ts` re-runs the 16 scenarios and asserts each `dSag` is within 0.005 m of the stored value and each `dHomes` matches exactly.
   - It is slow, so it runs under `npm run story`, not `npm test`.
   - Add it to the `test` script's excludes and the `story` script's includes.
 
