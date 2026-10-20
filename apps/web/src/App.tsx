@@ -170,6 +170,10 @@ export function App() {
 
   /** Switches the engine's active site (null = built-in) and resets everything derived from the previous one. */
   const applySite = (s: SiteSpec | null) => {
+    runTokenRef.current++;
+    setIsRunning(false);
+    setRunProgressMessage('');
+    setApiError(null);
     stopLive();
     engineSource.setSite(s);
     setSiteState(engineSource.getSite());

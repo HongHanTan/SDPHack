@@ -7,7 +7,7 @@ export interface Position3D {
   z: number; // Elevation in meters
 }
 
-export type SourceType = 'observed' | 'literature_derived' | 'assumed' | 'synthetic';
+export type SourceType = 'observed' | 'literature_derived' | 'assumed' | 'synthetic' | 'imported';
 
 export type ConduitStatus = 'normal' | 'near_capacity' | 'surcharged' | 'unknown';
 export type NodeStatus = 'normal' | 'surcharged' | 'flooding' | 'unknown';

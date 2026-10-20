@@ -86,9 +86,9 @@ class EngineSource {
     const focusLabel = site.builtIn ? 'D07' : focus;
     return {
       api_version: 'engine',
-      township_id: 'taman_kyra_demo',
+      township_id: site.builtIn ? 'taman_kyra_demo' : site.key,
       model_versions: [
-        { model_version_id: MODEL_VERSION, name: site.builtIn ? 'Illustrative Taman Kyra drainage zone (TS engine)' : `Imported site: ${site.label}`, source_type: 'synthetic', is_verified_site_model: false, readiness: 'execution_verified' },
+        { model_version_id: site.builtIn ? MODEL_VERSION : 'imported_site', name: site.builtIn ? 'Illustrative Taman Kyra drainage zone (TS engine)' : `Imported site: ${site.label}`, source_type: site.builtIn ? 'synthetic' : 'imported', is_verified_site_model: false, readiness: 'execution_verified' },
       ],
       storms: (Object.keys(STORMS) as StormId[]).map((id) => {
         const s = STORMS[id];
@@ -124,9 +124,10 @@ class EngineSource {
       return {
         township_id: this.site.key,
         model_version_id: 'imported_site',
-        source_type: 'imported' as never,
+        source_type: 'imported',
         is_verified_site_model: false,
         coordinate_system: 'local_metres_east_north_elevation',
+        // Engine asset literals are structurally wider than the web response types.
         nodes: a.nodes as unknown as AssetNode[],
         inlets: a.inlets as unknown as TownshipAssetsResponse['inlets'],
         conduits: a.conduits as unknown as AssetConduit[],
@@ -171,7 +172,7 @@ class EngineSource {
     // Keep only the newest runs: each holds every frame's depth grid.
     while (this.runs.size > MAX_RUNS) this.runs.delete(this.runs.keys().next().value as string);
     const sc = buildScenario(ids, stormId, [], opts);
-    const ctx = makeContext(sc.network, sc.grid, effectiveBlockage(ids, opts), this.site.assets.inlets as unknown as AssetInlet[]);
+    const ctx = makeContext(sc.network, sc.grid, effectiveBlockage(ids, opts), this.site.assets.inlets as unknown as AssetInlet[]) // engine inlet literals are wider than the web type;
     this.getRunner()
       .run(ids, stormId, undefined, [], opts)
       .then((r) => {
