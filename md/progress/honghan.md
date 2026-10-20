@@ -148,3 +148,12 @@ Plan: `docs/superpowers/plans/2026-10-23-team-ui-engine.md`
 | P6-5 | Live toggle | ✅ done (d34d5d7) — plus engine storm selector and appMode gating |
 | P6-6 | Engine-backed dashboard, HUD metrics, docs | ✅ done (b05f5dd) |
 | P6-7 | Final review + fixes | ✅ done |
+
+## Phase 7: X-ray view and 2D/3D toggle in the team UI
+| Task | Description | Status |
+|---|---|---|
+| P7-1 | Pure view helpers: theme blend, flow math, scale bar and camera fit, surface ghosting | ✅ done (e8243d2) |
+| P7-2 | X-ray toggle: theme fade, scene look, ghosted township | ✅ done (5d2fafe) — minor: grid hides instantly; surface swaps at the fade midpoint |
+| P7-3 | X-ray flow ribbons, bloom, manhole glow | ✅ done (039250c) — minor: list postprocessing peer explicitly; ribbons rebuild if asset arrays change identity |
+| P7-4 | 2D plan / 3D toggle, scale bar, checklist | ✅ done (e47a404, fix 27ba413) |
+| P7-5 | Final review + fixes (camera aspect after 2D, gizmo with bloom, clickable manholes in 2D, label polish) | ✅ done (ff249dc) |
