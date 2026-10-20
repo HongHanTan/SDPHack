@@ -606,8 +606,7 @@ describe('buildSiteFromFiles', () => {
     expect(buildSiteFromFiles(files(lonLat)).report.errors.join(' ')).toMatch(/projected metric/);
     expect(buildSiteFromFiles(files(inp().replace('P1 J1 J2', 'P1 J1 JX'))).report.errors.join(' ')).toMatch(/unknown node JX/);
     // J3 has coordinates but no pipe out of it.
-    const island = inp('J3 500010 300050').replace('J2 9.5 2.0 0 0 0', 'J2 9.5 2.0 0 0 0
-J3 9.0 2.0 0 0 0');
+    const island = inp('J3 500010 300050').replace('J2 9.5 2.0 0 0 0', 'J2 9.5 2.0 0 0 0\nJ3 9.0 2.0 0 0 0');
     expect(buildSiteFromFiles(files(island)).report.errors.join(' ')).toMatch(/J3 has no route to an outfall/);
   });
   it('warns on uphill pipes, length mismatches and unsupported sections', () => {
