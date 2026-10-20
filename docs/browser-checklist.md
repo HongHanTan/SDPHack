@@ -38,3 +38,12 @@ Run `npm run dev`, open http://localhost:5173.
 25. Quality Low: shadows, bloom and ripples off; noticeably lighter. High restores them.
 26. Auto-drop: DevTools → Performance → CPU 6× slowdown; within a few seconds quality switches to Low once with a status message.
 27. Live and Compare behave exactly as before in every look.
+
+## Team UI (engine mode) — `npm run dev:web`
+28. Header shows Engine | Mock | SWMM API; Engine is selected by default.
+29. Run the 80 mm/h storm: water rises at the J07 junction over time, pipes P05/P07 turn red (surcharged), rain stops at 60 min and water drains afterwards.
+30. The J07 pond surface looks flat (dips visible as a gentle hollow in lawn and roads); houses near J07 stand in water at the peak.
+31. Intervention dashboard shows 7 cards from the engine; Desilt card shows "No effect on its own while P07 runs full"; Combined is tagged Optimal Holistic Solution; Apply re-runs and the water drops.
+32. Live toggle: storm plays continuously; Apply mid-storm changes the water in place; speed/pause/jumps work.
+33. Switch to Mock: the team's original app (inspectors, debris lab, offline SWMM run) works unchanged. Switch to SWMM API with the backend stopped: a clear error, no silent fallback.
+34. `npm run build` passes; the built app loads both engine workers.

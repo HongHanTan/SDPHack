@@ -125,6 +125,9 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   liveTimeS = 0,
 }) => {
   const liveActive = !!liveAvailable && !!liveOn;
+  // Engine-only metric fields (absent from SWMM/mock metrics, so nothing extra renders there).
+  const j07PeakDepthM = (_metrics as { j07_peak_depth_m?: number } | null)?.j07_peak_depth_m;
+  const homesFlooded = (_metrics as { homes_flooded?: number } | null)?.homes_flooded;
   const [localIsPlaying, setLocalIsPlaying] = useState(false);
   const isPlaying = isPlayingProp !== undefined ? isPlayingProp : localIsPlaying;
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
@@ -323,6 +326,24 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                         </option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {/* Engine run results: render only when the engine's metric fields are present */}
+                {!liveActive && (j07PeakDepthM !== undefined || homesFlooded !== undefined) && (
+                  <div className="space-y-1 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px]">
+                    {j07PeakDepthM !== undefined && (
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-700">J07 peak depth</span>
+                        <span className="font-mono font-bold text-slate-900">{j07PeakDepthM.toFixed(2)} m</span>
+                      </div>
+                    )}
+                    {homesFlooded !== undefined && (
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-700">Homes flooded</span>
+                        <span className="font-mono font-bold text-slate-900">{homesFlooded}</span>
+                      </div>
+                    )}
                   </div>
                 )}
 

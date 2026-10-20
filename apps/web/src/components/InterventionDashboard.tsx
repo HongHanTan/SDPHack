@@ -15,25 +15,88 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { InterventionOption, ProposedAction, InspectionRecord } from '../types';
+import type { EngineOption } from '../engine/dashboardOptions';
 
 interface InterventionDashboardProps {
   onClose: () => void;
   onApplyIntervention: (interventionId: string) => void;
   inspections: InspectionRecord[];
+  /** Engine mode: cards and metrics from the engine. Absent: the original SWMM dashboard, unchanged. */
+  engineOptions?: EngineOption[];
+  /** Engine mode: label of the selected storm, shown in the heading. */
+  engineStormLabel?: string;
 }
+
+// Labels for the two D07 metric rows. HIS_LABELS is the original wording, verbatim.
+const HIS_LABELS = {
+  bypass: 'Surface Ponding Runoff',
+  bypassShort: 'Surface Ponding',
+  bypassUnit: ' m³',
+  bypassDigits: 1,
+  captured: 'Curb Inflow Captured',
+  capturedShort: 'Captured',
+  capturedUnit: ' m³',
+  capturedDigits: 1,
+  capturedBarDigits: 0,
+  capturedLowerIsBetter: false,
+};
+
+// Engine mode: d07_captured_volume_m3 carries the J07 peak depth, d07_bypass_volume_m3 the homes flooded.
+const ENGINE_LABELS: typeof HIS_LABELS = {
+  bypass: 'Homes flooded',
+  bypassShort: 'Homes flooded',
+  bypassUnit: '',
+  bypassDigits: 0,
+  captured: 'J07 peak water depth (m)',
+  capturedShort: 'J07 peak water depth (m)',
+  capturedUnit: ' m',
+  capturedDigits: 2,
+  capturedBarDigits: 2,
+  capturedLowerIsBetter: true,
+};
+
+const ENGINE_D07_PREFIX =
+  'Engine finding: desilting alone has no effect while P07 runs full; schedule together with the P07 upsizing. ';
 
 export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
   onClose,
   onApplyIntervention,
   inspections,
+  engineOptions,
+  engineStormLabel,
 }) => {
   const [activeTab, setActiveTab] = useState<'compare' | 'actions'>('compare');
-  const [selectedOptionId, setSelectedOptionId] = useState<string>('clean_inlet');
+  const [selectedOptionId, setSelectedOptionId] = useState<string>(engineOptions ? 'combined' : 'clean_inlet');
   const [copiedReport, setCopiedReport] = useState<boolean>(false);
+
+  const L = engineOptions ? ENGINE_LABELS : HIS_LABELS;
+  const cardCount = engineOptions ? 7 : 4;
+
+  // Engine mode: the engine's cards mapped onto the InterventionOption shape.
+  const fromEngine = (o: EngineOption): InterventionOption => ({
+    id: o.id as InterventionOption['id'],
+    title: o.title,
+    subtitle: o.subtitle,
+    type: o.id as InterventionOption['type'],
+    target_asset: o.interventions.length ? o.interventions.join(' + ') : 'INLET-D07 + PIPE-P07',
+    description: `${o.description} — ${o.finding}`,
+    tag: o.tag,
+    parameters: { hydraulic_loss_fraction: o.interventions.includes('desilt-d07') ? 0 : 0.4, pipe_diameter_mm: o.interventions.includes('upsize-p07') ? 750 : 600, storm_id: '', tailwater_case: 'normal' },
+    metrics: {
+      total_flooding_volume_m3: o.metrics?.floodedRoadAreaM2 ?? 0,
+      surcharge_duration_s: (o.metrics?.p07SurchargeMin ?? 0) * 60,
+      d07_captured_volume_m3: o.metrics?.j07PeakM ?? 0,
+      d07_bypass_volume_m3: o.metrics?.homesFlooded ?? 0,
+      flooded_node_count: o.metrics?.homesFlooded ?? 0,
+      peak_conduit_utilization_pct: o.metrics?.p07PeakUtilPct ?? 0,
+    },
+    feasibility: { timeframe: o.timeframe, cost_rating: o.costRating as InterventionOption['feasibility']['cost_rating'], lead_time_days: 0, crew_type: o.tag },
+    is_available: true,
+  });
 
   // Counterfactual Intervention Options based on verified SWMM 5.2.4 calculations
   // Shared boundary: Synthetic 120 mm/h 60min storm, Normal outfall tailwater stage
-  const options: InterventionOption[] = [
+  const hisOptions: InterventionOption[] = [
     {
       id: 'baseline',
       title: 'Baseline Condition',
@@ -186,6 +249,7 @@ export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
       unavailable_reason: 'Backend capability comparisons=false; will be unlocked in T4/T5 retention release.',
     },
   ];
+  const options = engineOptions ? engineOptions.map(fromEngine) : hisOptions;
 
   const baseline = options[0];
   const selectedOption = options.find((o) => o.id === selectedOptionId) || options[1];
@@ -209,6 +273,7 @@ export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
       target_asset: 'INLET-D07 (Jalan Kyra 1/2 Intersection Curb Inlet)',
       title: 'Emergency Curb Inlet & Grate Desilting Work Order',
       justification:
+        (engineOptions ? ENGINE_D07_PREFIX : '') +
         'Inspection record #INSP-2026-10-18-001 indicates 65% leaf litter coverage causing ~40% hydraulic restriction loss. SWMM modeling confirms desilting reduces street ponding by 296.7 m³ (-43.2%).',
       evidence_reference: 'Inspection #INSP-2026-10-18-001 (Inspector Azman, Photo Attachment)',
       expected_hydraulic_impact: 'Surface bypass runoff cut from 686.35 m³ to 389.68 m³; captured subsurface flow increases by 66.7%.',
@@ -292,7 +357,9 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Multi-Scenario Hydraulic Evaluation (120 mm/h 60min Storm Benchmark)
+                {engineOptions
+                  ? `Multi-Scenario Hydraulic Evaluation (${engineStormLabel ?? 'Engine'} Storm)`
+                  : 'Multi-Scenario Hydraulic Evaluation (120 mm/h 60min Storm Benchmark)'}
               </p>
             </div>
           </div>
@@ -343,7 +410,7 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                   Select Mitigation Candidate:
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                  {options.slice(0, 4).map((opt) => {
+                  {options.slice(0, cardCount).map((opt) => {
                     const isSelected = selectedOptionId === opt.id;
                     const isBase = opt.id === 'baseline';
 
@@ -427,14 +494,14 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                   <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
                     <div>
                       <span className="text-[11px] font-medium text-slate-500 block mb-1">
-                        Surface Ponding Runoff
+                        {L.bypass}
                       </span>
                       <div className="flex items-baseline gap-2">
                         <span className="text-xl font-bold font-mono text-red-600">
-                          {selectedOption.metrics.d07_bypass_volume_m3.toFixed(1)} m³
+                          {selectedOption.metrics.d07_bypass_volume_m3.toFixed(L.bypassDigits)}{L.bypassUnit}
                         </span>
                         <span className="text-[10px] text-slate-400 line-through">
-                          {baseline.metrics.d07_bypass_volume_m3.toFixed(1)} m³
+                          {baseline.metrics.d07_bypass_volume_m3.toFixed(L.bypassDigits)}{L.bypassUnit}
                         </span>
                       </div>
                     </div>
@@ -445,7 +512,7 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                       ) : bypassDeltaM3 < 0 ? (
                         <span className="text-emerald-700 font-bold flex items-center gap-0.5">
                           <TrendingDown className="w-3.5 h-3.5" />
-                          {bypassDeltaPct.toFixed(1)}% ({bypassDeltaM3.toFixed(1)} m³)
+                          {bypassDeltaPct.toFixed(1)}% ({bypassDeltaM3.toFixed(L.bypassDigits)}{L.bypassUnit})
                         </span>
                       ) : (
                         <span className="text-slate-400">No Change</span>
@@ -458,14 +525,14 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                   <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between">
                     <div>
                       <span className="text-[11px] font-medium text-slate-500 block mb-1">
-                        Curb Inflow Captured
+                        {L.captured}
                       </span>
                       <div className="flex items-baseline gap-2">
                         <span className="text-xl font-bold font-mono text-blue-600">
-                          {selectedOption.metrics.d07_captured_volume_m3.toFixed(1)} m³
+                          {selectedOption.metrics.d07_captured_volume_m3.toFixed(L.capturedDigits)}{L.capturedUnit}
                         </span>
                         <span className="text-[10px] text-slate-400 line-through">
-                          {baseline.metrics.d07_captured_volume_m3.toFixed(1)} m³
+                          {baseline.metrics.d07_captured_volume_m3.toFixed(L.capturedDigits)}{L.capturedUnit}
                         </span>
                       </div>
                     </div>
@@ -473,6 +540,20 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                     <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                       {selectedOption.id === 'baseline' ? (
                         <span className="text-slate-400">Baseline Benchmark</span>
+                      ) : L.capturedLowerIsBetter ? (
+                        capturedDeltaM3 < 0 ? (
+                          <span className="text-emerald-700 font-bold flex items-center gap-0.5">
+                            <TrendingDown className="w-3.5 h-3.5" />
+                            {capturedDeltaPct.toFixed(1)}% ({capturedDeltaM3.toFixed(L.capturedDigits)}{L.capturedUnit})
+                          </span>
+                        ) : capturedDeltaM3 > 0 ? (
+                          <span className="text-rose-700 font-bold flex items-center gap-0.5">
+                            <TrendingUp className="w-3.5 h-3.5" />
+                            +{capturedDeltaPct.toFixed(1)}% (+{capturedDeltaM3.toFixed(L.capturedDigits)}{L.capturedUnit})
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">No Change</span>
+                        )
                       ) : capturedDeltaM3 > 0 ? (
                         <span className="text-emerald-700 font-bold flex items-center gap-0.5">
                           <TrendingUp className="w-3.5 h-3.5" />
@@ -481,7 +562,9 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                       ) : (
                         <span className="text-slate-400">No Change</span>
                       )}
-                      <span className="text-[10px] text-slate-400 font-medium">Higher is Better</span>
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {L.capturedLowerIsBetter ? 'Lower is Better' : 'Higher is Better'}
+                      </span>
                     </div>
                   </div>
 
@@ -567,7 +650,7 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                     Multi-Scenario Water Balance Routing Partitioning:
                   </div>
 
-                  {options.slice(0, 4).map((opt) => {
+                  {options.slice(0, cardCount).map((opt) => {
                     const totalVolume = opt.metrics.d07_captured_volume_m3 + opt.metrics.d07_bypass_volume_m3;
                     const capturedPct = (opt.metrics.d07_captured_volume_m3 / totalVolume) * 100;
                     const bypassPct = (opt.metrics.d07_bypass_volume_m3 / totalVolume) * 100;
@@ -580,7 +663,7 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                             <span className="text-slate-400 font-normal">({opt.subtitle})</span>
                           </span>
                           <span className="font-mono text-slate-600 text-[10px]">
-                            Captured: {opt.metrics.d07_captured_volume_m3.toFixed(0)} m³ ({capturedPct.toFixed(0)}%) | Surface Ponding: {opt.metrics.d07_bypass_volume_m3.toFixed(0)} m³ ({bypassPct.toFixed(0)}%)
+                            {L.capturedShort}: {opt.metrics.d07_captured_volume_m3.toFixed(L.capturedBarDigits)}{L.capturedUnit} ({capturedPct.toFixed(0)}%) | {L.bypassShort}: {opt.metrics.d07_bypass_volume_m3.toFixed(0)}{L.bypassUnit} ({bypassPct.toFixed(0)}%)
                           </span>
                         </div>
                         {/* Stacked bar */}

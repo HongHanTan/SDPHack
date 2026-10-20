@@ -25,6 +25,7 @@ import { InterventionDashboard } from './components/InterventionDashboard';
 import { LiveTelemetryTicker } from './components/LiveTelemetryTicker';
 import { engineSource } from './engine/engineSource';
 import { useLiveEngine } from './engine/useLiveEngine';
+import { buildDashboardOptions, idsForOption } from './engine/dashboardOptions';
 import { rainIntensityAt, STORMS, type StormId } from '@floodops/engine/scenario/storms';
 
 export function App() {
@@ -485,7 +486,23 @@ export function App() {
   };
 
   // J4: Handle applying an intervention candidate
-  const handleApplyIntervention = (interventionId: string) => {
+  const handleApplyIntervention = async (interventionId: string) => {
+    if (engineMode) {
+      const ids = idsForOption(interventionId);
+      engineSource.setInterventions(ids);
+      try {
+        const a = await apiClient.getTownshipAssets('taman_kyra_demo');
+        setNodes(a.nodes);
+        setConduits(a.conduits);
+      } catch (err: unknown) {
+        setApiError(err instanceof Error ? err.message : String(err));
+        return;
+      }
+      setIsInterventionDashboardOpen(false);
+      if (live.on) live.patch(ids, interventionId);
+      else void handleRunSimulation();
+      return;
+    }
     if (interventionId === 'clean_inlet') {
       setDebrisRestrictionFraction(0.0);
       setSelectedDebrisId('demo_inlet_clean');
@@ -733,6 +750,8 @@ export function App() {
           onClose={() => setIsInterventionDashboardOpen(false)}
           onApplyIntervention={handleApplyIntervention}
           inspections={inspections}
+          engineOptions={engineMode ? buildDashboardOptions(selectedStormId as StormId) : undefined}
+          engineStormLabel={STORMS[selectedStormId as StormId]?.label}
         />
       )}
     </div>

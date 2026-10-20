@@ -64,14 +64,14 @@ This repository also contains a browser-based flood simulation engine written in
 - **Legacy UI** (`apps/legacy`): the engine's original three.js interface (Live/Compare modes, x-ray, plan view, intervention panel). The team UI in `apps/web` will replace it.
 
 ### Integration roadmap
-1. Merge histories and restructure into this monorepo.
-2. Rebuild the engine's township on the Taman Kyra network (`data/synthetic/taman_kyra_assets.json`) and retune the demo story: the team's inlet-desilting / Ø750 upsizing options, plus flap gate, storage tank, overflow to the lake and pump.
-3. Drive the `apps/web` 3D twin and dashboard from the engine through an adapter.
+- Steps 1–3 are done: the histories are merged into this monorepo, the engine's township is rebuilt on the Taman Kyra network, and the `apps/web` 3D twin and dashboard are driven by the engine through adapters.
+- The team UI (`apps/web`) runs on the engine by default (Engine mode); Mock and SWMM API modes remain.
+- `npm run dev:web` is the main way to run it.
 
 ### Run (from the repo root)
 
     npm install
     npm test              # engine + legacy UI unit tests
     npm run dev:legacy    # engine UI at http://localhost:5173
-    npm run dev:web       # team UI (its own mock mode)
+    npm run dev:web       # team UI on the engine (main app; Mock / SWMM API in the header)
     npm run story         # slow demo-story and effect-drift checks (~15 min)
