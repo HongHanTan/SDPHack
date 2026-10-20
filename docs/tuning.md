@@ -1,10 +1,15 @@
-# Taman Kyra tuning log (Tasks 4, 4b and 8)
+# Taman Kyra tuning log (Tasks 4, 4b, 8 and 10)
 
 Date: 2026-10-20. Storm: `synthetic_80mmh_60min` (constant 80 mm/h, 60 min, plus 3600 s recession).
 Town: Taman Kyra (network from `data/synthetic/taman_kyra_assets.json` by Tay Zheheng; layout from
 `data/synthetic/taman_kyra_layout.json`, derived from Jiajie's scene). Baseline blockage `INLET-D07` 40 %.
 
-**Outcome (pass 3, current):** with SWMM-style catchment loading (spec §14) and three tuned values (`CATCHMENT.lagS`
+**Outcome (pass 4, current):** with grate capture on the catchment runoff (spec §15; flap gate and pump dropped) and one
+retuned value (`HOUSE` 14.4 × 13 → 13.7 × 13.6 m, same +20 % area bound), claims 1, 3, 4, 6 and 7 pass. Claim 1's home
+margin grows from 6 mm to 39 mm. Claim 2 still can't be met honestly (P07 is saturated in every baseline within the
+bounds), so it stays removed (§ Pass 4). Claim 5 is gone with the flap gate and pump. The SWMM cross-check stays report-only.
+
+**Outcome (pass 3, superseded by pass 4):** with SWMM-style catchment loading (spec §14) and three tuned values (`CATCHMENT.lagS`
 300 → 60 s, `DIP` 30 × 0.5 → 45 × 0.8 m, `HOUSE.width` 12 → 14.4 m), claims 1, 3, 4, 6 and 7 pass. Claim 1 is restored.
 Claim 2 now fails because of the catchment loading, and claim 5 still can't be met, so both `it(...)` blocks are removed
 (§ Pass 3). The SWMM cross-check stays report-only (`ENFORCED = false`).
@@ -260,3 +265,144 @@ the gap on P01, P04 and P05's timing, but enforcement still fails:
 - **Peak time (structural).** SWMM's hydrographs peak at t = 60 min. The engine's pipes reach a capped plateau early
   (P07 at about 2 min, P03 at about 17 min) and the first plateau frame counts as the peak, which gives −43 to −58 min.
   A longer `CATCHMENT.lagS` (1200 s) delays P07's plateau only to about 25 min, still −35 min.
+
+## Pass 4 (Task 10): grate capture, flap gate and pump dropped
+
+Spec §15 routes each catchment's release through its outlet grate's capture curve (Tay Zheheng's
+`models/illustrative_taman_kyra/inlet_capture.json`: 80 % of approach flow up to 0.20 m³/s), times (1 − blockage). The
+bypass lands on the grate's street cell. `flap-gate` and `pump` are removed; badges cover the 4 interventions × 4 storms
+at normal tailwater (20 runs).
+
+House labels below are the layout ids (`LAYOUT.houses[k].id`). Pass 3 quoted the 0-based building indices, so its
+"H22 / H23" are the same two houses as H23 / H24 here.
+
+### Final `npm run tune` table (pass 4)
+
+| scenario | J07 peak (m) | J08 peak (m) | homes | road area (m²) | P07 max load | balance % | run (s) |
+|---|---|---|---|---|---|---|---|
+| baseline | 0.666 | 0.000 | 2 | 1172 | 1.000 | 0.000 | 21.2 |
+| desilt-d07 | 0.667 | 0.000 | 2 | 1168 | 1.000 | 0.000 | 17.5 |
+| upsize-p07 | 0.129 | 0.000 | 0 | 0 | 0.754 | 0.000 | 15.8 |
+| storage-tank | 0.129 | 0.000 | 0 | 0 | 0.643 | 0.000 | 15.8 |
+| lake-overflow | 0.481 | 0.000 | 0 | 844 | 1.000 | 0.000 | 15.9 |
+| desilt + upsize | 0.069 | 0.000 | 0 | 0 | 0.754 | 0.000 | 15.8 |
+| high: baseline | 0.666 | 0.000 | 2 | 1172 | 1.000 | 0.000 | 16.2 |
+
+**Runtime:** about 15 s per run alone (16–21 s with four jobs in parallel). The story test's 7 runs take about 2 min (118 s).
+
+### Config changes (pass 4)
+
+| Value | Old | New | Why |
+|---|---|---|---|
+| `HOUSE` | 14.4 × 13 m | 13.7 × 13.6 m | Same "+20 % footprint" bound read as area (186.3 m² vs 156 m², +19.4 %; width +14 %, depth +5 %). On the 2 m grid, a depth ≥ 13.37 m (with width ≥ 13.5 m) brings one more footprint row of H23 and H24 into the J07 pond: H24 0.306 → 0.339 m, a 39 mm margin over the 0.3 m threshold instead of 6 mm. The plateau is wide: every tried shape with width 13.5–14.0 m and depth 13.37–13.87 m gives the same 0.339 m, so the margin isn't a knife-edge pick. |
+
+All other values keep their pass 3 values: `CATCHMENT.lagS` 60 s, `DIP` 45 × 0.8 m, `FUNNEL` 30 × 0.3 m, `INLET_SUMP` 0.1,
+`LAKE`, `CANAL`, `TANK` and `LAKE_OVERFLOW`.
+
+### Iteration log (pass 4)
+
+Diagnostic runs applied config overrides in-process, one scenario per process, starting from the pass 3 config (lagS 60,
+DIP 45 × 0.8, FUNNEL 30 × 0.3, HOUSE 14.4 × 13). "Δ desilt" = desilt J07 − baseline J07. "fill" is J07's max node fill
+in the baseline; "full at" is when J07 first fills (baseline / desilt).
+
+Claim 2 sweep (baseline and desilt per row):
+
+| Change | base J07 | Δ desilt | homes | H23 / H24 | base P07 | fill | full at (min) |
+|---|---|---|---|---|---|---|---|
+| none (pass 3 config) | 0.662 | +0.001 | 2 | 0.351 / 0.306 | 1.000 | 1.00 | 4.5 / 3.0 |
+| lagS 90 | 0.657 | +0.001 | 2 | 0.346 / 0.302 | 1.000 | 1.00 | 7.0 / 4.0 |
+| lagS 120 | 0.653 | 0.000 | 1 | 0.342 / 0.297 | 1.000 | 1.00 | 8.5 / 5.0 |
+| lagS 180 | 0.643 | 0.000 | 1 | 0.332 / 0.288 | 1.000 | 1.00 | 11.0 / 7.0 |
+| lagS 240 | 0.632 | 0.000 | 1 | 0.322 / 0.278 | 1.000 | 1.00 | 14.5 / 9.5 |
+| lagS 300 | 0.622 | −0.001 | 1 | 0.311 / 0.267 | 1.000 | 1.00 | 18.0 / 11.0 |
+| lagS 400 | 0.603 | −0.001 | 0 | 0.293 / 0.248 | 1.000 | 1.00 | 23.5 / 14.5 |
+| lagS 600 | 0.562 | −0.001 | 0 | 0.252 / 0.207 | 1.000 | 1.00 | 35.0 / 21.5 |
+| lagS 1200 | 0.424 | 0.000 | 0 | 0.117 / 0.073 | 1.000 | 0.95 | – / 42.5 |
+| FUNNEL 8 × 0.1 | 0.579 | +0.002 | 0 | 0.294 / 0.278 | 1.000 | 1.00 | 4.5 / 2.5 |
+| FUNNEL 8 × 0.1, lagS 1200 | 0.407 | +0.005 | 0 | 0.126 / 0.111 | 1.000 | 0.95 | – / 44.0 |
+| FUNNEL 8 × 0.1, INLET_SUMP 0.05 | 0.579 | +0.002 | 0 | 0.294 / 0.278 | 1.000 | 1.00 | 4.5 / 2.5 |
+| DIP 15 × 0.2, FUNNEL 8 × 0.1 | 0.247 | +0.004 | 0 | dry | 1.000 | 1.00 | 4.5 / 2.5 |
+| DIP 15 × 0.2, FUNNEL 8 × 0.1, lagS 1200 | 0.246 | +0.004 | 0 | dry | 1.000 | 0.97 | – / 44.0 |
+| DIP 15 × 0.2, FUNNEL 30 × 0.3, lagS 1200 | 0.307 | +0.003 | 0 | dry | 1.000 | 0.97 | – / 42.5 |
+| DIP 30 × 0.5, FUNNEL 8 × 0.1, lagS 1200 | 0.402 | +0.004 | 0 | 0.060 / 0.031 | 1.000 | 0.96 | – / 44.0 |
+| DIP 15 × 1.0, FUNNEL 8 × 0.6, lagS 1200 | 1.344 | +0.006 | 0 | dry | 1.000 | 0.87 | – / 44.0 |
+| DIP 45 × 1.0 | 0.703 | +0.001 | 2 | 0.356 / 0.302 | 1.000 | 1.00 | 4.5 / 3.0 |
+| DIP 40 × 0.8 | 0.704 | 0.000 | 2 (desilt 1) | 0.354 / 0.300 | 1.000 | 1.00 | 4.5 / 3.0 |
+| DIP 45 × 0.9 | 0.683 | +0.001 | 2 | 0.354 / 0.305 | 1.000 | 1.00 | 4.5 / 3.0 |
+| INLET_SUMP 0.25 | 0.662 | +0.001 | 2 | 0.351 / 0.306 | 1.000 | 1.00 | 4.5 / 3.0 |
+| LAKE waterLevel 9.98, or 9.4 | 0.662 | +0.001 | 2 | 0.351 / 0.306 | 1.000 | 1.00 | 4.5 / 3.0 |
+| **HOUSE 13.7 × 13.6 (chosen)** | **0.666** | **+0.001** | **2** | **0.384 / 0.339** | **1.000** | **1.00** | **4.5 / 3.0** |
+
+Claim 1 margin sweep (baseline only; H24 is the binding house):
+
+| Change | base J07 | homes | H23 / H24 |
+|---|---|---|---|
+| DIP 45 × 0.6 / 0.7 / 0.75 / 0.85 | 0.581 / 0.639 / 0.650 / 0.673 | 1 / 2 / 2 / 2 | H24 0.271 / 0.305 / 0.306 / 0.306 |
+| DIP 42 × 0.85 | 0.697 | 2 | 0.354 / 0.302 |
+| FUNNEL 30 × 0.1 / 0.2 / 0.25 / 0.35 / 0.4 | 0.558–0.708 | 2 | H24 0.302–0.306 |
+| FUNNEL 28 × 0.3 / 26 × 0.3 / 14 × 0.3 / 8 × 0.3 | 0.677 / 0.693 / 0.768 / 0.772 | 1 / 1 / 0 / 0 | H24 0.299 / 0.287 / 0.267 / 0.278 |
+| DIP 45 × 0.9, FUNNEL 30 × 0.2 | 0.635 | 2 | 0.346 / 0.307 |
+| HOUSE 14 × 13, 14 × 13.2, 14.2 × 13.18, 14.4 × 12.5 | 0.662 | 2 | 0.350–0.351 / 0.306 |
+| HOUSE 12 × 13.37, 13 × 14.4, 12.5 × 14.97 | 0.660–0.663 | 1 | H24 0.294–0.297 |
+| HOUSE 13.5–14.0 × 13.37–13.87 (10 shapes, all ≤ +20 % area) | 0.666 | 2 | 0.384 / 0.339 |
+| HOUSE 14.4 × 15.6 (both sides × 1.2, +44 % area: outside the bound, for reference only) | 0.671 | 2 | 0.389 / 0.344 |
+
+At the claim-1 settings, `DIP`, `FUNNEL`, `INLET_SUMP`, `LAKE` and `lagS` move H24 by at most about 5 mm around 0.306 m.
+Only the footprint shape changes which grid cells the house covers.
+
+### Story claims (pass 4)
+
+| # | Claim | Result (final config) | Status |
+|---|---|---|---|
+| 1 | baseline J07 ≥ 0.15 m and ≥ 2 homes | J07 0.666 m ✓, 2 homes (H23 0.384 m, H24 0.339 m) ✓ | kept, passes (margin 39 mm) |
+| 2 | desilt lowers J07, P07 still ≥ 0.99 | 0.667 vs 0.666 ✗, P07 1.000 ✓ | **still removed** (below) |
+| 3 | upsize lowers J07 | 0.129 < 0.666 ✓ | kept, passes |
+| 4 | combined beats each alone | 0.069 < 0.667 and < 0.129 ✓ | kept, passes |
+| 5 | (flap gate and pump) | — | **gone**: spec §15 removed both interventions |
+| 6 | tank and lake each change J07 by ≥ 0.03 m | tank Δ 0.537 ✓, lake Δ 0.185 ✓ | kept, passes |
+| 7 | water balance < 1 % | 0.000 % on all 7 runs ✓ | kept, passes |
+
+**Why claim 2 still fails (structural: P07 is saturated).** Grate capture does carry the D07 blockage through to the
+catchment runoff: the blocked grate captures 0.6 × 0.8 × 0.178 ≈ 0.085 m³/s of CATCH-D07's 0.178 m³/s, and the desilted
+grate captures 0.142 m³/s. But:
+- P07 reaches its 0.549 m³/s full-bore cap in **every** baseline run of both sweeps (P07 max load 1.000 in all of them).
+  The upstream catchments alone deliver about 0.37 m³/s through their own grates (0.8 × (0.178 + 0.105 + 0.178)). Add
+  D07's capture and the surface weirs, and J07 fills 4.5 min into the storm at the claim-1 settings. It still reaches
+  0.95–0.97 fill with lagS 1200.
+- Once P07 is the limit, every m³ that desilting moves into J07 comes straight back out as node overflow on the same J07
+  cell where the bypass would have landed. The pond is set by arrivals minus P07's capacity, not by the grate. Desilting
+  only makes J07 fill earlier (3.0 vs 4.5 min).
+- The D07 surface weir isn't binding either: at 0.15 m of ponding, the 40 %-blocked grate already takes about 0.18 m³/s,
+  more than P07 has room for.
+- Across the sweeps, Δ desilt was −0.001 to +0.006 m. The only reductions (−1 mm, at lagS 300–600 s) come where claim 1
+  fails (≤ 1 home), and a 1 mm change isn't a demo story. Desilt badges are 0 to +0.004 m on all four storms.
+
+Claims 1 and 2 pull in opposite directions. Flooding homes needs J07 arrivals far above P07's capacity, and then the D07
+grate can't matter. Restoring claim 2 would need spare P07 capacity in the baseline (a larger asset diameter, which is
+off-limits) or head-driven pipe flow in `src/sim/pipes.ts`. Desilting does matter once P07 is upsized (claim 4: combined
+0.069 < upsize 0.129), and the P07 half of claim 2 still holds (desilt P07 max load 1.000).
+
+### Effect badges (pass 4)
+
+`npm run effects` regenerated `packages/engine/src/scenario/effects.json` (4 interventions × 4 storms, normal tailwater).
+The stale flap-gate, pump and `high` entries are gone; `high` is now `{}`. dSag (m) / dHomes:
+
+| Storm | desilt-d07 | upsize-p07 | storage-tank | lake-overflow |
+|---|---|---|---|---|
+| synthetic_80mmh_60min (base 0.666 m, 2 homes) | +0.001 / 0 | −0.537 / −2 | −0.537 / −2 | −0.186 / −2 |
+| synthetic_120mmh_60min (base 0.783 m, 2 homes) | +0.004 / 0 | −0.410 / −2 | −0.501 / −2 | −0.001 / 0 |
+| 10yr (base 0.710 m, 2 homes) | 0 / 0 | −0.313 / −2 | −0.346 / −2 | −0.065 / 0 |
+| 100yr (base 0.783 m, 2 homes) | +0.004 / 0 | −0.144 / 0 | −0.169 / 0 | 0 / 0 |
+
+The drift test passes against the new file.
+
+### SWMM cross-check (pass 4)
+
+Re-run with the final config. It stays report-only (`ENFORCED = false`, tolerances unchanged). Trunk pipes: P03 −31.3 %
+(−43.5 min), P05 −35.2 % (−57.5 min), P07 −37.1 % (−58.5 min), P08 −37.1 % (−58.5 min). The pass 3 reasons still hold:
+- P07's full-bore cap (−37.1 % is the best it can reach);
+- CATCH-D02's 0.59 ha of grid cells;
+- the early capped plateau.
+
+Grate capture now also returns 20 % of each catchment's flow to the street, which lowers P05 slightly (−32.6 % → −35.2 %).
+The cross-check runs with INLET-D07 clean, and `HOUSE` doesn't affect pipe flows.

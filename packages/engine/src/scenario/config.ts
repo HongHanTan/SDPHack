@@ -5,7 +5,7 @@ export const DATUM = { x0: -80, y0: -140 };
 export const GRID = { nx: 125, ny: 145, dx: 2 };
 
 export const ROAD_DROP = 0.1; // m, kerb: road surface below verge
-export const HOUSE = { width: 14.4, depth: 13 }; // m footprint before the layout's scale
+export const HOUSE = { width: 13.7, depth: 13.6 }; // m footprint before the layout's scale
 /** Maple Grove pond: bed level, normal water level (below NODE-J04 invert 10.0), park margin, overflow live rise. */
 export const LAKE = { bedZ: 9.2, waterLevel: 9.8, parkMargin: 12, liveRise: 1.0 };
 export const CANAL = { bedZ: 7.6 };

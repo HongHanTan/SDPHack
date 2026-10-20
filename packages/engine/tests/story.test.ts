@@ -30,10 +30,11 @@ describe('Taman Kyra demo story (80 mm/h, team storm)', () => {
     expect(base.m.peakSagDepth).toBeGreaterThanOrEqual(0.15);
     expect(base.m.homesFlooded).toBeGreaterThanOrEqual(2);
   });
-  // Claim 2 (desilting D07 lowers J07) was removed in the Task 8 retune: with catchment loading the outlets J01/J02/J04/J07
-  // deliver ~0.64 m³/s to J07 at steady state, above P07's 0.549 m³/s full-bore cap, so J07 is full and D07 captures
-  // nothing at the peak. Desilt dSag was 0.000 at every tried CATCHMENT.lagS (60-1200 s), DIP and FUNNEL. The P07 half
-  // still holds (desilt P07 max load 1.000). See docs/tuning.md ("Pass 3").
+  // Claim 2 (desilting D07 lowers J07) stays removed after the Task 10 retune (grate capture, spec §15). P07 runs at its
+  // 0.549 m³/s full-bore cap in every baseline tried within the bounds, so the J07 pond is set by P07, not the D07 grate:
+  // the bypass desilting saves lands on the same J07 cell as the node overflow it causes. Desilt dSag was −0.001 to
+  // +0.006 m across the pass 4 sweeps, and the only (1 mm) reductions came at lagS 300–600 s, where claim 1 fails. The P07
+  // half still holds (desilt P07 max load 1.000). See docs/tuning.md ("Pass 4").
   it('3. upsizing P07 helps', () => {
     expect(upsize.m.peakSagDepth).toBeLessThan(base.m.peakSagDepth);
   });
