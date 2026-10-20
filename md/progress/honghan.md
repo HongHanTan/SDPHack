@@ -157,3 +157,14 @@ Plan: `docs/superpowers/plans/2026-10-23-team-ui-engine.md`
 | P7-3 | X-ray flow ribbons, bloom, manhole glow | ✅ done (039250c) — minor: list postprocessing peer explicitly; ribbons rebuild if asset arrays change identity |
 | P7-4 | 2D plan / 3D toggle, scale bar, checklist | ✅ done (e47a404, fix 27ba413) |
 | P7-5 | Final review + fixes (camera aspect after 2D, gizmo with bloom, clickable manholes in 2D, label polish) | ✅ done (ff249dc) |
+
+## Phase 8: Site import (generate the city from SWMM, GIS and height files)
+| Task | Description | Status |
+|---|---|---|
+| P8-1 | Engine site abstraction (built-in Taman Kyra unchanged) | ✅ done (8903371, 95785ff) — minor: cache evicts oldest, not least-recently-used |
+| P8-2 | Importers and site builder with validation report | ✅ done (4595a9b, fix 5a78875) — minor: polygon vertices and layout points outside the height grid not validated; dz rounded to 1 cm |
+| P8-3 | Synthetic sample package, drift and equivalence tests | ✅ done (b7e22cd) — ground within 0.5 mm, identical land use, J07 0.666 m both ways, 2 homes both ways |
+| P8-4 | Web: active site through source, workers, live, water | ✅ done (f323775, fix a925bb2) — minor: site grid built twice (water and ground sampler) |
+| P8-5 | Web: SiteEnvironment scene for imported sites | ✅ done (9270106) — minor: ground colours can be off by a cell at land-use edges; grid/fog not re-centred on large sites |
+| P8-6 | Web: import panel, watch for changes, checklist | ✅ done (cbad52b, fix 4736302) |
+| P8-7 | Final review + fixes (ground mesh placement, build-checked imports, every default listed as an assumption, imported-site metrics, watch robustness) | ✅ done (f0c1050) |
