@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ScenarioOptions } from '@floodops/engine/scenario/index';
 import { buildScenario, effectiveBlockage } from '@floodops/engine/scenario/index';
 import type { InterventionId } from '@floodops/engine/scenario/interventions';
+import { TAMAN_KYRA } from '@floodops/engine/scenario/site';
 import { STORMS, type StormId } from '@floodops/engine/scenario/storms';
 import type { LiveCommand, LiveMessage } from '@floodops/engine/worker/liveProtocol';
-import type { SimulationFrame } from '../types';
+import type { AssetInlet, SimulationFrame } from '../types';
 import { makeContext, toTeamFrame, type AdapterContext } from './frameAdapter';
 
 export type LiveSeekTarget = 'start' | 'peak' | 'end';
@@ -20,7 +21,7 @@ export function liveSeekMinute(stormId: StormId, target: LiveSeekTarget): number
 
 function contextFor(ids: InterventionId[], stormId: StormId, opts: ScenarioOptions): AdapterContext {
   const sc = buildScenario(ids, stormId, [], opts);
-  return makeContext(sc.network, sc.grid, effectiveBlockage(ids, opts));
+  return makeContext(sc.network, sc.grid, effectiveBlockage(ids, opts), (opts.site ?? TAMAN_KYRA).assets.inlets as unknown as AssetInlet[]);
 }
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));

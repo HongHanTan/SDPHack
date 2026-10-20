@@ -1,5 +1,7 @@
 import { DIP, FUNNEL } from '@floodops/engine/scenario/config';
+import { baseTownship } from '@floodops/engine/scenario/index';
 import { ASSETS, LAYOUT } from '@floodops/engine/scenario/layout';
+import { siteToLocal, type SiteSpec } from '@floodops/engine/scenario/site';
 
 /** Jiajie's lawn plane height (scene y). */
 export const LAWN_Z = 10.8;
@@ -41,4 +43,21 @@ export const lawnHeight = (tx: number, ty: number) => LAWN_Z - bowlDrop(tx, ty);
 export function visualGround(tx: number, ty: number): number {
   const road = roadSurfaceAt(tx, ty);
   return Math.max(road ?? -Infinity, LAWN_Z) - bowlDrop(tx, ty);
+}
+
+/** Imported sites: the engine ground itself (bilinear over cell centres), in team metres. Built-in: Jiajie's visual ground. */
+export function groundSampler(site: SiteSpec): (tx: number, ty: number) => number {
+  if (site.builtIn) return visualGround;
+  const g = baseTownship({}, site).grid;
+  return (tx, ty) => {
+    const p = siteToLocal(site, tx, ty);
+    const fx = Math.min(g.nx - 1, Math.max(0, p.x / g.dx - 0.5));
+    const fy = Math.min(g.ny - 1, Math.max(0, p.y / g.dx - 0.5));
+    const i = Math.min(g.nx - 2, Math.floor(fx));
+    const j = Math.min(g.ny - 2, Math.floor(fy));
+    const u = fx - i;
+    const v = fy - j;
+    const z = (ii: number, jj: number) => g.z[jj * g.nx + ii];
+    return (1 - u) * (1 - v) * z(i, j) + u * (1 - v) * z(i + 1, j) + (1 - u) * v * z(i, j + 1) + u * v * z(i + 1, j + 1);
+  };
 }

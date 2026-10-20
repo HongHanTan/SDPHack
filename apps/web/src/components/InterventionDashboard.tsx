@@ -27,6 +27,8 @@ interface InterventionDashboardProps {
   engineStormLabel?: string;
   /** Engine mode: a simulation is in flight, so Apply waits. */
   applyDisabled?: boolean;
+  /** Engine mode, uploaded site: replaces the comparison with this notice. */
+  engineNotice?: string;
 }
 
 // Labels for the two D07 metric rows. HIS_LABELS is the original wording, verbatim.
@@ -110,6 +112,7 @@ export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
   engineOptions,
   engineStormLabel,
   applyDisabled = false,
+  engineNotice,
 }) => {
   const [activeTab, setActiveTab] = useState<'compare' | 'actions'>('compare');
   const [selectedOptionId, setSelectedOptionId] = useState<string>(
@@ -395,6 +398,43 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
     setCopiedReport(true);
     setTimeout(() => setCopiedReport(false), 2500);
   };
+
+  if (engineNotice) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm pointer-events-auto p-4 select-none animate-in fade-in">
+        <div className="w-full max-w-2xl bg-white border border-slate-200/90 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200 shadow-xs">
+                <Sliders className="w-5 h-5" />
+              </div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-slate-900">Mitigation & Counterfactual Decision Report</h2>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-mono font-semibold border border-emerald-200">
+                  {`${ENGINE_NAME} (simulated)`}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="px-6 py-8 text-sm text-slate-700">{engineNotice}</div>
+          <div className="flex items-center justify-end px-6 py-3.5 border-t border-slate-100 bg-slate-50">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold transition cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm pointer-events-auto p-4 select-none animate-in fade-in">

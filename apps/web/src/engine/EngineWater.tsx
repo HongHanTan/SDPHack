@@ -3,27 +3,28 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { smoothDepth, WET } from '@floodops/engine/client/smoothDepth';
 import { baseTownship } from '@floodops/engine/scenario/index';
-import { toTeam } from '@floodops/engine/scenario/layout';
+import { siteToTeam, type SiteSpec } from '@floodops/engine/scenario/site';
 import { LandUse } from '@floodops/engine/sim/types';
 import { useViewLook } from '../view/ViewLookContext';
 import { blendTheme, blendThemeInto } from '../view/xrayTheme';
-import { visualGround } from './visualGround';
+import { groundSampler } from './visualGround';
 import { createWaterMaterial } from './waterMaterial';
 
 /** Engine water surface over Jiajie's scene: height = visual ground + simulated depth (pond and canal excluded). */
-export function EngineWater({ depth }: { depth: Float32Array | null }) {
-  const grid = useMemo(() => baseTownship().grid, []);
+export function EngineWater({ depth, site }: { depth: Float32Array | null; site: SiteSpec }) {
+  const grid = useMemo(() => baseTownship(site.builtIn ? undefined : {}, site).grid, [site]);
   const { nx, ny, dx } = grid;
   const n = nx * ny;
   const { geom, base, mask, depthAttr } = useMemo(() => {
     const pos = new Float32Array(n * 3);
     const base = new Float32Array(n);
     const mask = new Uint8Array(n);
+    const ground = groundSampler(site);
     for (let j = 0; j < ny; j++) {
       for (let i = 0; i < nx; i++) {
         const c = j * nx + i;
-        const t = toTeam((i + 0.5) * dx, (j + 0.5) * dx);
-        base[c] = visualGround(t.x, t.y);
+        const t = siteToTeam(site, (i + 0.5) * dx, (j + 0.5) * dx);
+        base[c] = ground(t.x, t.y);
         mask[c] = grid.land[c] === LandUse.POND || grid.land[c] === LandUse.RIVER ? 0 : 1;
         pos[3 * c] = t.x;
         pos[3 * c + 1] = base[c] - 0.5;
@@ -44,7 +45,7 @@ export function EngineWater({ depth }: { depth: Float32Array | null }) {
     g.setAttribute('aDepth', depthAttr);
     g.computeVertexNormals();
     return { geom: g, base, mask, depthAttr };
-  }, [grid, n, nx, ny, dx]);
+  }, [grid, site.key, n, nx, ny, dx]);
   const smoothed = useMemo(() => new Float32Array(n), [n]);
   const material = useMemo(() => createWaterMaterial(), []);
   const { lookRef } = useViewLook();

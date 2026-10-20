@@ -9,6 +9,7 @@
     "./sim/*": "./src/sim/*.ts",
     "./scenario/dashboard.json": "./src/scenario/dashboard.json",
     "./scenario/*": "./src/scenario/*.ts",
+    "./import/*": "./src/import/*.ts",
     "./worker/*": "./src/worker/*.ts"
   },
   "scripts": {

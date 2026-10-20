@@ -3,9 +3,11 @@ import type { TailwaterCase } from '@floodops/engine/scenario/config';
 import { buildScenario, buildTownship, effectiveBlockage, type ScenarioOptions } from '@floodops/engine/scenario/index';
 import type { InterventionId } from '@floodops/engine/scenario/interventions';
 import { ASSETS, toTeam } from '@floodops/engine/scenario/layout';
+import { TAMAN_KYRA, type SiteSpec } from '@floodops/engine/scenario/site';
 import { STORMS, type StormId } from '@floodops/engine/scenario/storms';
 import type {
   AssetConduit,
+  AssetInlet,
   AssetNode,
   BootstrapResponse,
   HealthResponse,
@@ -36,6 +38,7 @@ class EngineSource {
   private interventions: InterventionId[] = [];
   private runs = new Map<string, RunRecord>();
   private counter = 0;
+  private site: SiteSpec = TAMAN_KYRA;
 
   private getRunner(): SimRunner {
     if (!this.runner) {
@@ -44,6 +47,15 @@ class EngineSource {
       );
     }
     return this.runner;
+  }
+
+  setSite(site: SiteSpec | null): void {
+    this.site = site ?? TAMAN_KYRA;
+    this.interventions = [];
+  }
+
+  getSite(): SiteSpec {
+    return this.site;
   }
 
   setInterventions(ids: InterventionId[]): void {
@@ -56,7 +68,7 @@ class EngineSource {
 
   blockageForDebris(debrisId: string | null | undefined): Record<string, number> {
     const c = DEBRIS_CASES.find((d) => d.id === debrisId) ?? DEBRIS_CASES[2];
-    return { 'INLET-D07': c.fraction };
+    return this.site.focusInletId ? { [this.site.focusInletId]: c.fraction } : {};
   }
 
   getHealth(): HealthResponse {
@@ -69,11 +81,14 @@ class EngineSource {
   }
 
   getBootstrap(): BootstrapResponse {
+    const site = this.site;
+    const focus = site.focusInletId ?? 'inlet';
+    const focusLabel = site.builtIn ? 'D07' : focus;
     return {
       api_version: 'engine',
       township_id: 'taman_kyra_demo',
       model_versions: [
-        { model_version_id: MODEL_VERSION, name: 'Illustrative Taman Kyra drainage zone (TS engine)', source_type: 'synthetic', is_verified_site_model: false, readiness: 'execution_verified' },
+        { model_version_id: MODEL_VERSION, name: site.builtIn ? 'Illustrative Taman Kyra drainage zone (TS engine)' : `Imported site: ${site.label}`, source_type: 'synthetic', is_verified_site_model: false, readiness: 'execution_verified' },
       ],
       storms: (Object.keys(STORMS) as StormId[]).map((id) => {
         const s = STORMS[id];
@@ -87,16 +102,16 @@ class EngineSource {
       }),
       debris_scenarios: DEBRIS_CASES.map((d) => ({
         debris_scenario_id: d.id,
-        name: d.fraction === 0 ? 'D07 clean' : `D07 ${Math.round(d.fraction * 100)}% blocked`,
+        name: d.fraction === 0 ? `${focusLabel} clean` : `${focusLabel} ${Math.round(d.fraction * 100)}% blocked`,
         source_type: 'assumed',
-        parameters: { inlet_id: 'INLET-D07', hydraulic_inlet_clogging_fraction: d.fraction, parameter_status: 'assumed_not_calibrated' },
+        parameters: { inlet_id: site.focusInletId ?? 'inlet', hydraulic_inlet_clogging_fraction: d.fraction, parameter_status: 'assumed_not_calibrated' },
         swmm_supported: true,
       })),
       tailwater_cases: (['normal', 'high'] as TailwaterCase[]).map((t) => ({
         tailwater_case: t,
         name: t === 'normal' ? 'Normal canal level' : 'High canal level',
         source_type: 'assumed',
-        parameters: { depth_above_outfall_invert_m: t === 'normal' ? 0 : 1.2 },
+        parameters: { depth_above_outfall_invert_m: site.tailwater[t] },
       })),
       capabilities: CAPS,
       assumptions: ['Local TypeScript engine on the Taman Kyra synthetic network; not a surveyed site model.'],
@@ -104,6 +119,20 @@ class EngineSource {
   }
 
   getTownshipAssets(): TownshipAssetsResponse {
+    if (!this.site.builtIn) {
+      const a = this.site.assets;
+      return {
+        township_id: this.site.key,
+        model_version_id: 'imported_site',
+        source_type: 'imported' as never,
+        is_verified_site_model: false,
+        coordinate_system: 'local_metres_east_north_elevation',
+        nodes: a.nodes as unknown as AssetNode[],
+        inlets: a.inlets as unknown as TownshipAssetsResponse['inlets'],
+        conduits: a.conduits as unknown as AssetConduit[],
+        assumptions: ['Generated from uploaded files: ' + this.site.label],
+      };
+    }
     const t = buildTownship(this.interventions);
     const known = new Set(ASSETS.nodes.map((n) => n.node_id));
     const knownPipes = new Set(ASSETS.conduits.map((c) => c.conduit_id));
@@ -134,7 +163,7 @@ class EngineSource {
   async createSimulation(req: SimulationCreateRequest): Promise<{ run_id: string; status: string }> {
     if (!(req.storm_id in STORMS)) throw new Error(`[ENGINE] Unknown storm ${req.storm_id}`);
     const stormId = req.storm_id as StormId;
-    const opts: ScenarioOptions = { tailwater: (req.tailwater_case === 'high' ? 'high' : 'normal') as TailwaterCase, blockage: this.blockageForDebris(req.debris_scenario_id) };
+    const opts: ScenarioOptions = { tailwater: (req.tailwater_case === 'high' ? 'high' : 'normal') as TailwaterCase, blockage: this.blockageForDebris(req.debris_scenario_id), site: this.site };
     const ids = this.getInterventions();
     const runId = `engine-${++this.counter}`;
     const rec: RunRecord = { status: 'running' };
@@ -142,7 +171,7 @@ class EngineSource {
     // Keep only the newest runs: each holds every frame's depth grid.
     while (this.runs.size > MAX_RUNS) this.runs.delete(this.runs.keys().next().value as string);
     const sc = buildScenario(ids, stormId, [], opts);
-    const ctx = makeContext(sc.network, sc.grid, effectiveBlockage(ids, opts));
+    const ctx = makeContext(sc.network, sc.grid, effectiveBlockage(ids, opts), this.site.assets.inlets as unknown as AssetInlet[]);
     this.getRunner()
       .run(ids, stormId, undefined, [], opts)
       .then((r) => {

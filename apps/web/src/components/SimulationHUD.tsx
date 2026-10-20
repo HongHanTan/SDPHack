@@ -78,6 +78,8 @@ interface SimulationHUDProps {
   /** Engine mode: engine wording, and the applied dashboard option instead of the SWMM-only tools. */
   engineMode?: boolean;
   appliedOptionTitle?: string;
+  /** Imported engine site: the hotspot node shown in place of J07. */
+  hotspotLabel?: string;
 }
 
 export const SimulationHUD: React.FC<SimulationHUDProps> = ({
@@ -128,6 +130,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   liveTimeS = 0,
   engineMode = false,
   appliedOptionTitle,
+  hotspotLabel = 'J07',
 }) => {
   const liveActive = !!liveAvailable && !!liveOn;
   // Engine-only metric fields (absent from SWMM/mock metrics, so nothing extra renders there).
@@ -339,7 +342,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                   <div className="space-y-1 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px]">
                     {j07PeakDepthM !== undefined && (
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-700">J07 peak depth</span>
+                        <span className="font-semibold text-slate-700">{hotspotLabel} peak depth</span>
                         <span className="font-mono font-bold text-slate-900">{j07PeakDepthM.toFixed(2)} m</span>
                       </div>
                     )}

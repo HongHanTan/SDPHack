@@ -26,12 +26,14 @@ import { LiveTelemetryTicker } from './components/LiveTelemetryTicker';
 import { engineSource } from './engine/engineSource';
 import { useLiveEngine } from './engine/useLiveEngine';
 import { buildDashboardOptions, idsForOption } from './engine/dashboardOptions';
+import { TAMAN_KYRA, type SiteSpec } from '@floodops/engine/scenario/site';
 import { rainIntensityAt, STORMS, type StormId } from '@floodops/engine/scenario/storms';
 
 export function App() {
   const [mode, setMode] = useState<DataMode>(apiClient.getDataMode());
   const engineMode = mode === 'engine';
   const live = useLiveEngine();
+  const [site, setSiteState] = useState<SiteSpec>(TAMAN_KYRA);
   const liveActive = engineMode && live.on;
   const [appMode, setAppMode] = useState<AppMode>('diagnose');
   const [health, setHealth] = useState<HealthResponse | null>(null);
@@ -144,6 +146,7 @@ export function App() {
     live.start(stormId as StormId, engineSource.getInterventions(), {
       tailwater: tailwater === 'high' ? 'high' : 'normal',
       blockage: engineSource.blockageForDebris(debrisId),
+      site: engineSource.getSite(),
     });
   };
 
@@ -164,6 +167,23 @@ export function App() {
       stopLive();
     }
   };
+
+  /** Switches the engine's active site (null = built-in) and resets everything derived from the previous one. */
+  const applySite = (s: SiteSpec | null) => {
+    stopLive();
+    engineSource.setSite(s);
+    setSiteState(engineSource.getSite());
+    setAppliedOptionId('baseline');
+    setFrames([]);
+    setMetrics(null);
+    setEngineRunId(null);
+    setHasSimulationStarted(false);
+    setIsPlaying(false);
+    setCurrentFrameIndex(0);
+    setSelectedDebrisId('engine_d07_40pct');
+    void loadData();
+  };
+  void applySite; // Task 6 (upload UI) calls this.
 
   const handleToggleMode = (newMode: DataMode) => {
     runTokenRef.current++;
@@ -574,8 +594,8 @@ export function App() {
     : rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && currentTimestamp <= 3600;
   const shownError = liveActive && live.error ? live.error : apiError;
   const engineOptions = useMemo(
-    () => (engineMode ? buildDashboardOptions(selectedStormId as StormId) : undefined),
-    [engineMode, selectedStormId]
+    () => (engineMode && site.builtIn ? buildDashboardOptions(selectedStormId as StormId) : undefined),
+    [engineMode, site, selectedStormId]
   );
 
   const handleSelectTab = (tab: 'dashboard' | 'map' | 'assets' | 'analytics' | 'reports') => {
@@ -752,6 +772,7 @@ export function App() {
           onToggleRain={() => setRainEnabled(!rainEnabled)}
           onOpenDebrisLab={() => setIsDebrisLabOpen(true)}
           engineMode={engineMode}
+          hotspotLabel={engineMode && !site.builtIn ? site.hotspotNodeId : undefined}
           appliedOptionTitle={
             engineMode
               ? appliedOptionId === 'baseline'
@@ -796,6 +817,11 @@ export function App() {
           onApplyIntervention={handleApplyIntervention}
           inspections={inspections}
           engineOptions={engineOptions}
+          engineNotice={
+            engineMode && !site.builtIn
+              ? 'Intervention comparison is available for the built-in township. For an uploaded site, edit the files and re-upload to compare designs.'
+              : undefined
+          }
           engineStormLabel={STORMS[selectedStormId as StormId]?.label}
           applyDisabled={engineMode && isRunning && !live.on}
         />

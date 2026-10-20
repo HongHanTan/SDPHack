@@ -22,6 +22,7 @@ import { SceneLook } from '../view/SceneLook';
 import { FieldInspectorsManager } from './FieldInspectorsManager';
 import { TownshipEnvironment } from './TownshipEnvironment';
 import { EngineWater } from '../engine/EngineWater';
+import { TAMAN_KYRA } from '@floodops/engine/scenario/site';
 import { RainEffect } from './RainEffect';
 import { NetworkHighlightOverlay } from './NetworkHighlightOverlay';
 import { FieldInspector } from '../types';
@@ -698,7 +699,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           currentFrame={engineDepth !== undefined ? null : currentFrame}
           engineMode={engineDepth !== undefined}
         />
-        {engineDepth !== undefined && <EngineWater depth={engineDepth} />}
+        {engineDepth !== undefined && <EngineWater depth={engineDepth} site={TAMAN_KYRA} />}
 
         {/* Glowing Surface Road Flow Ribbons & 3D Glowing Junction Markers (Mockup View) */}
         <NetworkHighlightOverlay

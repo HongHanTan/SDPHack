@@ -1,7 +1,7 @@
 import { ASSETS } from '@floodops/engine/scenario/layout';
 import { createNetworkState } from '@floodops/engine/sim/pipes';
 import { LandUse, type Frame, type Grid, type Metrics, type Network } from '@floodops/engine/sim/types';
-import type { ConduitStatus, InletState, NodeState, PipeState, SimulationFrame, SimulationMetricsResponse } from '../types';
+import type { AssetInlet, ConduitStatus, InletState, NodeState, PipeState, SimulationFrame, SimulationMetricsResponse } from '../types';
 
 export const NEAR_CAPACITY = 0.8;
 export const SURCHARGED = 0.999;
@@ -18,10 +18,16 @@ export interface AdapterContext {
   grid: Grid;
   qFull: Float64Array;
   blockage: Record<string, number>;
+  inlets: AssetInlet[];
 }
 
-export function makeContext(network: Network, grid: Grid, blockage: Record<string, number>): AdapterContext {
-  return { network, grid, qFull: createNetworkState(network).qFull, blockage };
+export function makeContext(
+  network: Network,
+  grid: Grid,
+  blockage: Record<string, number>,
+  inlets: AssetInlet[] = ASSETS.inlets as unknown as AssetInlet[],
+): AdapterContext {
+  return { network, grid, qFull: createNetworkState(network).qFull, blockage, inlets };
 }
 
 export function toTeamFrame(frame: Frame, ctx: AdapterContext): SimulationFrame {
@@ -50,7 +56,7 @@ export function toTeamFrame(frame: Frame, ctx: AdapterContext): SimulationFrame 
       status: !nodesOk ? 'unknown' : surcharged && wet ? 'flooding' : surcharged ? 'surcharged' : 'normal',
     };
   });
-  const inlet_states: InletState[] = ASSETS.inlets.map((i) => ({
+  const inlet_states: InletState[] = ctx.inlets.map((i) => ({
     inlet_id: i.inlet_id,
     hydraulic_inlet_clogging_fraction: ctx.blockage[i.inlet_id] ?? 0,
     parameter_status: 'assumed_not_calibrated',
