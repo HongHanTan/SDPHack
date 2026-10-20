@@ -41,7 +41,7 @@ export function ViewRig({
   const saved = useRef<Pose | null>(null);
   const anim = useRef<{ from: Pose; to: Pose; start: number | null; then: () => void } | null>(null);
   const zoom = orthoZoomFor(size.width, size.height);
-  const scratch = useRef(new THREE.Vector3());
+  const lookRef = useRef(DEFAULT_POSE.target.clone()); // current look-at, kept live during glides
 
   const topPose = (): Pose => {
     const h = topHeightFor(size.height, zoom, perspRef.current!.fov);
@@ -53,17 +53,24 @@ export function ViewRig({
     const p = phaseRef.current;
     if (is2d && (p === '3d' || p === 'to3d')) {
       const ctl = controlsRef.current;
-      const from: Pose = { pos: persp.position.clone(), target: ctl ? ctl.target.clone() : DEFAULT_POSE.target.clone() };
+      const target = p === '3d' ? (ctl ? ctl.target.clone() : DEFAULT_POSE.target.clone()) : lookRef.current.clone();
+      const from: Pose = { pos: persp.position.clone(), target };
       if (p === '3d') saved.current = from;
       anim.current = { from, to: topPose(), start: null, then: () => go('2d') };
       go('to2d');
     } else if (!is2d && (p === '2d' || p === 'to2d')) {
       const top = topPose();
-      persp.position.copy(top.pos);
-      persp.lookAt(top.target);
+      let from: Pose;
+      if (p === '2d') {
+        persp.position.copy(top.pos);
+        persp.lookAt(top.target);
+        from = top;
+      } else {
+        from = { pos: persp.position.clone(), target: lookRef.current.clone() };
+      }
       const to = saved.current ?? DEFAULT_POSE;
       anim.current = {
-        from: top,
+        from,
         to,
         start: null,
         then: () => {
@@ -88,7 +95,7 @@ export function ViewRig({
     const k = Math.min(1, (clock.elapsedTime - a.start) / SWITCH_S);
     const e = k * k * (3 - 2 * k);
     persp.position.lerpVectors(a.from.pos, a.to.pos, e);
-    persp.lookAt(scratch.current.lerpVectors(a.from.target, a.to.target, e));
+    persp.lookAt(lookRef.current.lerpVectors(a.from.target, a.to.target, e));
     if (k >= 1) {
       anim.current = null;
       a.then();
@@ -97,7 +104,8 @@ export function ViewRig({
 
   useEffect(() => {
     if (phase === '2d') onMetresPerPixel(1 / zoom);
-  }, [phase, zoom, onMetresPerPixel]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, onMetresPerPixel]);
 
   const orthoRef = useRef<THREE.OrthographicCamera>(null);
   useLayoutEffect(() => {
@@ -108,7 +116,9 @@ export function ViewRig({
     cam.lookAt(SITE.cx, GROUND_Y, SITE.cz);
     cam.zoom = zoom;
     cam.updateProjectionMatrix();
-  }, [phase, zoom]);
+    // Only on entering 2D: a window resize must not reset the user's pan/zoom.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   if (phase === '2d') {
     return (

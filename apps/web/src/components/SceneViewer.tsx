@@ -592,28 +592,28 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           <button
             onClick={() => handlePreset('overview')}
             disabled={is2d}
-            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed\"
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Overview
           </button>
           <button
             onClick={() => handlePreset('d07')}
             disabled={is2d}
-            className="px-2 py-0.5 rounded-lg hover:bg-amber-100 text-amber-800 transition cursor-pointer font-bold disabled:opacity-40 disabled:cursor-not-allowed\"
+            className="px-2 py-0.5 rounded-lg hover:bg-amber-100 text-amber-800 transition cursor-pointer font-bold disabled:opacity-40 disabled:cursor-not-allowed"
           >
             D07 Lowland
           </button>
           <button
             onClick={() => handlePreset('outfall')}
             disabled={is2d}
-            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed\"
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Outfall
           </button>
           <button
             onClick={() => handlePreset('north')}
             disabled={is2d}
-            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed\"
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Upstream
           </button>
