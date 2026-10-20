@@ -1,8 +1,7 @@
 import { MANNING_N } from '../sim/pipes';
-import type { DrainNode, Grid, Network, Pipe } from '../sim/types';
+import { LandUse, type DrainNode, type Grid, type Network, type Pipe } from '../sim/types';
 import { COVER, MANHOLE } from './config';
-import { ASSETS, toLocal } from './layout';
-import { cellAt } from './terrain';
+import { cellIn, siteNodeLocal, siteToLocal, TAMAN_KYRA, type SiteSpec } from './site';
 
 export function makeNode(
   grid: Grid,
@@ -11,7 +10,7 @@ export function makeNode(
   y: number,
   opts: Partial<Pick<DrainNode, 'invert' | 'area' | 'maxDepth' | 'inletPerimeter'>> = {},
 ): DrainNode {
-  const cell = cellAt(x, y);
+  const cell = cellIn(grid, x, y);
   const ground = grid.z[cell];
   const invert = opts.invert ?? ground - COVER;
   return {
@@ -31,11 +30,28 @@ export function makePipe(a: DrainNode, b: DrainNode, diameter: number): Pipe {
   return { id: `${a.id}-${b.id}`, from: a.id, to: b.id, diameter, length, slope: (a.invert - b.invert) / length, n: MANNING_N };
 }
 
-/** Grid-local position of an asset node. */
+/** Grid-local position of a built-in Taman Kyra asset node. */
 export function nodeSite(id: string): { x: number; y: number } {
-  const nd = ASSETS.nodes.find((n) => n.node_id === id);
-  if (!nd) throw new Error(`Unknown asset node ${id}`);
-  return toLocal(nd.position_m.x, nd.position_m.y);
+  return siteNodeLocal(TAMAN_KYRA, id);
+}
+
+/** The outfall's own cell when it is river, else the nearest river cell (Euclidean cell distance, ties to the lower index). */
+export function nearestRiverCell(grid: Grid, cell: number): number {
+  if (grid.land[cell] === LandUse.RIVER) return cell;
+  const ci = cell % grid.nx;
+  const cj = Math.floor(cell / grid.nx);
+  let best = -1;
+  let bestD = Infinity;
+  for (let c = 0; c < grid.nx * grid.ny; c++) {
+    if (grid.land[c] !== LandUse.RIVER) continue;
+    const d = (c % grid.nx - ci) ** 2 + (Math.floor(c / grid.nx) - cj) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = c;
+    }
+  }
+  if (best < 0) throw new Error('No river cell for outfall');
+  return best;
 }
 
 /** Effective weir edge of a square grate (m), reduced by the blocked fraction. */
@@ -43,11 +59,11 @@ export function inletPerimeter(grateAreaM2: number, blockage = 0): number {
   return 4 * Math.sqrt(grateAreaM2) * (1 - Math.min(1, Math.max(0, blockage)));
 }
 
-/** Tay's Taman Kyra network on the grid; blockage maps inlet_id → blocked fraction. */
-export function buildNetwork(grid: Grid, blockage: Record<string, number> = {}): Network {
-  const inletByNode = new Map(ASSETS.inlets.map((i) => [i.node_id, i]));
-  const nodes: DrainNode[] = ASSETS.nodes.map((nd) => {
-    const p = toLocal(nd.position_m.x, nd.position_m.y);
+/** The site's drainage network on the grid (default Tay's Taman Kyra); blockage maps inlet_id → blocked fraction. */
+export function buildNetwork(grid: Grid, blockage: Record<string, number> = {}, site: SiteSpec = TAMAN_KYRA): Network {
+  const inletByNode = new Map(site.assets.inlets.map((i) => [i.node_id, i]));
+  const nodes: DrainNode[] = site.assets.nodes.map((nd) => {
+    const p = siteToLocal(site, nd.position_m.x, nd.position_m.y);
     const inlet = inletByNode.get(nd.node_id);
     return makeNode(grid, nd.node_id, p.x, p.y, {
       invert: nd.invert_elevation_m,
@@ -57,17 +73,18 @@ export function buildNetwork(grid: Grid, blockage: Record<string, number> = {}):
     });
   });
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const pipes: Pipe[] = ASSETS.conduits.map((cd) => {
+  const pipes: Pipe[] = site.assets.conduits.map((cd) => {
     const a = byId.get(cd.from_node_id)!;
     const b = byId.get(cd.to_node_id)!;
     return { id: cd.conduit_id, from: a.id, to: b.id, diameter: cd.diameter_m, length: cd.length_m, slope: (a.invert - b.invert) / cd.length_m, n: cd.manning_n };
   });
-  const outfall = nodes.find((n) => ASSETS.nodes.find((a) => a.node_id === n.id)!.node_type === 'outfall')!;
-  const lastPipe = pipes.find((p) => p.to === outfall.id)!;
-  return {
-    nodes,
-    pipes,
-    outfalls: [{ node: outfall.id, riverCell: outfall.cell, area: (Math.PI * lastPipe.diameter ** 2) / 4, flapGate: false }],
-    pumps: [],
-  };
+  const outfalls = site.assets.nodes
+    .filter((a) => a.node_type === 'outfall')
+    .map((a) => {
+      const node = byId.get(a.node_id)!;
+      const into = pipes.find((p) => p.to === node.id);
+      if (!into) throw new Error(`Outfall ${node.id} has no incoming pipe`);
+      return { node: node.id, riverCell: nearestRiverCell(grid, node.cell), area: (Math.PI * into.diameter ** 2) / 4, flapGate: false };
+    });
+  return { nodes, pipes, outfalls, pumps: [] };
 }
