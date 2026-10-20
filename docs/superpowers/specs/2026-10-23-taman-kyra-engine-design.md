@@ -227,3 +227,27 @@ The user chose to add catchment loading modelled on Tay's `models/illustrative_t
   - regenerate the effect badges.
 
   The same honesty rule applies.
+
+## 15. Amendment: grate capture for catchment runoff; drop flap gate and pump (2026-10-23)
+
+### Grate capture
+With §14, catchment runoff bypassed the grates, so `desilt-d07` had no effect. That contradicts the team model, whose T3 inlet capture limits what enters the sewer.
+
+Each catchment's released flow now passes through its outlet grate's capture curve, taken from Tay's `models/illustrative_taman_kyra/inlet_capture.json` (`capture_curve_m3s`: 80% of approach flow up to 0.20 m³/s).
+
+```
+captured = curve(Q) × (1 − blockage)
+bypass   = Q − captured
+```
+
+- The captured flow enters the node.
+- The bypass flow lands on the 2D street surface at the grate's cell, where it can pond, flow on, or reach other grates.
+- `blockage` is the inlet's blocked fraction. `desilt-d07` sets INLET-D07 to 0 for both the grate edge and its catchment capture.
+- **Engine change:** `Catchment` gains `captureCurve?` and `captureLoss?`. The release step applies them. Without a curve, behaviour is unchanged.
+
+### Interventions
+`flap-gate` and `pump` are removed from the Taman Kyra interventions. Under every storm and both tailwater cases they had zero effect: the canal is never the constraint, because P07 is the bottleneck.
+
+- The tailwater option stays in the engine (`normal`/`high`) for future use. Badges are computed for `normal` only.
+- The second combo becomes "Store the peak" = `storage-tank` + `lake-overflow`.
+- Retune within the existing bounds, then restore claim 2 (desilting helps; P07 still runs full) if it can be met honestly.

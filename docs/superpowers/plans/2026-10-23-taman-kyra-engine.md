@@ -1783,3 +1783,194 @@ git commit -m "feat(engine): SWMM-style catchment loading for Taman Kyra" -m "Ca
 git add packages/engine docs/tuning.md docs/swmm-crosscheck.md
 git commit -m "chore(engine): retune Taman Kyra with catchment loading; refresh badges and SWMM cross-check" -m "Reference results: EPA SWMM 5.2.4 run by Tay Zheheng (data/validation/t1)."
 ```
+
+---
+
+### Task 9: Grate capture for catchments; drop flap gate and pump (spec §15)
+
+**Files:**
+- Modify (authorised physics-core change): `packages/engine/src/sim/types.ts`, `packages/engine/src/sim/engine.ts`
+- Modify:
+  - `packages/engine/src/scenario/catchments.ts`, `packages/engine/src/scenario/index.ts`, `packages/engine/src/scenario/interventions.ts`;
+  - `packages/engine/scripts/computeEffects.ts`, `packages/engine/scripts/tune.ts`;
+  - `packages/engine/tests/sim/catchment.test.ts`, `packages/engine/tests/scenario/township.test.ts`, `packages/engine/tests/story.test.ts`, `packages/engine/tests/worker/liveSession.test.ts`;
+  - `apps/legacy/src/ui/catalog.ts`;
+  - `apps/legacy/tests/ui/catalog.test.ts`, `apps/legacy/tests/ui/effects.test.ts`, `apps/legacy/tests/ui/runner.test.ts`, `apps/legacy/tests/ui/selection.test.ts`.
+
+- [ ] **Step 1: Failing engine tests.** Append to `packages/engine/tests/sim/catchment.test.ts`:
+
+```ts
+describe('catchment grate capture', () => {
+  const capped = (loss: number): Scenario => {
+    const sc = withCatchment(makeScenario({ rainMmHr: 150 }));
+    return { ...sc, catchments: sc.catchments!.map((c) => ({ ...c, captureCurve: [[0, 0], [0.02, 0.01], [10, 0.01]] as Array<[number, number]>, captureLoss: loss })) };
+  };
+  it('limits what enters the node and puts the bypass on the street, conserving water', () => {
+    const free = peakLoad(withCatchment(makeScenario({ rainMmHr: 150 })));
+    const lim = runSimulation(capped(0));
+    expect(Math.max(...lim.frames.map((f) => f.pipeLoad[0]))).toBeLessThan(free);
+    expect(lim.metrics.balance.error).toBeLessThan(0.01);
+  });
+  it('a fully blocked grate sends everything to the street', () => {
+    const sc = capped(1);
+    const st = createEngine(sc);
+    for (let k = 0; k < 600; k++) stepEngine(sc, st);
+    expect(st.net.vol[0]).toBeLessThan(1e-6 + st.net.vmax[0]); // node only gets surface inlet water
+    expect(balanceError(sc, st).error).toBeLessThan(0.01);
+  });
+});
+```
+
+Run: `npm -w @floodops/engine exec vitest run tests/sim/catchment.test.ts`
+Expected: the first new test FAILs, because the curve is ignored and the peak load equals `free`.
+
+- [ ] **Step 2: Types.** In `packages/engine/src/sim/types.ts`, add these to `Catchment`:
+
+```ts
+  /** Optional capture curve [approach flow m3/s, captured m3/s] (linear interpolation, flat beyond the last point). */
+  captureCurve?: Array<[number, number]>;
+  /** Blocked fraction of the outlet grate (0..1); captured = curve(Q) × (1 − captureLoss). */
+  captureLoss?: number;
+```
+
+- [ ] **Step 3: Engine.** In `packages/engine/src/sim/engine.ts`:
+
+  1. Add the module-level helper:
+
+```ts
+function interpCurve(curve: Array<[number, number]>, x: number): number {
+  if (x <= curve[0][0]) return curve[0][1];
+  for (let i = 1; i < curve.length; i++) {
+    if (x <= curve[i][0]) {
+      const [x0, y0] = curve[i - 1];
+      const [x1, y1] = curve[i];
+      return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0);
+    }
+  }
+  return curve[curve.length - 1][1];
+}
+```
+
+  2. Replace the catchment release loop body with:
+
+```ts
+    for (let k = 0; k < cats.length; k++) {
+      const ct = cats[k];
+      const q = st.catchStore[k] * (1 - Math.exp(-dt / ct.lagS)); // m3 released this step
+      if (!(q > 0)) continue;
+      st.catchStore[k] -= q;
+      const j = st.net.index.get(ct.node);
+      const rate = q / dt;
+      const capturedRate = ct.captureCurve ? Math.min(rate, interpCurve(ct.captureCurve, rate)) * (1 - (ct.captureLoss ?? 0)) : rate;
+      const captured = j === undefined ? 0 : capturedRate * dt;
+      const bypass = q - captured;
+      if (j !== undefined) st.net.vol[j] += captured;
+      if (bypass > 0) st.surf.h[j === undefined ? ct.cells[0] : sc.network.nodes[j].cell] += bypass / area;
+    }
+```
+
+Run the catchment tests: PASS, 6 tests. Run `npm -w @floodops/engine test`: green.
+
+- [ ] **Step 4: Scenario capture and effective blockage.**
+
+In `packages/engine/src/scenario/catchments.ts`:
+- import `capture from '../../../../models/illustrative_taman_kyra/inlet_capture.json'` and `ASSETS` from `./layout`;
+- change the signature to `buildCatchments(grid: Grid, blockage: Record<string, number> = {})`;
+- in each returned catchment add:
+
+```ts
+      captureCurve: (capture as unknown as { capture_curve_m3s: Array<[number, number]> }).capture_curve_m3s,
+      captureLoss: blockage[ASSETS.inlets.find((i) => i.node_id === s.outlet_node_id)?.inlet_id ?? ''] ?? 0,
+```
+
+In `packages/engine/src/scenario/index.ts`, add:
+
+```ts
+/** Blocked fractions after interventions (desilting clears INLET-D07 for both the grate and its catchment). */
+export function effectiveBlockage(ids: readonly InterventionId[], opts: ScenarioOptions = {}): Record<string, number> {
+  const b = { ...(opts.blockage ?? BASELINE_BLOCKAGE) };
+  if (ids.includes('desilt-d07')) b['INLET-D07'] = 0;
+  return b;
+}
+```
+
+and in `buildScenario` use `catchments: opts.catchments === false ? undefined : buildCatchments(grid, effectiveBlockage(ids, opts)),`.
+
+- [ ] **Step 5: Drop the flap gate and pump.**
+
+`packages/engine/src/scenario/interventions.ts`:
+- remove `'flap-gate'` and `'pump'` from `InterventionId`;
+- remove their two entries from `INTERVENTIONS`;
+- remove the now-unused `PUMP` import.
+
+Keep `PUMP` in `config.ts` only if something else uses it; otherwise delete it.
+
+`packages/engine/scripts/computeEffects.ts`: delete the `high` block from `EFFECT_MATRIX`, so it has a single `normal` entry. Keep the `Effects` type with both keys, so `out` still initialises `{ normal: {}, high: {} }`.
+
+`packages/engine/scripts/tune.ts`: remove the flap-gate and pump rows, and the high-tailwater rows that use them. Keep the high-tailwater baseline row for reference.
+
+Engine tests:
+
+| File | Change |
+|---|---|
+| `township.test.ts` | Remove the flap-gate and pump `expect` lines from "applies each intervention". |
+| `liveSession.test.ts` | Replace `['flap-gate']` with `['desilt-d07']`, and `['pump']` with `['upsize-p07']`. |
+| `story.test.ts` | Remove the `highFlap` and `highPump` runs, and any reference to them. |
+
+Legacy:
+- **`apps/legacy/src/ui/catalog.ts`:**
+  - remove the `flap-gate` and `pump` `DISPLAY` entries, and the `OUT01` constant if it's now unused;
+  - set `COMBOS` to:
+
+```ts
+export const COMBOS: Combo[] = [
+  { label: 'Combined desilt + upsize', hint: 'team option 3', ids: ['desilt-d07', 'upsize-p07'] },
+  { label: 'Store the peak', hint: 'tank + lake', ids: ['storage-tank', 'lake-overflow'] },
+];
+```
+
+- **`catalog.test.ts`:**
+  - the combos expectation becomes `[['desilt-d07', 'upsize-p07'], ['storage-tank', 'lake-overflow']]`;
+  - in the node-pin test, replace `['flap-gate', 'NODE-OUT01']` and `['pump', 'NODE-J08']` with `['desilt-d07', 'NODE-J07']` only.
+- **`selection.test.ts`:**
+  - in the label test, use `'storage-tank'`, expecting `['+ tank', '− tank']`;
+  - replace other uses of `'flap-gate'` and `'pump'` with `'storage-tank'` and `'lake-overflow'`. Expected order follows `INTERVENTIONS`: `['desilt-d07', 'upsize-p07', 'storage-tank', 'lake-overflow']`.
+- **`effects.test.ts`:** iterate over the 4 remaining IDs, and drop the high-tailwater `flap-gate` assertion.
+- **`runner.test.ts`:** build the 7 distinct LRU keys from the 4 interventions × 2 constant storms, taking the first 7.
+
+  ```ts
+  const keys: Array<[InterventionId[], StormId]> = (['desilt-d07', 'upsize-p07', 'storage-tank', 'lake-overflow'] as InterventionId[])
+    .flatMap((id) => (['synthetic_80mmh_60min', 'synthetic_120mmh_60min'] as StormId[]).map((s): [InterventionId[], StormId] => [[id], s]))
+    .slice(0, 7);
+  ```
+
+  Replace other uses of `'flap-gate'` and `'pump'` with `'desilt-d07'` and `'upsize-p07'`.
+
+- [ ] **Step 6: Verify and commit.** Run `npm test`, `npm -w @floodops/engine run typecheck` and `npm -w legacy run typecheck`. All must be green; the slow suites change in Task 10.
+
+```bash
+git add packages/engine apps/legacy
+git commit -m "feat(engine): route catchment runoff through grate capture; drop flap gate and pump" -m "Capture curve from models/illustrative_taman_kyra/inlet_capture.json by Tay Zheheng."
+```
+
+---
+
+### Task 10: Retune; restore claim 2; badges (spec §15)
+
+**Files:** `packages/engine/src/scenario/config.ts` (tunables only), `packages/engine/tests/story.test.ts`, `packages/engine/src/scenario/effects.json`, `docs/tuning.md`, `docs/swmm-crosscheck.md`
+
+- [ ] **Step 1:** Re-add claim 2 to `tests/story.test.ts` exactly as in Task 2 Step 9 ("desilting D07 helps but P07 still runs full").
+- [ ] **Step 2: Retune.**
+  - Tune within the Task 4, Task 4b (`FUNNEL`) and `CATCHMENT.lagS` bounds until claims 1, 2, 3, 4, 6 and 7 pass.
+  - Claim 1 previously had only a 5 mm margin; prefer settings that give it a safer margin.
+  - Same honesty rule: if a claim can't be met, remove it and document why.
+- [ ] **Step 3: Cross-check.** Re-run the SWMM cross-check (report-only unless it now passes enforced; never change tolerances). It regenerates `docs/swmm-crosscheck.md`.
+- [ ] **Step 4: Badges.** Run `npm run effects`, then the drift test, both in the background.
+- [ ] **Step 5: Record and commit.**
+  - Add a "Pass 4: grate capture, flap gate and pump dropped" section to `docs/tuning.md`.
+  - Run `npm test`, which must be green.
+
+```bash
+git add packages/engine docs/tuning.md docs/swmm-crosscheck.md
+git commit -m "chore(engine): retune Taman Kyra with grate capture; refresh badges" -m "Reference results: EPA SWMM 5.2.4 run by Tay Zheheng (data/validation/t1)."
+```
