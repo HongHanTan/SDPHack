@@ -5,12 +5,18 @@ Sime Darby Property University Hackathon 2026 — Theme: PLANET (Climate Resilie
 A browser-based 3D what-if tool: apply candidate drainage interventions to a township, run an MSMA-style
 design storm, and compare flood depth, homes flooded, time-to-passable and indicative cost against the baseline.
 
+## Modes
+
+- **Live:** the storm plays continuously at ½–4×; switching interventions or drawing pipes changes the flood in place.
+- **Compare:** fair baseline vs scenario runs with cost.
+
 ## Run
 
     npm install
     npm run dev        # http://localhost:5173
     npm test           # unit tests
-    npm run story      # demo-story acceptance checks (~5 min)
+    npm run story      # demo-story + effects drift checks (~15 min)
+    npm run effects    # regenerate intervention effect badges (~9 min)
     npm run tune       # metrics table for all presets
     npm run build      # static site in dist/
 

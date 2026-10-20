@@ -19,7 +19,8 @@ export function renderAssumptions(el: HTMLElement): void {
     ['Outfall', `Orifice Cd = ${ORIFICE_CD}`],
     ['River stage', RIVER_STAGE.times.map((t, k) => `${t / 60} min: ${RIVER_STAGE.levels[k]} m`).join(' · ')],
     ['Flood thresholds', `road ${THRESHOLDS.road} m, home ${THRESHOLDS.home} m`],
-    ['Costs', 'Indicative placeholders — replace with SDP quantity-surveyor rates.'],
+    ['Live mode', 'Changes made mid-storm are applied in place (water kept where it is); use Compare for fair before/after numbers. Effect badges are pre-computed single-intervention runs (npm run effects).'],
+    ['Costs','Indicative placeholders — replace with SDP quantity-surveyor rates.'],
   ];
   el.innerHTML = `<h2>Assumptions</h2><table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>`;
 }
