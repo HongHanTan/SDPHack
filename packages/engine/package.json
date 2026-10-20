@@ -1,0 +1,26 @@
+{
+  "name": "@floodops/engine",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./scenario/effects.json": "./src/scenario/effects.json",
+    "./sim/*": "./src/sim/*.ts",
+    "./scenario/*": "./src/scenario/*.ts",
+    "./worker/*": "./src/worker/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run --exclude tests/story.test.ts --exclude tests/effects.drift.test.ts",
+    "story": "vitest run tests/story.test.ts tests/effects.drift.test.ts",
+    "effects": "tsx scripts/effects.ts",
+    "tune": "tsx scripts/tune.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "vite": "^6.1.2",
+    "vitest": "^2.1.4"
+  }
+}

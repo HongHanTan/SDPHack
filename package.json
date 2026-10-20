@@ -1,27 +1,15 @@
 {
-  "name": "township-flood-sim",
+  "name": "township-floodops",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "overrides": { "vite": "^6.1.2" },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "test": "vitest run --exclude tests/story.test.ts --exclude tests/effects.drift.test.ts",
-    "story": "vitest run tests/story.test.ts tests/effects.drift.test.ts",
-    "effects": "tsx scripts/effects.ts",
-    "tune": "tsx scripts/tune.ts"
-  },
-  "dependencies": {
-    "three": "^0.169.0",
-    "uplot": "^1.6.31"
-  },
-  "devDependencies": {
-    "@types/node": "^22.9.0",
-    "@types/three": "^0.169.0",
-    "tsx": "^4.19.2",
-    "typescript": "^5.6.3",
-    "vite": "^5.4.10",
-    "vitest": "^2.1.4"
+    "test": "npm -w @floodops/engine test && npm -w legacy test",
+    "story": "npm -w @floodops/engine run story",
+    "effects": "npm -w @floodops/engine run effects",
+    "tune": "npm -w @floodops/engine run tune",
+    "dev:web": "npm -w township-floodops-web run dev",
+    "dev:legacy": "npm -w legacy run dev",
+    "build": "npm -w legacy run build && npm -w township-floodops-web run build"
   }
 }

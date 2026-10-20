@@ -1,0 +1,25 @@
+{
+  "name": "legacy",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@floodops/engine": "*",
+    "three": "^0.170.0",
+    "uplot": "^1.6.31"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/three": "^0.170.0",
+    "typescript": "^5.6.3",
+    "vite": "^6.1.2",
+    "vitest": "^2.1.4"
+  }
+}
