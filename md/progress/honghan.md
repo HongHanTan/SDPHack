@@ -130,3 +130,5 @@ Plan: `docs/superpowers/plans/2026-10-23-taman-kyra-engine.md`
 |---|---|---|
 | P5-7 | SWMM-style catchment loading (engine + scenario) | ✅ done (9de10df) — note: J02 catchment only 0.59 ha (grid edge) |
 | P5-8 | Retune with catchments; restore claims; cross-check; badges | ✅ done (3cfa486) — claims 1,3,4,6,7 pass; 2 (desilt) & 5 (tailwater) removed; cross-check report-only |
+| P5-9 | Grate capture for catchments; drop flap gate and pump | ✅ done (1796ac6) |
+| P5-10 | Retune; restore claim 2; badges | ✅ done (b1611f7) — claims 1,3,4,6,7 pass (homes margin 39 mm); claim 2 stays removed (desilt alone ≈ 0 while P07 saturated) |
