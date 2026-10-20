@@ -1,95 +1,122 @@
-# Taman Kyra tuning log (Task 4)
+# Taman Kyra tuning log (Tasks 4 and 4b)
 
 Date: 2026-10-20. Storm: `synthetic_80mmh_60min` (constant 80 mm/h, 60 min, plus 3600 s recession).
 Town: Taman Kyra (network from `data/synthetic/taman_kyra_assets.json` by Tay Zheheng; layout from
 `data/synthetic/taman_kyra_layout.json`, derived from Jiajie's scene). Baseline blockage `INLET-D07` 40 %.
-This replaces the pass-2 log for the classic synthetic township.
 
-**Outcome:** the demo story can't be reached within the allowed tunables. Claims 1–6 are removed from
-`packages/engine/tests/story.test.ts`. Only claim 7 (water balance) is kept, and it passes. The config is left at the Task 2
-defaults: no tunable moved any of the failing claims (see the sweeps below). The cause is structural (§ Root cause),
-so it has to be fixed outside this task's bounds.
+**Outcome (pass 2):** with the spec §13 terrain redesign and one tuned value (`FUNNEL.radius` 18 → 30 m), claims 2, 3, 4,
+6 and 7 pass. Claim 1 (it needs ≥ 2 homes flooded) and the restated claim 5 (J08 under high tailwater) can't be met within
+the tunables, so their `it(...)` blocks are removed from `packages/engine/tests/story.test.ts` (§ Story claims).
 
-## Final `npm run tune` table
+## Pass 1 (Task 4, IDW terrain): summary
 
-| scenario | J07 peak (m) | homes | road area (m²) | P07 max load | balance % | run (s) |
-|---|---|---|---|---|---|---|
-| baseline | 0.203 | 0 | 4 | 0.713 | 0.000 | 29.5 |
-| desilt-d07 | 0.130 | 0 | 0 | 0.713 | 0.000 | 30.3 |
-| upsize-p07 | 0.203 | 0 | 4 | 0.393 | 0.000 | 23.5 |
-| flap-gate | 0.203 | 0 | 4 | 0.713 | 0.000 | 26.2 |
-| storage-tank | 0.203 | 0 | 4 | 0.711 | 0.000 | 30.9 |
-| lake-overflow | 0.203 | 0 | 4 | 0.713 | 0.000 | 29.6 |
-| pump | 0.203 | 0 | 4 | 0.713 | 0.000 | 29.8 |
-| desilt + upsize | 0.130 | 0 | 0 | 0.393 | 0.000 | 29.5 |
-| high: baseline | 0.203 | 0 | 4 | 0.713 | 0.000 | 26.1 |
-| high: flap-gate | 0.203 | 0 | 4 | 0.713 | 0.000 | 25.2 |
-| high: pump | 0.203 | 0 | 4 | 0.713 | 0.000 | 23.8 |
+With the IDW ground surface, no tunable moved any failing claim, so only claim 7 was kept. The causes were structural:
+- IDW has zero gradient at each data point, so grates D01, D02 and D04 sat on flat-topped peaks and caught only the rain
+  falling on their own cells. P01–P06 carried about nothing.
+- The J07 inflow peaked at about 0.39 m³/s against P07's 0.549 m³/s, so P07's max load was 0.71 and J07 never surcharged.
+  Upsize gave exactly the baseline, and the tank and lake (fed from dry J05 and J04) were dead toggles.
+- OUT01 sat in the canal with the 0.3 m chamber floor (head ≤ 8.5 m), so under the 9.4 m stage P08 stopped completely.
+  J08 spilled onto its street and J07 was unaffected.
 
-**Runtime:** 24–31 s per run, single-threaded on the dev laptop. The story test's 9 runs take about 4–5 min.
+That led to the spec §13 amendment: a least-squares plane surface, a grate funnel at every inlet, and OUT01's asset
+chamber depth (2.0 m).
 
-## Config changes
+## Pass 2 (Task 4b): final `npm run tune` table
 
-None. Every value in `packages/engine/src/scenario/config.ts` stays at its Task 2 default (`DIP` 30 m / 0.5 m,
-`INLET_SUMP` 0.1, `LAKE`, `CANAL`, `TANK`, `PUMP`, `LAKE_OVERFLOW`, `HOUSE`). The sweeps below show that no in-bounds value
-changes the outcome of any claim. So moving them would only add churn that a later fix would have to undo.
-
-## Root cause
-
-1. **Only J07 sees water.**
-   - Surface water enters the network only through the four asset grates: D01 at J01, D02 at J02, D04 at J04, and D07 at J07.
-   - Ground is IDW (power 2) of the node ground levels. IDW has zero gradient at each data point, and J01 (12.2), J02 (12.1) and J04 (12.0) are the highest nodes. So their grate cells sit on flat-topped peaks.
-   - In the baseline, the peak depth on the D01, D02 and D04 cells is 0.002 m: only rain falling straight onto the sump.
-   - P01–P06 carry about 0 m³/s; P05's max load is 0.00.
-   - Tay's SWMM model routes subcatchment runoff straight to the nodes, which our 2-D surface doesn't do.
-2. **J07 can't fill P07.**
-   - Overland flow reaching the J07 cell peaks at about 0.39 m³/s. P07's capacity is 0.549 m³/s, so its max load is 0.71.
-   - Even the 40 %-blocked D07 grate takes almost all of it. The J07 dip never fills: 0.20 m is mostly the 0.1 m sump plus the kerb drop. So no water ponds near the houses.
-   - J07 never surcharges, which leaves upsizing P07 with nothing to relieve. Upsize gives the baseline result exactly, and combined gives the desilt result exactly.
-3. **A blocked outfall doesn't back up to J07.**
-   - OUT01 sits inside the canal (bed 7.6), so its `maxDepth` is the 0.3 m floor and its head is at most 8.5 m. Under the 9.4 m high stage it can never discharge, with or without the flap gate, and P08 stops.
-   - Capacity routing in `src/sim/pipes.ts` lets J08 accept P07's flow and spill the excess onto the street at J08, beside the canal. So J07 is unchanged under high tailwater, and the flap gate and the pump can't lower it.
-4. **The tank and lake overflow are dead toggles.** They are fed from J05 and J04, which carry no flow (point 1).
-
-## Sweeps (iteration log)
-
-Diagnostic scripts ran single scenarios with config overrides applied in-process. `INLET_SUMP` was applied by re-cutting the grate cells.
-
-| # | Change | baseline J07 / P07 load | desilt J07 / P07 | upsize J07 | comb J07 | homes | note |
+| scenario | J07 peak (m) | J08 peak (m) | homes | road area (m²) | P07 max load | balance % | run (s) |
 |---|---|---|---|---|---|---|---|
-| 0 | Task 2 defaults | 0.203 / 0.71 | 0.130 / 0.71 | 0.203 | 0.130 | 0 | P05 = P06 = 0; high tailwater, flap gate and pump all equal 0.203 |
-| 1 | DIP 1.0 m × 35 m, HOUSE +20 % | 0.208 / 0.74 | 0.134 / 0.74 | 0.208 | 0.134 | 0 | max house depth 0.01 m |
-| 2 | as 1, INLET_SUMP 0.25 | 0.212 / 0.75 | 0.136 / 0.75 | 0.212 | 0.136 | 0 | the deeper sump doesn't widen the catchment |
-| 3 | DIP 1.0 m × 30 m, HOUSE +20 % | 0.206 / 0.73 | 0.132 / 0.73 | 0.206 | 0.132 | 0 | |
-| 4 | DIP 1.0 m × 45 m, HOUSE +20 % (upper bounds) | 0.216 / 0.79 | 0.138 / 0.79 | 0.216 | 0.138 | 0 | best J07 supply: 0.44 m³/s, still < 0.549 |
-| 5 | DIP 1.0 m × 45 m, HOUSE +20 %, INLET_SUMP 0.25 | 0.220 / 0.80 | 0.140 / 0.80 | 0.220 | 0.140 | 0 | |
+| baseline | 0.296 | 0.000 | 0 | 340 | 1.000 | 0.000 | 14.4 |
+| desilt-d07 | 0.274 | 0.000 | 0 | 260 | 1.000 | 0.000 | 14.1 |
+| upsize-p07 | 0.187 | 0.000 | 0 | 4 | 0.573 | 0.000 | 14.1 |
+| flap-gate | 0.296 | 0.000 | 0 | 340 | 1.000 | 0.000 | 13.8 |
+| storage-tank | 0.187 | 0.000 | 0 | 4 | 0.690 | 0.000 | 14.2 |
+| lake-overflow | 0.187 | 0.000 | 0 | 4 | 0.945 | 0.000 | 14.3 |
+| pump | 0.296 | 0.000 | 0 | 340 | 1.000 | 0.000 | 15.9 |
+| desilt + upsize | 0.121 | 0.000 | 0 | 0 | 0.573 | 0.000 | 14.0 |
+| high: baseline | 0.296 | 0.000 | 0 | 340 | 1.000 | 0.000 | 14.4 |
+| high: flap-gate | 0.296 | 0.000 | 0 | 340 | 1.000 | 0.000 | 14.0 |
+| high: pump | 0.296 | 0.000 | 0 | 340 | 1.000 | 0.000 | 14.0 |
 
-Static fill-and-spill analysis (priority-flood to the canal) agrees:
-- the deepest in-bounds dip, 1.0 m × 35 m with houses +20 %, would put at most 0.34 m (H23) and 0.29 m (H24) on house footprints, and only if the 727 m³ dip filled to its spill level;
-- the dynamic runs never fill it, because D07 drains the dip faster than it fills.
+**Runtime:** 14–16 s per run (single-threaded, dev laptop; pass 1 measured 24–31 s). The story test's 9 runs take about 2 min (117 s).
 
-`CANAL.bedZ`, `LAKE`, `TANK`, `PUMP.rate` and `LAKE_OVERFLOW.diameter` can't help:
-- OUT01's head stays capped at invert + 0.3 m for any `bedZ` from 7.0 to 8.2;
-- the tank and lake are fed by dry nodes;
-- the pump only lowers the J08 spill.
+## Config changes (pass 2)
 
-## Story claims dropped
-
-| # | Claim | Result | Why it can't be met |
+| Value | Old | New | Why |
 |---|---|---|---|
-| 1 | baseline J07 ≥ 0.15 m and ≥ 2 homes | 0.203 m ✓, 0 homes ✗ | no ponding reaches any footprint (max 0.01 m); root cause 1–2 |
-| 2 | desilt lowers J07, P07 ≥ 0.99 | 0.130 < 0.203 ✓, P07 0.71 ✗ | J07 inflow ≤ 0.44 m³/s even at tunable bounds |
-| 3 | upsize lowers J07 | 0.203 = 0.203 ✗ | P07 never runs full in the baseline |
-| 4 | combined beats each alone | 0.130 = desilt ✗ (< upsize ✓) | same as 3 |
-| 5 | high tailwater: flap gate and pump each lower J07 | all 0.203 ✗ | outfall blockage spills at J08, not J07 (root cause 3) |
-| 6 | tank and lake change J07 by ≥ 0.03 m | Δ 0.000 ✗ | fed from dry J05 and J04 (root cause 4) |
-| 7 | water balance < 1 % | 0.000 % on all 9 runs ✓ | **kept** |
+| `FUNNEL` (new, spec §13) | — | `{ radius: 18, depth: 0.3 }` | spec default |
+| `FUNNEL.radius` | 18 m | 30 m | At 18 m the upstream funnels gather too little: J07's inflow only just reaches P07's capacity (max load 0.99, J07 node fill 0.08), so J07 never surcharges and upsize, tank and lake change nothing. At 30 m, D01, D02 and D04 capture about 30 % more (0.18 → 0.23 m³/s together), P05 rises from 0.35 to 0.45 load, and J07 surcharges (node fill 0.86). |
 
-Claims 1 and 2 each contain a sub-assertion that holds (J07 ≥ 0.15 m; desilt lowers J07). They were removed with
-their `it(...)` blocks, as the plan requires. They could come back as separate tests if wanted.
+All other values stay at their Task 2 defaults: `DIP` 30 m / 0.5 m, `INLET_SUMP` 0.1, `LAKE`, `CANAL`, `TANK`, `PUMP`,
+`LAKE_OVERFLOW` and `HOUSE`. `FUNNEL.depth` stays at 0.3 m because 0.6 m gives the same pass/fail outcome (sweep A below).
 
-## Suggested fixes (outside Task 4's bounds)
+Scenario-layer changes (spec §13, not tunables): the IDW surface is replaced by the least-squares plane through the 9 node
+ground levels, every asset grate gets a `FUNNEL` bowl, and NODE-OUT01 keeps its asset `max_depth_m` (2.0 m).
 
-- Route each node's subcatchment runoff into the node, as Tay's SWMM model does. Alternatively, place the grates at low points of the ground: cut a local dip under every inlet, not only J07, or replace IDW with a surface that drains toward the grates. This feeds J05/P05, so P07 can surcharge, which revives claims 2–4 and 6.
-- Have a full outfall back water up to J07. Today `routePipes` checks P07 against J08's outflow before P08 itself is throttled, so J08 overfills and spills. Fixing this needs a physics-core change, or a scenario-level redesign such as OUT01 outside the canal with a real `maxDepth`. It would revive claim 5.
-- Then re-tune `DIP` and `HOUSE` for claim 1's homes.
+## Iteration log (pass 2)
+
+Diagnostic runs applied config overrides in-process, one scenario per process. "fill" is J07's max node fill.
+
+| # | Change (from the §13 defaults) | base J07 | desilt | upsize | comb | tank | lake | P07 base / desilt | J07 fill | J08 (all runs) | max house depth |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | §13 defaults, `FUNNEL` 18 m × 0.3 m | 0.196 | 0.126 | 0.196 | 0.126 | 0.196 | 0.196 | 0.99 / 0.99 | 0.08 | 0.000 | 0.00 |
+| 1 | `FUNNEL` 30 × 0.1 | 0.193 | | | | | | 0.98 | 0.07 | | |
+| 2 | `FUNNEL` 8 × 0.6 | 0.200 | | | | | | 0.96 | 0.09 | | |
+| 3 | `FUNNEL` 18 × 0.6 | 0.195 | | | | | | 0.99 | 0.11 | | |
+| 4 | `FUNNEL` 24 × 0.45 | 0.257 | | | | | | 1.00 | 0.83 | | |
+| 5 (A) | `FUNNEL` 30 × 0.6 | 0.333 | 0.314 | 0.186 | 0.120 | 0.186 | 0.186 | 1.00 / 1.00 | 0.82 | 0.000 | 0.00 |
+| **6 (B, chosen)** | **`FUNNEL` 30 × 0.3** | **0.296** | **0.274** | **0.187** | **0.121** | **0.187** | **0.187** | **1.00 / 1.00** | **0.86** | **0.000** | **0.01** |
+
+Sweep for claim 1's homes (on A, `FUNNEL` 30 × 0.6, baseline only). HOUSE "+20 %" area is ×1.095 per side; ×1.2 per
+side is the most generous reading of the bound.
+
+| `DIP` (depth × radius) | `HOUSE` | J07 | max house depth | homes |
+|---|---|---|---|---|
+| 0.5 × 30 (default) | default | 0.333 | 0.00 | 0 |
+| 0.6 × 40 | default / +20 % area | 0.390 / 0.409 | 0.00 / 0.01 (H23) | 0 |
+| 0.8 × 35 | default / +20 % area | 0.384 / 0.406 | 0.00 / 0.00 | 0 |
+| 0.8 × 45 | default / +20 % area | 0.436 / 0.453 | 0.00 / 0.04 (H23) | 0 |
+| 1.0 × 30 | default / +20 % area | 0.382 / 0.410 | 0.00 / 0.00 | 0 |
+| 1.0 × 38 | default / +20 % area | 0.416 / 0.438 | 0.00 / 0.00 | 0 |
+| 1.0 × 45 | default / +20 % area | 0.452 / 0.471 | 0.00 / 0.03 (H23) | 0 |
+| 1.0 × 45 (all upper bounds) | ×1.2 per side | 0.490 | 0.09 (H23) | 0 |
+
+Sweep for claim 5 (on B, high tailwater): `CANAL.bedZ` 7.0 and 8.2 give identical results (J08 0.000, OUT01 max fill
+0.64). Upsizing P07 under high tailwater, which delivers the most water to J08, also leaves J08 dry (OUT01 fill 0.58).
+
+Static fill-and-spill check (priority-flood to the canal and the grid edge):
+- With A, the J07 bowl spills at 10.76 m. Filled to that level, it would put 0.36 m on H23.
+- With all upper bounds, H23 would get up to 0.86 m.
+- The dynamic runs never fill the bowl. D07 and the surcharged J07 drain it while the storm feeds it, so the pond peaks
+  at about 9.84 m. H23's lowest footprint cell is 9.77 m, and a home needs 0.3 m.
+
+## Story claims
+
+| # | Claim | Result (final config) | Status |
+|---|---|---|---|
+| 1 | baseline J07 ≥ 0.15 m and ≥ 2 homes | J07 0.296 m ✓, 0 homes ✗ | **removed**: homes unreachable (sweep above); the J07 half holds |
+| 2 | desilt lowers J07, P07 still ≥ 0.99 | 0.274 < 0.296 ✓, P07 1.000 ✓ | kept, passes |
+| 3 | upsize lowers J07 | 0.187 < 0.296 ✓ | kept, passes |
+| 4 | combined beats each alone | 0.121 < 0.274 and < 0.187 ✓ | kept, passes |
+| 5 | high tailwater raises J08; flap gate and pump each lower it | J08 0.000 in all three runs ✗ | **removed**: see below |
+| 6 | tank and lake each change J07 by ≥ 0.03 m | tank Δ 0.109 ✓, lake Δ 0.109 ✓ | kept, passes |
+| 7 | water balance < 1 % | 0.000 % on all 9 runs ✓ | kept, passes |
+
+**Why claim 5 can't be met.** The restated claim needs NODE-J08 to surcharge onto its street under the 9.4 m stage, which
+needs P08 to be throttled by OUT01:
+- In capacity routing, P08 is throttled only when OUT01 lacks free storage. With the 2.0 m chamber, OUT01 discharges
+  0.6 · A(Ø750) · √(2g·ΔH), up to about 1.05 m³/s at the 9.4 m stage (ΔH ≤ 0.8 m). That is above P08's own full-bore
+  capacity (0.996 m³/s).
+- J08's only inflow is P07, at most 0.549 m³/s (asset Ø600). OUT01 passes that at a head of about 9.62 m, below its 10.2 m crown (the observed
+  max fill is 0.64), so P08 is never throttled and J08 never spills.
+- The J08 street cell stays dry (peak < 0.5 mm) in every run, so neither the high stage nor the flap gate or pump can
+  change it.
+- With a constant stage and one-way pipe routing, the flap gate only stops the one-off backflow that fills OUT01 to
+  9.4 m. It can't change any steady-flow peak.
+- No tunable changes this. `CANAL.bedZ` only sets the river cell depth (backflow supply), `PUMP.rate` can only lower J08,
+  and the tank's Ø150 release adds too little. A fix would need a physics-core change (head-driven pipe flow) or a
+  different outfall design (e.g. a smaller orifice), both outside Task 4b.
+
+**Why claim 1's homes can't be met.** See the homes sweep: even at every upper bound, the J07 pond leaves at most 0.09 m
+on a footprint. Unlike pass 1, the bowl is now deep enough (static spill 0.36–0.86 m on H23), but an 80 mm/h, 60-minute
+storm doesn't supply enough surplus over P07's capacity and D07's draw to fill it. Claim 1's other assertion (J07 ≥ 0.15
+m) holds and could come back as its own test.

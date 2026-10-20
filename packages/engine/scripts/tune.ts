@@ -1,8 +1,12 @@
 import { buildScenario, type ScenarioOptions } from '../src/scenario/index';
 import { INTERVENTIONS, type InterventionId } from '../src/scenario/interventions';
+import { nodeSite } from '../src/scenario/network';
+import { cellAt } from '../src/scenario/terrain';
 import { runSimulation } from '../src/sim/engine';
 
 const STORM = 'synthetic_80mmh_60min';
+const j08 = nodeSite('NODE-J08');
+const j08Cell = cellAt(j08.x, j08.y);
 
 const combos: Array<[string, InterventionId[], ScenarioOptions]> = [
   ['baseline', [], {}],
@@ -25,6 +29,7 @@ const rows = combos
     return {
       scenario: name,
       'J07 peak (m)': m.peakSagDepth.toFixed(3),
+      'J08 peak (m)': m.peakDepth[j08Cell].toFixed(3),
       homes: m.homesFlooded,
       'road area (m²)': m.floodedRoadArea,
       'P07 max load': p07Max.toFixed(3),

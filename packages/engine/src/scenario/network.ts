@@ -52,6 +52,8 @@ export function buildNetwork(grid: Grid, blockage: Record<string, number> = {}):
     return makeNode(grid, nd.node_id, p.x, p.y, {
       invert: nd.invert_elevation_m,
       inletPerimeter: inlet ? inletPerimeter(inlet.grate_area_m2, blockage[inlet.inlet_id] ?? 0) : 0,
+      // The outfall headwall chamber keeps its asset depth, so canal backflow can fill it and throttle P08.
+      ...(nd.node_type === 'outfall' ? { maxDepth: nd.max_depth_m } : {}),
     });
   });
   const byId = new Map(nodes.map((n) => [n.id, n]));

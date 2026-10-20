@@ -11,6 +11,8 @@ export const LAKE = { bedZ: 9.2, waterLevel: 9.8, parkMargin: 12, liveRise: 1.0 
 export const CANAL = { bedZ: 7.6 };
 /** Shallow bowl at the J07 junction so street water gathers there. Tunable. */
 export const DIP = { radius: 30, depth: 0.5 };
+/** Shallow bowl around every grate so street water drains to it (D07 additionally sits in DIP). Tunable. */
+export const FUNNEL = { radius: 30, depth: 0.3 };
 /** Gully sump: each grate cell sits this far below the street. */
 export const INLET_SUMP = 0.1;
 export const COVER = 1.5; // m, default cover for nodes added by interventions

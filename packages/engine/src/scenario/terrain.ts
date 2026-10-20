@@ -1,5 +1,5 @@
 import { LandUse, type Grid } from '../sim/types';
-import { CANAL, DIP, GRID, HOUSE, INFILTRATION_MMHR, INLET_SUMP, LAKE, MMHR, ROAD_DROP } from './config';
+import { CANAL, DIP, FUNNEL, GRID, HOUSE, INFILTRATION_MMHR, INLET_SUMP, LAKE, MMHR, ROAD_DROP } from './config';
 import { ASSETS, LAYOUT, toLocal } from './layout';
 
 /** Cell index for grid-local metres (clamped to the grid). */
@@ -29,7 +29,7 @@ function inRect(x: number, y: number, cx: number, cy: number, length: number, wi
   return Math.abs(along) <= length / 2 && Math.abs(across) <= width / 2;
 }
 
-/** Taman Kyra ground: IDW of the 9 asset ground levels, then roads, houses, pond, canal and the J07 dip. */
+/** Taman Kyra ground: a least-squares plane through the 9 asset ground levels, grate funnels, the J07 dip, then roads, houses, pond and canal. */
 export function buildTerrain(): Grid {
   const { nx, ny, dx } = GRID;
   const n = nx * ny;
@@ -39,18 +39,22 @@ export function buildTerrain(): Grid {
   const building = new Int32Array(n).fill(-1);
   const h0 = new Float32Array(n);
 
-  const ground = ASSETS.nodes.map((nd) => ({ ...toLocal(nd.position_m.x, nd.position_m.y), g: nd.ground_elevation_m }));
-  const idw = (x: number, y: number) => {
-    let s = 0;
-    let w = 0;
-    for (const p of ground) {
-      const d2 = (x - p.x) ** 2 + (y - p.y) ** 2;
-      if (d2 < 1e-6) return p.g;
-      s += p.g / d2;
-      w += 1 / d2;
-    }
-    return s / w;
-  };
+  // Least-squares plane z = a + b·x + c·y through the node ground levels (grid-local coordinates).
+  const pts = ASSETS.nodes.map((nd) => ({ ...toLocal(nd.position_m.x, nd.position_m.y), g: nd.ground_elevation_m }));
+  const S = { n: pts.length, x: 0, y: 0, xx: 0, xy: 0, yy: 0, g: 0, xg: 0, yg: 0 };
+  for (const p of pts) {
+    S.x += p.x; S.y += p.y; S.xx += p.x * p.x; S.xy += p.x * p.y; S.yy += p.y * p.y;
+    S.g += p.g; S.xg += p.x * p.g; S.yg += p.y * p.g;
+  }
+  const M = [[S.n, S.x, S.y], [S.x, S.xx, S.xy], [S.y, S.xy, S.yy]];
+  const v = [S.g, S.xg, S.yg];
+  const det3 = (m: number[][]) =>
+    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+  const D = det3(M);
+  const col = (k: number) => M.map((row, r) => row.map((val, c) => (c === k ? v[r] : val)));
+  const [pa, pb, pc] = [0, 1, 2].map((k) => det3(col(k)) / D);
+  const plane = (x: number, y: number) => pa + pb * x + pc * y;
+  const funnels = ASSETS.inlets.map((i) => toLocal(i.position_m.x, i.position_m.y));
   const roads = LAYOUT.roads.map((r) => ({ ...r, ...toLocal(r.x, r.y) }));
   const houses = LAYOUT.houses.map((h, k) => ({ ...h, ...toLocal(h.x, h.y), k }));
   const lake = { ...LAYOUT.lake, ...toLocal(LAYOUT.lake.x, LAYOUT.lake.y) };
@@ -65,7 +69,7 @@ export function buildTerrain(): Grid {
       const c = j * nx + i;
       const x = (i + 0.5) * dx;
       const y = (j + 0.5) * dx;
-      let zc = idw(x, y);
+      let zc = plane(x, y);
       let lc: number = LandUse.LAWN;
 
       if (inRect(x, y, canalC.x, canalC.y, canalLen, canal.width, 90)) {
@@ -75,6 +79,10 @@ export function buildTerrain(): Grid {
       }
       const dd = Math.hypot(x - dip.x, y - dip.y);
       if (dd < DIP.radius) zc -= DIP.depth * (1 - (dd / DIP.radius) ** 2);
+      for (const f of funnels) {
+        const df = Math.hypot(x - f.x, y - f.y);
+        if (df < FUNNEL.radius) zc -= FUNNEL.depth * (1 - (df / FUNNEL.radius) ** 2);
+      }
 
       const dl = Math.hypot(x - lake.x, y - lake.y);
       if (dl < lake.radius) {
