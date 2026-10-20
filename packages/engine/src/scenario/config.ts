@@ -5,12 +5,12 @@ export const DATUM = { x0: -80, y0: -140 };
 export const GRID = { nx: 125, ny: 145, dx: 2 };
 
 export const ROAD_DROP = 0.1; // m, kerb: road surface below verge
-export const HOUSE = { width: 12, depth: 13 }; // m footprint before the layout's scale
+export const HOUSE = { width: 14.4, depth: 13 }; // m footprint before the layout's scale
 /** Maple Grove pond: bed level, normal water level (below NODE-J04 invert 10.0), park margin, overflow live rise. */
 export const LAKE = { bedZ: 9.2, waterLevel: 9.8, parkMargin: 12, liveRise: 1.0 };
 export const CANAL = { bedZ: 7.6 };
 /** Shallow bowl at the J07 junction so street water gathers there. Tunable. */
-export const DIP = { radius: 30, depth: 0.5 };
+export const DIP = { radius: 45, depth: 0.8 };
 /** Shallow bowl around every grate so street water drains to it (D07 additionally sits in DIP). Tunable. */
 export const FUNNEL = { radius: 30, depth: 0.3 };
 /** Gully sump: each grate cell sits this far below the street. */
@@ -36,4 +36,4 @@ export const INFILTRATION_MMHR = { ROOF: 0, ROAD: 0, LAWN: 15, PARK: 25, POND: 0
 export const SIM = { dt: 0.5, recessionS: 3600, frameEveryS: 30 };
 
 /** SWMM-style catchment reservoir lag (s); tunable 60-1200. Catchment areas/imperviousness come from Tay's hydrology.json. */
-export const CATCHMENT = { lagS: 300 };
+export const CATCHMENT = { lagS: 60 };

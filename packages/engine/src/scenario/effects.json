@@ -2,24 +2,24 @@
   "normal": {
     "synthetic_80mmh_60min": {
       "desilt-d07": {
-        "dSag": -0.022,
+        "dSag": 0,
         "dHomes": 0
       },
       "upsize-p07": {
-        "dSag": -0.109,
-        "dHomes": 0
+        "dSag": -0.581,
+        "dHomes": -2
       },
       "flap-gate": {
         "dSag": 0,
         "dHomes": 0
       },
       "storage-tank": {
-        "dSag": -0.109,
-        "dHomes": 0
+        "dSag": -0.581,
+        "dHomes": -2
       },
       "lake-overflow": {
-        "dSag": -0.109,
-        "dHomes": 0
+        "dSag": -0.183,
+        "dHomes": -2
       },
       "pump": {
         "dSag": 0,
@@ -32,19 +32,19 @@
         "dHomes": 0
       },
       "upsize-p07": {
-        "dSag": -0.357,
-        "dHomes": 0
+        "dSag": -0.43,
+        "dHomes": -2
       },
       "flap-gate": {
         "dSag": 0,
         "dHomes": 0
       },
       "storage-tank": {
-        "dSag": -0.208,
-        "dHomes": 0
+        "dSag": -0.533,
+        "dHomes": -2
       },
       "lake-overflow": {
-        "dSag": -0.007,
+        "dSag": -0.001,
         "dHomes": 0
       },
       "pump": {
@@ -54,24 +54,24 @@
     },
     "10yr": {
       "desilt-d07": {
-        "dSag": -0.002,
+        "dSag": 0,
         "dHomes": 0
       },
       "upsize-p07": {
-        "dSag": -0.185,
-        "dHomes": 0
+        "dSag": -0.317,
+        "dHomes": -2
       },
       "flap-gate": {
         "dSag": 0,
         "dHomes": 0
       },
       "storage-tank": {
-        "dSag": -0.177,
-        "dHomes": 0
+        "dSag": -0.358,
+        "dHomes": -2
       },
       "lake-overflow": {
-        "dSag": -0.015,
-        "dHomes": 0
+        "dSag": -0.062,
+        "dHomes": -1
       },
       "pump": {
         "dSag": 0,
@@ -84,7 +84,7 @@
         "dHomes": 0
       },
       "upsize-p07": {
-        "dSag": -0.037,
+        "dSag": -0.149,
         "dHomes": 0
       },
       "flap-gate": {
@@ -92,8 +92,8 @@
         "dHomes": 0
       },
       "storage-tank": {
-        "dSag": -0.033,
-        "dHomes": 0
+        "dSag": -0.196,
+        "dHomes": -2
       },
       "lake-overflow": {
         "dSag": -0.001,

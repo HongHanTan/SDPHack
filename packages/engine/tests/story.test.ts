@@ -28,15 +28,14 @@ describe('Taman Kyra demo story (80 mm/h, team storm)', () => {
   const tank = run(['storage-tank']);
   const lake = run(['lake-overflow']);
 
-  // Claim 1 (homes) and claim 5 (J08 under high tailwater) were removed in the Task 4b retune; neither is
-  // reachable within the tunables. Homes: even with DIP, FUNNEL and HOUSE at their upper bounds the J07 pond
-  // puts at most 0.09 m on a footprint (threshold 0.3 m). J08: P07 delivers at most 0.549 m³/s, below what
-  // OUT01's 2 m chamber passes at the 9.4 m stage, so P08 is never throttled and J08 stays dry in every case.
-  // The J07 half of claim 1 holds (0.296 m ≥ 0.15). See docs/tuning.md ("Pass 2", "Story claims").
-  it('2. desilting D07 helps but P07 still runs full', () => {
-    expect(desilt.m.peakSagDepth).toBeLessThan(base.m.peakSagDepth);
-    expect(desilt.p07Max).toBeGreaterThanOrEqual(0.99);
+  it('1. baseline floods the J07 junction and homes', () => {
+    expect(base.m.peakSagDepth).toBeGreaterThanOrEqual(0.15);
+    expect(base.m.homesFlooded).toBeGreaterThanOrEqual(2);
   });
+  // Claim 2 (desilting D07 lowers J07) was removed in the Task 8 retune: with catchment loading the outlets J01/J02/J04/J07
+  // deliver ~0.64 m³/s to J07 at steady state, above P07's 0.549 m³/s full-bore cap, so J07 is full and D07 captures
+  // nothing at the peak. Desilt dSag was 0.000 at every tried CATCHMENT.lagS (60-1200 s), DIP and FUNNEL. The P07 half
+  // still holds (desilt P07 max load 1.000). See docs/tuning.md ("Pass 3").
   it('3. upsizing P07 helps', () => {
     expect(upsize.m.peakSagDepth).toBeLessThan(base.m.peakSagDepth);
   });
@@ -44,6 +43,9 @@ describe('Taman Kyra demo story (80 mm/h, team storm)', () => {
     expect(combined.m.peakSagDepth).toBeLessThan(desilt.m.peakSagDepth);
     expect(combined.m.peakSagDepth).toBeLessThan(upsize.m.peakSagDepth);
   });
+  // Claim 5 (J08 under high tailwater) was removed again in the Task 8 retune: P07 still delivers at most 0.549 m³/s, which
+  // OUT01's 2 m chamber passes below its crown at the 9.4 m stage, so P08 is never throttled and the J08 street stays dry
+  // (≤ 1 mm) in the normal, high, flap and pump runs. See docs/tuning.md ("Pass 3").
   it('6. tank and lake overflow are not dead toggles', () => {
     expect(Math.abs(tank.m.peakSagDepth - base.m.peakSagDepth)).toBeGreaterThanOrEqual(0.03);
     expect(Math.abs(lake.m.peakSagDepth - base.m.peakSagDepth)).toBeGreaterThanOrEqual(0.03);

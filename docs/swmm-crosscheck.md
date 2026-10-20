@@ -7,14 +7,14 @@ Status: report-only (see docs/tuning.md).
 
 | Pipe | SWMM peak (m³/s) | Engine peak (m³/s) | Difference | Peak time difference (min) |
 |---|---|---|---|---|
-| PIPE-P01 | 0.218 | 0.068 | -68.8% | -58.0 |
-| PIPE-P02 | 0.218 | 0.074 | -66.2% | -58.0 |
-| PIPE-P03 | 0.437 | 0.142 | -67.5% | -58.0 |
-| PIPE-P04 | 0.218 | 0.091 | -58.2% | -58.5 |
-| PIPE-P05 | 0.655 | 0.233 | -64.4% | -57.5 |
+| PIPE-P01 | 0.218 | 0.186 | -14.7% | -43.0 |
+| PIPE-P02 | 0.218 | 0.113 | -48.2% | -43.5 |
+| PIPE-P03 | 0.437 | 0.299 | -31.5% | -43.5 |
+| PIPE-P04 | 0.218 | 0.183 | -16.1% | -42.0 |
+| PIPE-P05 | 0.655 | 0.441 | -32.6% | 0.5 |
 | PIPE-P06 | 0.029 | 0.000 | -100.0% | -61.0 |
-| PIPE-P07 | 0.873 | 0.549 | -37.1% | -57.0 |
-| PIPE-P08 | 0.873 | 0.549 | -37.1% | -57.0 |
+| PIPE-P07 | 0.873 | 0.549 | -37.1% | -58.5 |
+| PIPE-P08 | 0.873 | 0.549 | -37.1% | -58.5 |
 
 **Why they differ:**
 - SWMM T1 routes catchment runoff directly into the manholes. The engine routes rain over a 2D surface into capacity-limited grates (only 4 grates exist), so some water bypasses the network.
