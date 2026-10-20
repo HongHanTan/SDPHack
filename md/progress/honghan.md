@@ -69,3 +69,25 @@ Plan: `docs/superpowers/plans/2026-10-22-visual-upgrade.md`
 ## Phase 3 notes
 - Everything is built and passes 115 tests, the type checks and the production build. **Nothing in Phase 3 has been opened in a browser yet**; work through `docs/browser-checklist.md`, items 20–27.
 - Open question for you: the automatic switch to Low quality triggers below 30 fps, as the spec says. The reviewer suggested 27 fps, so that laptops capped at 30 fps (battery saver, 30 Hz screens) don't trigger it by accident.
+
+---
+
+# Phase 4 — Team integration, part 1 (history merge + monorepo)
+
+Plan: `docs/superpowers/plans/2026-10-23-team-merge.md`
+
+| # | Task | Status |
+|---|---|---|
+| P4-1 | Merge team history (zerngx/sdphack) | ✅ done (352164e) |
+| P4-2 | Restructure into workspaces (packages/engine, apps/legacy, apps/web) | ✅ done (f602e3b) — note: three→0.170 & vite→6 for legacy/engine so the team app builds in the shared install |
+| P4-3 | Move ledger, final checks, push to main | ✅ done |
+
+---
+
+# Team integration
+
+| # | Part | Status |
+|---|---|---|
+| T1 | History merge + monorepo layout (`apps/web`, `apps/legacy`, `packages/engine`) | ✅ done |
+| T2 | Rebuild engine township on Taman Kyra + retune (team's 3 options + flap gate, tank, lake overflow, pump) | pending |
+| T3 | Drive `apps/web` UI from the engine through an adapter | pending |
