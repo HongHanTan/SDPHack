@@ -65,3 +65,10 @@ export function designStorm(returnPeriod: number, c: IdfCoefficients = IDF): Sto
 
 export const STORMS = { '10yr': designStorm(10), '100yr': designStorm(100) };
 export type StormId = keyof typeof STORMS;
+
+/** Rain intensity in mm/hr at storm time t (s); 0 before the start and after the storm ends. */
+export function rainIntensityAt(storm: Storm, t: number): number {
+  if (t < 0) return 0;
+  const k = Math.floor(t / storm.blockS);
+  return k < storm.intensity.length ? storm.intensity[k] * 3.6e6 : 0;
+}
