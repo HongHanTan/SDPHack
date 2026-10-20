@@ -20,6 +20,7 @@ import { makeContext, toTeamFrame, toTeamMetrics, type EngineMetricsExtras } fro
 
 export const MODEL_VERSION = 'taman_kyra_synthetic_v1';
 export const DEBRIS_CASES = [0, 0.2, 0.4, 0.6].map((f) => ({ id: f === 0 ? 'engine_d07_clean' : `engine_d07_${Math.round(f * 100)}pct`, fraction: f }));
+const MAX_RUNS = 2;
 const CAPS = { assets: true, storm_creation: false, simulations: true, inspections: false, debris: true, comparisons: true };
 
 interface RunRecord {
@@ -34,7 +35,6 @@ class EngineSource {
   private runner: SimRunner | null = null;
   private interventions: InterventionId[] = [];
   private runs = new Map<string, RunRecord>();
-  private lastSurfaces = new Map<number, Float32Array>();
   private counter = 0;
 
   private getRunner(): SimRunner {
@@ -139,6 +139,8 @@ class EngineSource {
     const runId = `engine-${++this.counter}`;
     const rec: RunRecord = { status: 'running' };
     this.runs.set(runId, rec);
+    // Keep only the newest runs: each holds every frame's depth grid.
+    while (this.runs.size > MAX_RUNS) this.runs.delete(this.runs.keys().next().value as string);
     const sc = buildScenario(ids, stormId, [], opts);
     const ctx = makeContext(sc.network, sc.grid, effectiveBlockage(ids, opts));
     this.getRunner()
@@ -148,7 +150,6 @@ class EngineSource {
         rec.frames = frames;
         rec.metrics = toTeamMetrics(runId, r.metrics, frames, ctx, sc.frameEveryS);
         rec.surfaces = new Map(r.frames.map((f) => [f.t, f.depth]));
-        this.lastSurfaces = rec.surfaces;
         rec.status = 'succeeded';
       })
       .catch((e: unknown) => {
@@ -195,11 +196,13 @@ class EngineSource {
     return rec.metrics;
   }
 
-  /** Depth grid of the latest finished run at a frame time (nearest earlier frame), for the water surface. */
-  surfaceAt(timestampS: number): Float32Array | null {
+  /** Depth grid of a finished run at a frame time (nearest earlier frame), for the water surface. */
+  surfaceAt(runId: string | null, timestampS: number): Float32Array | null {
+    const surfaces = runId ? this.runs.get(runId)?.surfaces : undefined;
+    if (!surfaces) return null;
     let best: Float32Array | null = null;
     let bestT = -Infinity;
-    for (const [t, d] of this.lastSurfaces) {
+    for (const [t, d] of surfaces) {
       if (t <= timestampS + 1e-6 && t > bestT) {
         best = d;
         bestT = t;

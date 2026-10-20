@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { smoothDepth, WET } from '@floodops/engine/client/smoothDepth';
 import { baseTownship } from '@floodops/engine/scenario/index';
@@ -51,6 +51,11 @@ export function EngineWater({ depth }: { depth: Float32Array | null }) {
     return m;
   }, []);
 
+  useEffect(() => () => geom.dispose(), [geom]);
+  useEffect(() => () => material.dispose(), [material]);
+
+  // Normals only shade the ripples; recomputing them every 3rd update keeps Live cheap.
+  const updates = useRef(0);
   useEffect(() => {
     const pos = geom.getAttribute('position') as THREE.BufferAttribute;
     if (depth) smoothDepth(depth, nx, ny, smoothed);
@@ -62,7 +67,7 @@ export function EngineWater({ depth }: { depth: Float32Array | null }) {
     }
     pos.needsUpdate = true;
     depthAttr.needsUpdate = true;
-    geom.computeVertexNormals();
+    if (updates.current++ % 3 === 0) geom.computeVertexNormals();
   }, [depth, geom, base, mask, depthAttr, smoothed, n, nx, ny]);
 
   useFrame(({ clock }) => {

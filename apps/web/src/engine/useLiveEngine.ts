@@ -99,8 +99,18 @@ export function useLiveEngine() {
     [ensureWorker],
   );
 
+  const errored = useRef(false);
+  useEffect(() => {
+    errored.current = error !== null;
+  }, [error]);
+
   const patch = useCallback((ids: InterventionId[], label: string) => {
     if (!cfg.current) return;
+    // A stopped or crashed session can't take a patch: begin a fresh storm with the new interventions.
+    if (errored.current || !worker.current) {
+      start(cfg.current.stormId, ids, cfg.current.opts);
+      return;
+    }
     try {
       cfg.current = { ...cfg.current, ids };
       pendingCtx.current = contextFor(ids, cfg.current.stormId, cfg.current.opts);
@@ -108,7 +118,7 @@ export function useLiveEngine() {
     } catch (e) {
       setError(`Live engine patch failed: ${errText(e)}`);
     }
-  }, []);
+  }, [start]);
 
   const setSpeed = useCallback((s: number) => {
     speedRef.current = s;

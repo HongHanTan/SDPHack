@@ -29,6 +29,8 @@ interface AssetDetailModalProps {
   currentFrame?: SimulationFrame | null;
   blockageFraction?: number;
   onUpdateBlockage?: (assetId: string, fraction: number) => void;
+  /** Engine mode: hide the blockage tab (D07 blockage is set from the HUD debris selector instead). */
+  hideBlockageTuning?: boolean;
 }
 
 export const AssetDetailModal: React.FC<AssetDetailModalProps> = ({
@@ -40,6 +42,7 @@ export const AssetDetailModal: React.FC<AssetDetailModalProps> = ({
   currentFrame,
   blockageFraction = 0.0,
   onUpdateBlockage,
+  hideBlockageTuning = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'photos' | 'blockage' | 'maintenance'>('overview');
   const [isMinimized, setIsMinimized] = useState(false);
@@ -163,6 +166,7 @@ export const AssetDetailModal: React.FC<AssetDetailModalProps> = ({
             <Camera className="w-3 h-3" />
             <span>Field CCTV</span>
           </button>
+          {!hideBlockageTuning && (
           <button
             onClick={() => setActiveTab('blockage')}
             className={`px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 ${
@@ -177,6 +181,7 @@ export const AssetDetailModal: React.FC<AssetDetailModalProps> = ({
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
             )}
           </button>
+          )}
           <button
             onClick={() => setActiveTab('maintenance')}
             className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${
@@ -439,7 +444,7 @@ export const AssetDetailModal: React.FC<AssetDetailModalProps> = ({
         )}
 
         {/* 6. Tab 3: Interactive Blockage Degree Adjustment & Simulation */}
-        {activeTab === 'blockage' && (
+        {activeTab === 'blockage' && !hideBlockageTuning && (
           <div className="space-y-3 py-1 animate-in fade-in">
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
               <div className="flex items-center gap-2 font-bold text-amber-900">

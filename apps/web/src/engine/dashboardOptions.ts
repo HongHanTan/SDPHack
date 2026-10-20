@@ -34,7 +34,7 @@ const CARDS: Array<Omit<EngineOption, 'costRM' | 'metrics' | 'dSagVsBaseline' | 
   { id: 'upsize-p07', title: 'Option 2: Conduit Upsizing', subtitle: 'PIPE-P07 Ø600 → Ø750', icon: '⬇️', tag: 'Capital Engineering', description: 'Replace trunk conduit PIPE-P07 (J07 → J08) with Ø750 RCP.', finding: 'Removes the P07 bottleneck — the largest single reduction at J07.', interventions: ['upsize-p07'], costRating: 'HIGH', timeframe: '3 - 6 Months', recommended: false },
   { id: 'storage-tank', title: 'Option 4: Underground Storage Tank', subtitle: 'Off-line tank fed from J05', icon: '🛢️', tag: 'Capital Engineering', description: 'Store the peak from J05 and release slowly to J08.', finding: 'Takes the peak off P07 — comparable to upsizing at J07.', interventions: ['storage-tank'], costRating: 'HIGH', timeframe: 'Phased Implementation', recommended: false },
   { id: 'lake-overflow', title: 'Option 5: Overflow to Maple Grove Pond', subtitle: 'Relief pipe J04 → pond', icon: '↪️', tag: 'Green-Blue Infrastructure', description: 'Divert the J04 branch into the retention pond.', finding: 'Partial relief: diverts the east branch away from the trunk.', interventions: ['lake-overflow'], costRating: 'MEDIUM', timeframe: 'Phased Implementation', recommended: false },
-  { id: 'combined', title: 'Option 3: Combined Desilting & Upsizing', subtitle: 'Clean D07 + Ø750 P07', icon: '✅', tag: 'Optimal Holistic Solution', description: 'Inlet desilting coupled with conduit upsizing.', finding: 'Best result: upsizing frees P07, and the clean grate then captures more.', interventions: ['desilt-d07', 'upsize-p07'], costRating: 'MEDIUM', timeframe: 'Phased Implementation', recommended: true },
+  { id: 'combined', title: 'Option 3: Combined Desilting & Upsizing', subtitle: 'Clean D07 + Ø750 P07', icon: '✅', tag: 'Optimal Holistic Solution', description: 'Inlet desilting coupled with conduit upsizing.', finding: 'Upsizing frees P07, and the clean grate then captures more.', interventions: ['desilt-d07', 'upsize-p07'], costRating: 'MEDIUM', timeframe: 'Phased Implementation', recommended: false },
   { id: 'store-peak', title: 'Option 6: Store the Peak', subtitle: 'Tank + pond overflow', icon: '💧', tag: 'Green-Blue Infrastructure', description: 'Storage tank and pond overflow together.', finding: 'Storage-led alternative to upsizing.', interventions: ['storage-tank', 'lake-overflow'], costRating: 'HIGH', timeframe: 'Long-Term Masterplan', recommended: false },
 ];
 
@@ -44,10 +44,13 @@ export function idsForOption(optionId: string): InterventionId[] {
   return CARDS.find((c) => c.id === optionId)?.interventions ?? [];
 }
 
+export const PRECOMPUTED_NOTE = 'Cards precomputed at D07 40% blocked, normal canal level; Apply runs with your HUD choices.';
+
+/** Builds the 7 cards for a storm. The recommended card is the lowest J07 peak (cheaper wins a tie), baseline excluded. */
 export function buildDashboardOptions(stormId: StormId): EngineOption[] {
   const table = (dashboard as unknown as Record<string, Record<string, DashboardMetrics>>)[stormId] ?? {};
   const base = table.baseline ?? null;
-  return CARDS.map((c) => {
+  const opts: EngineOption[] = CARDS.map((c) => {
     const m = table[c.id] ?? null;
     return {
       ...c,
@@ -57,4 +60,19 @@ export function buildDashboardOptions(stormId: StormId): EngineOption[] {
       dHomesVsBaseline: m && base ? m.homesFlooded - base.homesFlooded : null,
     };
   });
+  let best: EngineOption | null = null;
+  for (const o of opts) {
+    if (o.id === 'baseline' || !o.metrics) continue;
+    if (!best || o.metrics.j07PeakM < best.metrics!.j07PeakM || (o.metrics.j07PeakM === best.metrics!.j07PeakM && o.costRM < best.costRM)) best = o;
+  }
+  if (best) best.recommended = true;
+  const combined = opts.find((o) => o.id === 'combined')!;
+  combined.finding = combined.recommended
+    ? `Best result: ${combined.finding.charAt(0).toLowerCase()}${combined.finding.slice(1)}`
+    : `Best for 80 mm/h; for this storm ${best?.title.replace(/^Option \d+: /, '') ?? 'another option'} gives a lower J07 peak.`;
+  return opts;
+}
+
+export function recommendedOption(opts: EngineOption[]): EngineOption | undefined {
+  return opts.find((o) => o.recommended);
 }

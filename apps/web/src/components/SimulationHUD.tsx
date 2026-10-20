@@ -75,6 +75,9 @@ interface SimulationHUDProps {
   onLivePause?: () => void;
   onLiveSeek?: (t: 'start' | 'peak' | 'end') => void;
   liveTimeS?: number;
+  /** Engine mode: engine wording, and the applied dashboard option instead of the SWMM-only tools. */
+  engineMode?: boolean;
+  appliedOptionTitle?: string;
 }
 
 export const SimulationHUD: React.FC<SimulationHUDProps> = ({
@@ -123,6 +126,8 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   onLivePause,
   onLiveSeek,
   liveTimeS = 0,
+  engineMode = false,
+  appliedOptionTitle,
 }) => {
   const liveActive = !!liveAvailable && !!liveOn;
   // Engine-only metric fields (absent from SWMM/mock metrics, so nothing extra renders there).
@@ -423,6 +428,16 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
 
                 {/* Quick Action Buttons */}
                 <div className="space-y-1.5 pt-1">
+                  {engineMode ? (
+                    // Engine mode: Inspect and Debris Lab have no engine backing, so the applied option shows here instead.
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <span className="font-semibold text-slate-700">Applied:</span>
+                      <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 border border-purple-200 font-semibold truncate">
+                        {appliedOptionTitle ?? 'Baseline'}
+                      </span>
+                    </div>
+                  ) : (
+                  <>
                   <span className="text-[11px] font-semibold text-slate-700 block">Analysis Tools</span>
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
@@ -440,6 +455,8 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                       <span>Debris Lab</span>
                     </button>
                   </div>
+                  </>
+                  )}
 
                   {!liveActive && (
                   <button
@@ -460,7 +477,13 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                     ) : (
                       <>
                         <Play className="w-3.5 h-3.5 fill-white" />
-                        <span>{hasSimulationStarted ? 'Re-Run SWMM Simulation' : 'Start Simulation'}</span>
+                        <span>
+                          {hasSimulationStarted
+                            ? engineMode
+                              ? 'Re-Run Engine Simulation'
+                              : 'Re-Run SWMM Simulation'
+                            : 'Start Simulation'}
+                        </span>
                       </>
                     )}
                   </button>

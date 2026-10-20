@@ -5,7 +5,6 @@ import layout from '../../../../data/synthetic/taman_kyra_layout.json';
 import { SimulationFrame, AppMode } from '../types';
 import { PondingWaterAnimation } from './PondingWaterAnimation';
 import { displaceFlat } from '../engine/displaceFlat';
-import { EngineWater } from '../engine/EngineWater';
 import { bowlDrop, lawnHeight } from '../engine/visualGround';
 
 type HeightAt = (tx: number, ty: number) => number;
@@ -20,9 +19,7 @@ interface TownshipEnvironmentProps {
   floodingActive?: boolean;
   appMode?: AppMode;
   currentFrame?: SimulationFrame | null;
-  /** Engine mode: simulated depth grid for the current frame. */
-  engineDepth?: Float32Array | null;
-  /** Engine mode: dips on lawn/roads, data-driven heights, engine water surface. */
+  /** Engine mode: dips on lawn/roads, data-driven heights (SceneViewer draws the engine water). */
   engineMode?: boolean;
 }
 
@@ -415,12 +412,11 @@ const CulDeSac: React.FC<{
   );
 };
 
-export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
+const TownshipEnvironmentInner: React.FC<TownshipEnvironmentProps> = ({
   showUndergroundOnly = false,
   floodingActive = true,
   appMode = 'diagnose',
   currentFrame,
-  engineDepth,
   engineMode = false,
 }) => {
   // Placement data extracted from this component's original loops (TEH JIA JIE) into data/synthetic/taman_kyra_layout.json
@@ -655,9 +651,8 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
       </group>
 
       {/* 7. Dynamic Street Surface Ponding Water Animation (Physically rises with runoff) */}
-      {engineMode ? (
-        <EngineWater depth={engineDepth ?? null} />
-      ) : (
+      {/* Engine mode: the engine water surface is rendered by SceneViewer beside this component, so Live frames don't re-render the township. */}
+      {engineMode ? null : (
         <PondingWaterAnimation
           currentFrame={currentFrame}
           floodingActive={Boolean(floodingActive)}
@@ -734,3 +729,6 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
     </group>
   );
 };
+
+// Memoised so engine Live frames (which only change the water) don't rebuild the houses, trees and roads.
+export const TownshipEnvironment = React.memo(TownshipEnvironmentInner);

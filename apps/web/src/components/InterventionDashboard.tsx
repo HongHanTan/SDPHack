@@ -15,7 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { InterventionOption, ProposedAction, InspectionRecord } from '../types';
-import type { EngineOption } from '../engine/dashboardOptions';
+import { PRECOMPUTED_NOTE, recommendedOption, type EngineOption } from '../engine/dashboardOptions';
 
 interface InterventionDashboardProps {
   onClose: () => void;
@@ -25,6 +25,8 @@ interface InterventionDashboardProps {
   engineOptions?: EngineOption[];
   /** Engine mode: label of the selected storm, shown in the heading. */
   engineStormLabel?: string;
+  /** Engine mode: a simulation is in flight, so Apply waits. */
+  applyDisabled?: boolean;
 }
 
 // Labels for the two D07 metric rows. HIS_LABELS is the original wording, verbatim.
@@ -55,8 +57,51 @@ const ENGINE_LABELS: typeof HIS_LABELS = {
   capturedLowerIsBetter: true,
 };
 
-const ENGINE_D07_PREFIX =
-  'Engine finding: desilting alone has no effect while P07 runs full; schedule together with the P07 upsizing. ';
+const ENGINE_NAME = 'FloodOps TS engine';
+
+// Engine mode: tag colours keyed by the engine's option ids (his palette, with teal for the storage options).
+const ENGINE_TAG_CLASS: Record<string, string> = {
+  baseline: 'bg-slate-200 text-slate-700',
+  'desilt-d07': 'bg-emerald-100 text-emerald-800',
+  'upsize-p07': 'bg-blue-100 text-blue-800',
+  combined: 'bg-purple-100 text-purple-800',
+  'storage-tank': 'bg-teal-100 text-teal-800',
+  'lake-overflow': 'bg-teal-100 text-teal-800',
+  'store-peak': 'bg-teal-100 text-teal-800',
+};
+
+/** Engine mode: the text of the summary, work orders and report, built from the engine's numbers. */
+function engineNarrative(opts: EngineOption[], stormLabel: string) {
+  const by = (id: string) => opts.find((o) => o.id === id)?.metrics;
+  const base = by('baseline');
+  const desilt = by('desilt-d07');
+  const up = by('upsize-p07');
+  const comb = by('combined');
+  const bestOpt = recommendedOption(opts);
+  if (!base || !desilt || !up || !comb || !bestOpt?.metrics) return null;
+  const best = bestOpt.metrics;
+  const m = (x: number) => `${x.toFixed(2)} m`;
+  const dDesilt = desilt.j07PeakM - base.j07PeakM;
+  const bestName = bestOpt.title.replace(/^Option \d+: /, '');
+  return {
+    summary: [
+      `Desilting INLET-D07 alone changes the J07 peak by ${dDesilt >= 0 ? '+' : ''}${dDesilt.toFixed(3)} m: P07 still runs full (${desilt.p07SurchargeMin} min surcharged), so the extra captured water has nowhere to go.`,
+      `At baseline PIPE-P07 is surcharged for ${base.p07SurchargeMin} min and the J07 junction peaks at ${m(base.j07PeakM)} with ${base.homesFlooded} homes flooded: the Ø600mm trunk is the bottleneck.`,
+      `Upsizing PIPE-P07 to Ø750mm cuts surcharge from ${base.p07SurchargeMin} to ${up.p07SurchargeMin} min (J07 peak ${m(up.j07PeakM)}). Lowest J07 peak for this storm: ${bestName} at ${m(best.j07PeakM)}.`,
+    ],
+    d07Justification: `Inspection record #INSP-2026-10-18-001 indicates 65% leaf litter coverage causing ~40% hydraulic restriction loss. ${ENGINE_NAME} (${stormLabel}): desilting alone changes the J07 peak by ${dDesilt.toFixed(3)} m while P07 runs full; schedule it together with the P07 upsizing.`,
+    d07Impact: `J07 peak ${m(base.j07PeakM)} → ${m(desilt.j07PeakM)} on its own; ${m(comb.j07PeakM)} together with the P07 upsizing.`,
+    p07Justification: `${ENGINE_NAME} (${stormLabel}): the existing Ø600mm conduit surcharges for ${base.p07SurchargeMin} min and acts as the downstream bottleneck; J07 peaks at ${m(base.j07PeakM)}.`,
+    p07Evidence: `${ENGINE_NAME} (taman_kyra_synthetic_v1, simulated)`,
+    p07Impact: `Upsizing to Ø750mm reduces P07 surcharge from ${base.p07SurchargeMin} min to ${up.p07SurchargeMin} min; J07 peak ${m(base.j07PeakM)} → ${m(up.j07PeakM)}.`,
+    reportHeader: `Model Baseline: taman_kyra_synthetic_v1 | Engine: ${ENGINE_NAME} (simulated)
+Rainfall Scenario: ${stormLabel} | Tailwater: Normal canal level | INLET-D07 40% blocked`,
+    reportFindings: [
+      ...opts.map((o) => `- ${o.title}: J07 peak ${o.metrics ? m(o.metrics.j07PeakM) : 'n/a'}, homes flooded ${o.metrics?.homesFlooded ?? 'n/a'}, P07 surcharged ${o.metrics?.p07SurchargeMin ?? 'n/a'} min`),
+      `- Recommended for this storm (lowest J07 peak): ${bestOpt.title}`,
+    ].join('\n'),
+  };
+}
 
 export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
   onClose,
@@ -64,9 +109,13 @@ export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
   inspections,
   engineOptions,
   engineStormLabel,
+  applyDisabled = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'compare' | 'actions'>('compare');
-  const [selectedOptionId, setSelectedOptionId] = useState<string>(engineOptions ? 'combined' : 'clean_inlet');
+  const [selectedOptionId, setSelectedOptionId] = useState<string>(
+    engineOptions ? recommendedOption(engineOptions)?.id ?? 'combined' : 'clean_inlet'
+  );
+  const eng = engineOptions ? engineNarrative(engineOptions, engineStormLabel ?? 'selected storm') : null;
   const [copiedReport, setCopiedReport] = useState<boolean>(false);
 
   const L = engineOptions ? ENGINE_LABELS : HIS_LABELS;
@@ -83,7 +132,8 @@ export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
     tag: o.tag,
     parameters: { hydraulic_loss_fraction: o.interventions.includes('desilt-d07') ? 0 : 0.4, pipe_diameter_mm: o.interventions.includes('upsize-p07') ? 750 : 600, storm_id: '', tailwater_case: 'normal' },
     metrics: {
-      total_flooding_volume_m3: o.metrics?.floodedRoadAreaM2 ?? 0,
+      // Not a volume in engine mode; the engine's flooded road area (m²) is shown from engineOptions instead.
+      total_flooding_volume_m3: 0,
       surcharge_duration_s: (o.metrics?.p07SurchargeMin ?? 0) * 60,
       d07_captured_volume_m3: o.metrics?.j07PeakM ?? 0,
       d07_bypass_volume_m3: o.metrics?.homesFlooded ?? 0,
@@ -272,11 +322,13 @@ export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
       category: 'OPERATIONAL_MAINTENANCE',
       target_asset: 'INLET-D07 (Jalan Kyra 1/2 Intersection Curb Inlet)',
       title: 'Emergency Curb Inlet & Grate Desilting Work Order',
-      justification:
-        (engineOptions ? ENGINE_D07_PREFIX : '') +
-        'Inspection record #INSP-2026-10-18-001 indicates 65% leaf litter coverage causing ~40% hydraulic restriction loss. SWMM modeling confirms desilting reduces street ponding by 296.7 m³ (-43.2%).',
+      justification: eng
+        ? eng.d07Justification
+        : 'Inspection record #INSP-2026-10-18-001 indicates 65% leaf litter coverage causing ~40% hydraulic restriction loss. SWMM modeling confirms desilting reduces street ponding by 296.7 m³ (-43.2%).',
       evidence_reference: 'Inspection #INSP-2026-10-18-001 (Inspector Azman, Photo Attachment)',
-      expected_hydraulic_impact: 'Surface bypass runoff cut from 686.35 m³ to 389.68 m³; captured subsurface flow increases by 66.7%.',
+      expected_hydraulic_impact: eng
+        ? eng.d07Impact
+        : 'Surface bypass runoff cut from 686.35 m³ to 389.68 m³; captured subsurface flow increases by 66.7%.',
       action_steps: [
         'Dispatch Township O&M Crew (2 personnel) with high-pressure jetting/suction tanker to INLET-D07.',
         'Manually clear accumulated leaf litter and debris from 1.8m × 0.15m curb throat and grate surface.',
@@ -291,10 +343,13 @@ export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
       category: 'CAPITAL_ENGINEERING',
       target_asset: 'PIPE-P07 (Trunk Storm Conduit connecting NODE-J07 to NODE-J08, L=38m)',
       title: 'Trunk Conduit Hydraulic Conveyance Verification & Upsizing Recommendation',
-      justification:
-        'Dynamic simulation shows that upon full inlet capture, existing Ø600mm conduit surcharges for 55.4 minutes under 120 mm/h storm, acting as a downstream bottleneck. Upsizing is required to convey design discharge.',
-      evidence_reference: 'EPA SWMM 5.2.4 Dynamic Simulation Engine (taman_kyra_synthetic_v1)',
-      expected_hydraulic_impact: 'Upsizing to Ø750mm reduces surcharge duration from 55.4 min to 0 min (-100%), eliminating backwater pressure.',
+      justification: eng
+        ? eng.p07Justification
+        : 'Dynamic simulation shows that upon full inlet capture, existing Ø600mm conduit surcharges for 55.4 minutes under 120 mm/h storm, acting as a downstream bottleneck. Upsizing is required to convey design discharge.',
+      evidence_reference: eng ? eng.p07Evidence : 'EPA SWMM 5.2.4 Dynamic Simulation Engine (taman_kyra_synthetic_v1)',
+      expected_hydraulic_impact: eng
+        ? eng.p07Impact
+        : 'Upsizing to Ø750mm reduces surcharge duration from 55.4 min to 0 min (-100%), eliminating backwater pressure.',
       action_steps: [
         'Enroll PIPE-P07 into FY2027 Municipal Stormwater Capital Expenditure (CAPEX) budget.',
         'Engage Professional Engineer (PE) for utility mapping and longitudinal invert slope verification.',
@@ -306,16 +361,22 @@ export const InterventionDashboard: React.FC<InterventionDashboardProps> = ({
   ];
 
   const handleCopyReport = () => {
-    const text = `# Township FloodOps — Mitigation Decision & Engineering Report
-Generated: ${new Date().toLocaleString()}
-Model Baseline: taman_kyra_synthetic_v1 | Engine: EPA SWMM 5.2.4 (Simulated)
+    const head = eng
+      ? `${eng.reportHeader}
+
+## 1. Scenario Comparison Findings
+${eng.reportFindings}`
+      : `Model Baseline: taman_kyra_synthetic_v1 | Engine: EPA SWMM 5.2.4 (Simulated)
 Rainfall Scenario: 120 mm/h Extreme Monsoon Rain (60 min) | Tailwater: Free Outfall (Normal)
 
 ## 1. Scenario Comparison Findings
 - Baseline Condition: Surface bypass runoff 686.35 m³, conduit surcharged 53.2 min
 - Inlet Desilting (Clean Inlet): Surface bypass runoff reduced to 389.68 m³ (-43.2% mitigation), conduit surcharged 55.4 min
 - Conduit Upsizing (Upsize P07): Conduit surcharge reduced to 0 min (-100%), but surface ponding remains at 686.35 m³
-- Combined Mitigation (Clean + Upsize): Surface ponding reduced by 43.2%, conduit surcharge 100% eliminated!
+- Combined Mitigation (Clean + Upsize): Surface ponding reduced by 43.2%, conduit surcharge 100% eliminated!`;
+    const text = `# Township FloodOps — Mitigation Decision & Engineering Report
+Generated: ${new Date().toLocaleString()}
+${head}
 
 ## 2. Recommended Action Work Orders
 1. [CRITICAL 24h] ${proposedActions[0].title}
@@ -350,7 +411,7 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                   Mitigation & Counterfactual Decision Report
                 </h2>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-mono font-semibold border border-emerald-200">
-                  EPA SWMM 5.2.4 Verified
+                  {engineOptions ? `${ENGINE_NAME} (simulated)` : 'EPA SWMM 5.2.4 Verified'}
                 </span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-mono font-semibold border border-red-200">
                   Taman Kyra Twin
@@ -428,7 +489,9 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                           <div className="flex items-center justify-between mb-2">
                             <span
                               className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                                isBase
+                                engineOptions
+                                  ? ENGINE_TAG_CLASS[opt.id] ?? 'bg-slate-200 text-slate-700'
+                                  : isBase
                                   ? 'bg-slate-200 text-slate-700'
                                   : opt.id === 'clean_inlet'
                                   ? 'bg-emerald-100 text-emerald-800'
@@ -471,6 +534,12 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                     );
                   })}
                 </div>
+                {engineOptions && (
+                  <p className="text-[11px] text-slate-500 mt-2">
+                    {PRECOMPUTED_NOTE} Recommended for this storm (lowest J07 peak):{' '}
+                    <strong className="text-slate-800">{recommendedOption(engineOptions)?.title ?? 'n/a'}</strong>
+                  </p>
+                )}
               </div>
 
               {/* Side-by-side KPI Delta Breakdown */}
@@ -645,6 +714,42 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                 </div>
 
                 {/* Comparative Bar Visualization */}
+                {engineOptions ? (
+                  <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-3">
+                    {(
+                      [
+                        { key: 'j07PeakM', label: 'J07 peak water depth', unit: ' m', digits: 2, color: 'bg-blue-500' },
+                        { key: 'floodedRoadAreaM2', label: 'Flooded road area (≥ 0.15 m)', unit: ' m²', digits: 0, color: 'bg-rose-500' },
+                      ] as const
+                    ).map((metric) => {
+                      const baseVal = engineOptions[0]?.metrics?.[metric.key] ?? 0;
+                      return (
+                        <div key={metric.key} className="space-y-1.5">
+                          <div className="text-xs font-bold text-slate-800">
+                            {metric.label} — bar length relative to baseline (lower is better):
+                          </div>
+                          {engineOptions.map((o) => {
+                            const v = o.metrics?.[metric.key] ?? 0;
+                            const pct = baseVal > 0 ? Math.min(100, (v / baseVal) * 100) : 0;
+                            return (
+                              <div key={o.id} className="flex items-center gap-2 text-[11px]">
+                                <span className="w-56 shrink-0 truncate text-slate-800 font-semibold" title={o.title}>
+                                  {o.title}
+                                </span>
+                                <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                  <div style={{ width: `${pct}%` }} className={`h-full ${metric.color}`} />
+                                </div>
+                                <span className="w-20 shrink-0 text-right font-mono text-slate-600 text-[10px]">
+                                  {o.metrics ? `${v.toFixed(metric.digits)}${metric.unit}` : 'n/a'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
                 <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-xs space-y-2.5">
                   <div className="text-xs font-bold text-slate-800">
                     Multi-Scenario Water Balance Routing Partitioning:
@@ -687,6 +792,7 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                     );
                   })}
                 </div>
+                )}
 
                 {/* Concise Executive Takeaways (Clean 3-Bullet Decision Architecture) */}
                 <div className="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 leading-relaxed space-y-2">
@@ -697,21 +803,33 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                   <ul className="space-y-1.5 text-xs text-amber-900 pl-1">
                     <li className="flex items-start gap-2">
                       <span className="text-emerald-600 font-bold shrink-0">1. Immediate O&M (24h):</span>
+                      {eng ? (
+                        <span>{eng.summary[0]}</span>
+                      ) : (
                       <span>
                         Desilting INLET-D07 eliminates <strong>43.2% of surface street ponding</strong> (-296.7 m³) immediately by restoring full grate capture aperture.
                       </span>
+                      )}
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-amber-700 font-bold shrink-0">2. Downstream Reality:</span>
+                      {eng ? (
+                        <span>{eng.summary[1]}</span>
+                      ) : (
                       <span>
                         Conveying all surface runoff into existing Ø600mm conduit causes a <strong>55.4 min pressurized pipe surcharge</strong> because the subsurface network becomes the primary bottleneck.
                       </span>
+                      )}
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-red-700 font-bold shrink-0">3. Capital Work (CAPEX):</span>
+                      {eng ? (
+                        <span>{eng.summary[2]}</span>
+                      ) : (
                       <span>
                         Upsizing downstream trunk conduit PIPE-P07 to <strong>Ø750mm permanently eliminates surcharge</strong>, allowing full gravity free-flow to the retention pond.
                       </span>
+                      )}
                     </li>
                   </ul>
                 </div>
@@ -726,7 +844,7 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
                     Traceable Action Orders & Work Recommendations
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Engineering evidence chain backed by SWMM hydrodynamic modeling & {inspections.length} field records
+                    Engineering evidence chain backed by {engineOptions ? `${ENGINE_NAME} simulation` : 'SWMM hydrodynamic modeling'} & {inspections.length} field records
                   </p>
                 </div>
                 <button
@@ -836,12 +954,17 @@ Disclaimer: This report is generated from a synthetic digital twin (taman_kyra_s
             </button>
             <button
               onClick={() => {
+                if (applyDisabled) return;
                 onApplyIntervention(selectedOption.id);
                 onClose();
               }}
-              className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-red-600/20 active:scale-95"
+              disabled={applyDisabled}
+              title={applyDisabled ? 'A simulation is running; Apply when it finishes.' : undefined}
+              className={`px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-red-600/20 active:scale-95 ${
+                applyDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+              }`}
             >
-              <span>Apply Option to 3D Twin</span>
+              <span>{applyDisabled ? 'Simulation running…' : 'Apply Option to 3D Twin'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { apiClient, DataMode } from './api/client';
 import {
   AssetConduit,
@@ -85,8 +85,11 @@ export function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Ref to cancel ongoing poll loops when switching modes or unmounting
-  const activePollRef = useRef<boolean>(false);
+  // Run token: each run takes the next number; a newer run, a mode switch or unmount makes older poll loops stale.
+  const runTokenRef = useRef<number>(0);
+  // Engine mode: the run whose frames are shown (its depth grids feed the water surface), and the applied dashboard option.
+  const [engineRunId, setEngineRunId] = useState<string | null>(null);
+  const [appliedOptionId, setAppliedOptionId] = useState<string>('baseline');
 
   // Load foundational data (assets, bootstrap, health)
   const loadData = useCallback(async () => {
@@ -130,15 +133,15 @@ export function App() {
   useEffect(() => {
     loadData();
     return () => {
-      activePollRef.current = false;
+      runTokenRef.current++;
     };
   }, [loadData, mode]);
 
   // Engine Live: one continuous storm in a worker with the current scenario settings.
-  const startLive = (stormId: string) => {
+  const startLive = (stormId: string, debrisId = selectedDebrisId, tailwater = selectedTailwater) => {
     live.start(stormId as StormId, engineSource.getInterventions(), {
-      tailwater: selectedTailwater === 'high' ? 'high' : 'normal',
-      blockage: engineSource.blockageForDebris(selectedDebrisId),
+      tailwater: tailwater === 'high' ? 'high' : 'normal',
+      blockage: engineSource.blockageForDebris(debrisId),
     });
   };
 
@@ -161,12 +164,18 @@ export function App() {
   };
 
   const handleToggleMode = (newMode: DataMode) => {
-    activePollRef.current = false;
+    runTokenRef.current++;
+    setIsRunning(false);
+    setRunProgressMessage('');
     if (newMode !== 'engine') stopLive();
     apiClient.setDataMode(newMode);
     setMode(newMode);
     if (newMode === 'engine') {
       setSelectedDebrisId('engine_d07_40pct');
+      // Entering engine mode starts from the baseline network (loadData reloads the assets).
+      engineSource.setInterventions([]);
+      setAppliedOptionId('baseline');
+      setEngineRunId(null);
     } else if (mode === 'engine') {
       setSelectedDebrisId('demo_inlet_clean');
     }
@@ -213,7 +222,8 @@ export function App() {
     setIsRunning(true);
     setApiError(null);
     setRunProgressMessage('Submitting hydraulic simulation job...');
-    activePollRef.current = true;
+    const myRun = ++runTokenRef.current;
+    const isCurrent = () => runTokenRef.current === myRun;
 
     try {
       if (mode === 'mock') {
@@ -250,54 +260,59 @@ export function App() {
       let attempts = 0;
       const maxAttempts = mode === 'engine' ? 300 : 60; // 60 * 800ms = 48s max poll (engine: 240s)
 
-      while (activePollRef.current && (currentStatus === 'queued' || currentStatus === 'running')) {
+      while (isCurrent() && (currentStatus === 'queued' || currentStatus === 'running')) {
         attempts++;
         if (attempts > maxAttempts) {
           throw new Error(`Simulation polling timed out after ${Math.round(maxAttempts * 0.8)} seconds.`);
         }
 
         await new Promise((r) => setTimeout(r, 800));
-        if (!activePollRef.current) return;
+        if (!isCurrent()) return;
 
+        let run;
         try {
-          const run = await apiClient.getSimulation(run_id);
-          currentStatus = run.status;
-          setRunProgressMessage(
-            `${mode === 'engine' ? 'Engine solving' : 'EPA SWMM Solving'} (${run.status})... [${(attempts * 0.8).toFixed(1)}s]`
-          );
-
-          if (run.status === 'failed') {
-            const msg = run.error?.message || 'SWMM calculation failed.';
-            throw new Error(`[SIMULATION_FAILED] ${msg}`);
-          }
+          run = await apiClient.getSimulation(run_id);
         } catch (pollErr: unknown) {
-          // If 409 RESULTS_NOT_READY, continue polling
+          // If 409 RESULTS_NOT_READY, continue polling (engine mode: only its own not-ready signal)
           const errStr = String(pollErr);
-          if (errStr.includes('RESULTS_NOT_READY') || errStr.includes('409')) {
+          if (errStr.includes('RESULTS_NOT_READY') || (mode !== 'engine' && errStr.includes('409'))) {
             continue;
           }
           throw pollErr;
         }
+        if (!isCurrent()) return;
+        currentStatus = run.status;
+        setRunProgressMessage(
+          `${mode === 'engine' ? 'Engine solving' : 'EPA SWMM Solving'} (${run.status})... [${(attempts * 0.8).toFixed(1)}s]`
+        );
+
+        if (run.status === 'failed') {
+          const msg = run.error?.message || (mode === 'engine' ? 'Engine run failed.' : 'SWMM calculation failed.');
+          throw new Error(`[SIMULATION_FAILED] ${msg}`);
+        }
       }
 
-      if (currentStatus === 'succeeded') {
+      if (isCurrent() && currentStatus === 'succeeded') {
         setRunProgressMessage('Fetching simulation frames & metrics...');
         const [newFrames, newMetrics] = await Promise.all([
           apiClient.getSimulationFrames(run_id),
           apiClient.getSimulationMetrics(run_id),
         ]);
+        if (!isCurrent()) return;
 
         setFrames(newFrames.frames);
         setMetrics(newMetrics);
         setCurrentFrameIndex(0);
+        if (mode === 'engine') setEngineRunId(run_id);
       }
     } catch (err: unknown) {
       console.error('Simulation execution failed:', err);
-      setApiError(err instanceof Error ? err.message : String(err));
+      if (isCurrent()) setApiError(err instanceof Error ? err.message : String(err));
     } finally {
-      setIsRunning(false);
-      setRunProgressMessage('');
-      activePollRef.current = false;
+      if (isCurrent()) {
+        setIsRunning(false);
+        setRunProgressMessage('');
+      }
     }
   };
 
@@ -488,8 +503,13 @@ export function App() {
   // J4: Handle applying an intervention candidate
   const handleApplyIntervention = async (interventionId: string) => {
     if (engineMode) {
+      if (isRunning && !live.on) {
+        setApiError('A simulation is still running; apply the option when it finishes.');
+        return;
+      }
       const ids = idsForOption(interventionId);
       engineSource.setInterventions(ids);
+      setAppliedOptionId(interventionId);
       try {
         const a = await apiClient.getTownshipAssets('taman_kyra_demo');
         setNodes(a.nodes);
@@ -551,6 +571,10 @@ export function App() {
     ? rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && stormIntensity > 0
     : rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && currentTimestamp <= 3600;
   const shownError = liveActive && live.error ? live.error : apiError;
+  const engineOptions = useMemo(
+    () => (engineMode ? buildDashboardOptions(selectedStormId as StormId) : undefined),
+    [engineMode, selectedStormId]
+  );
 
   const handleSelectTab = (tab: 'dashboard' | 'map' | 'assets' | 'analytics' | 'reports') => {
     if (tab === 'dashboard') {
@@ -632,13 +656,13 @@ export function App() {
         hasSimulationStarted={hasSimulationStarted}
         onToggleRain={() => setRainEnabled(!rainEnabled)}
         stormIntensityMmh={stormIntensity}
-        onOpenDebrisLab={() => setIsDebrisLabOpen(true)}
+        onOpenDebrisLab={engineMode ? undefined : () => setIsDebrisLabOpen(true)}
         isDebrisLabOpen={isDebrisLabOpen}
         appMode={appMode}
         onSelectInspector={handleSelectInspector}
         selectedInspectorId={selectedInspectorId}
         showInspectors={!engineMode}
-        engineDepth={liveActive ? live.depth : engineMode ? engineSource.surfaceAt(currentTimestamp) : undefined}
+        engineDepth={liveActive ? live.depth : engineMode ? engineSource.surfaceAt(engineRunId, currentTimestamp) : undefined}
       />
 
       {/* Selected Asset Details Drawer with Live Site Photos, CCTV, and Blockage Slider */}
@@ -655,6 +679,7 @@ export function App() {
             : customBlockages['NODE-J07'] ?? 0.4
         }
         onUpdateBlockage={handleUpdateBlockage}
+        hideBlockageTuning={engineMode}
       />
 
       {/* Real-time Field Telemetry Stream (Intelligent non-overlapping layout) */}
@@ -675,10 +700,16 @@ export function App() {
           }}
           debrisScenarios={bootstrap.debris_scenarios}
           selectedDebrisId={selectedDebrisId}
-          onSelectDebris={(id) => setSelectedDebrisId(id)}
+          onSelectDebris={(id) => {
+            setSelectedDebrisId(id);
+            if (liveActive) startLive(selectedStormId, id);
+          }}
           tailwaterCases={bootstrap.tailwater_cases}
           selectedTailwater={selectedTailwater}
-          onSelectTailwater={(id) => setSelectedTailwater(id)}
+          onSelectTailwater={(id) => {
+            setSelectedTailwater(id);
+            if (liveActive) startLive(selectedStormId, selectedDebrisId, id);
+          }}
           onRunSimulation={handleRunSimulation}
           onLoadVerifiedRun={engineMode ? () => {} : handleLoadVerifiedRun}
           hideVerifiedRun={engineMode}
@@ -714,6 +745,14 @@ export function App() {
           rainEnabled={rainEnabled}
           onToggleRain={() => setRainEnabled(!rainEnabled)}
           onOpenDebrisLab={() => setIsDebrisLabOpen(true)}
+          engineMode={engineMode}
+          appliedOptionTitle={
+            engineMode
+              ? appliedOptionId === 'baseline'
+                ? 'Baseline'
+                : engineOptions?.find((o) => o.id === appliedOptionId)?.title.replace(/^Option \d+: /, '') ?? appliedOptionId
+              : undefined
+          }
           onOpenInspect={() => setInspectingAssetId('NODE-J07')}
           appMode={appMode}
           onChangeAppMode={handleSwitchAppMode}
@@ -750,8 +789,9 @@ export function App() {
           onClose={() => setIsInterventionDashboardOpen(false)}
           onApplyIntervention={handleApplyIntervention}
           inspections={inspections}
-          engineOptions={engineMode ? buildDashboardOptions(selectedStormId as StormId) : undefined}
+          engineOptions={engineOptions}
           engineStormLabel={STORMS[selectedStormId as StormId]?.label}
+          applyDisabled={engineMode && isRunning && !live.on}
         />
       )}
     </div>

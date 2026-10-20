@@ -15,6 +15,7 @@ import {
 } from '../types';
 import { FieldInspectorsManager } from './FieldInspectorsManager';
 import { TownshipEnvironment } from './TownshipEnvironment';
+import { EngineWater } from '../engine/EngineWater';
 import { RainEffect } from './RainEffect';
 import { NetworkHighlightOverlay } from './NetworkHighlightOverlay';
 import { FieldInspector } from '../types';
@@ -559,15 +560,18 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           </button>
         </div>
 
-        <div className="h-3.5 w-px bg-slate-200 mx-0.5" />
-
-        {/* 4. Virtual Debris Lab Quick Button */}
-        <button
-          onClick={onOpenDebrisLab}
-          className="px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition cursor-pointer font-bold flex items-center gap-1 shadow-xs"
-        >
-          <span>★ Virtual Debris Lab</span>
-        </button>
+        {/* 4. Virtual Debris Lab Quick Button (absent in engine mode, which has no Debris Lab) */}
+        {onOpenDebrisLab && (
+          <>
+            <div className="h-3.5 w-px bg-slate-200 mx-0.5" />
+            <button
+              onClick={onOpenDebrisLab}
+              className="px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 transition cursor-pointer font-bold flex items-center gap-1 shadow-xs"
+            >
+              <span>★ Virtual Debris Lab</span>
+            </button>
+          </>
+        )}
       </div>
 
       <Canvas
@@ -611,21 +615,26 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         />
 
         {/* Full Residential Township Digital Twin (Houses, Roads, Lawns, Lake, Canal, and Rising Ponding Water) */}
+        {/* Engine mode passes no frame: the township is static there and only the engine water moves. */}
         <TownshipEnvironment
           showUndergroundOnly={currentMode === 'underground_only'}
-          floodingActive={Boolean(
-            currentFrame?.inlet_states?.some(
-              (i) => i.inlet_id === 'INLET-D07' && i.hydraulic_inlet_clogging_fraction > 0
-            ) ||
-              currentFrame?.node_states?.some(
-                (n) => n.node_id === 'NODE-J07' && (n.status === 'flooding' || n.depth_m > 1.4)
-              )
-          )}
+          floodingActive={
+            engineDepth !== undefined
+              ? false
+              : Boolean(
+                  currentFrame?.inlet_states?.some(
+                    (i) => i.inlet_id === 'INLET-D07' && i.hydraulic_inlet_clogging_fraction > 0
+                  ) ||
+                    currentFrame?.node_states?.some(
+                      (n) => n.node_id === 'NODE-J07' && (n.status === 'flooding' || n.depth_m > 1.4)
+                    )
+                )
+          }
           appMode={appMode}
-          currentFrame={currentFrame}
+          currentFrame={engineDepth !== undefined ? null : currentFrame}
           engineMode={engineDepth !== undefined}
-          engineDepth={engineDepth}
         />
+        {engineDepth !== undefined && <EngineWater depth={engineDepth} />}
 
         {/* Glowing Surface Road Flow Ribbons & 3D Glowing Junction Markers (Mockup View) */}
         <NetworkHighlightOverlay
