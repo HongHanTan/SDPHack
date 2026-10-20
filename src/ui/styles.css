@@ -67,3 +67,19 @@ input.switch:checked { background: #0b62c4; }
 input.switch:checked::after { left: 16px; }
 input.switch:disabled { opacity: 0.5; cursor: default; }
 .iv-footer { display: flex; justify-content: space-between; margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--navy); color: #fff; font-size: 12.5px; }
+.pin { background: none; border: 0; padding: 0; cursor: pointer; pointer-events: auto; }
+.pin-head { width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 2px solid #8a94a3; background: #ffffffd9; display: grid; place-items: center; box-shadow: 0 2px 6px #0003; }
+.pin-head > span { transform: rotate(45deg); font-size: 14px; }
+.pin.installed .pin-head { background: #0b62c4; border-color: #0b62c4; }
+.pin-popover { position: absolute; z-index: 5; width: 240px; background: #fff; border-radius: 10px; padding: 10px 12px; box-shadow: 0 6px 20px #0003; font-size: 12.5px; }
+.pin-popover h3 { margin: 0 0 4px; font-size: 14px; }
+.pin-popover .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.pin-popover .chip { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: #eef2f6; }
+.pin-popover label { display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+.rain-gauge { position: absolute; right: 12px; top: 12px; background: #ffffffdd; border-radius: 8px; padding: 6px 10px; font-size: 12px; z-index: 4; }
+.rg-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+.rg-bars { display: flex; align-items: flex-end; gap: 1px; height: 30px; margin-top: 4px; }
+.rg-bars i { width: 4px; background: #9ec3e6; border-radius: 1px; }
+.rg-bars i.now { background: #0b62c4; }
+.pins-toggle { position: absolute; right: 12px; bottom: 12px; z-index: 4; background: #ffffffdd; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+[hidden] { display: none !important; }

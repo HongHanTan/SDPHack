@@ -1,10 +1,16 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { Township } from '../scenario/interventions';
+import type { InterventionId, Township } from '../scenario/interventions';
+import { cellAt } from '../scenario/terrain';
 import type { Frame } from '../sim/types';
+import { worldX, worldY, worldZ } from './coords';
 import { NetworkView } from './network';
+import { PinLayer, type PinItem } from './pins';
+import { Rain } from './rain';
 import { createTerrainMesh } from './terrain';
 import { WaterSurface } from './water';
+
+export type PinSpec = Omit<PinItem, 'position'> & { x: number; y: number };
 
 export interface SceneHandle {
   canvas: HTMLCanvasElement;
@@ -12,7 +18,15 @@ export interface SceneHandle {
   showFrame(f: Frame | null): void;
   /** ndc in [-1, 1]; returns the id of the drain node under the pointer, if any. */
   pickNode(ndcX: number, ndcY: number): string | null;
+  setRain(mmHr: number): void;
+  setPins(specs: PinSpec[]): void;
+  setInstalled(ids: ReadonlySet<InterventionId>): void;
+  setPinsVisible(visible: boolean): void;
+  setPinsDisabled(disabled: boolean): void;
+  onPinToggle(fn: (id: InterventionId, on: boolean) => void): void;
 }
+
+const PIN_LIFT = 14; // world units above ground
 
 export function createScene(container: HTMLElement): SceneHandle {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -32,15 +46,34 @@ export function createScene(container: HTMLElement): SceneHandle {
   sun.position.set(200, 400, 100);
   scene.add(sun);
 
+  const pins = new PinLayer(container);
+  scene.add(pins.group);
+
   let township: Township | null = null;
   let terrain: THREE.Mesh | null = null;
   let water: WaterSurface | null = null;
   let network: NetworkView | null = null;
+  let rain: Rain | null = null;
   let frame: Frame | null = null;
+  let pinSpecs: PinSpec[] | null = null;
+  let pinsBuilt = false;
+
+  const buildPins = () => {
+    if (!township || !pinSpecs) return;
+    const g = township.grid;
+    pins.setItems(
+      pinSpecs.map(({ x, y, ...rest }) => ({
+        ...rest,
+        position: new THREE.Vector3(worldX(g, x), worldY(g.z[cellAt(x, y)]) + PIN_LIFT, worldZ(g, y)),
+      })),
+    );
+    pinsBuilt = true;
+  };
 
   const resize = () => {
     const { clientWidth: w, clientHeight: h } = container;
     renderer.setSize(w, h);
+    pins.setSize(w, h);
     camera.aspect = w / Math.max(1, h);
     camera.updateProjectionMatrix();
   };
@@ -49,9 +82,12 @@ export function createScene(container: HTMLElement): SceneHandle {
 
   const clock = new THREE.Clock();
   renderer.setAnimationLoop(() => {
+    const dt = clock.getDelta();
     controls.update();
-    network?.update(frame, clock.getElapsedTime());
+    rain?.update(dt);
+    network?.update(frame, clock.elapsedTime);
     renderer.render(scene, camera);
+    pins.render(scene, camera);
   });
 
   const raycaster = new THREE.Raycaster();
@@ -59,10 +95,9 @@ export function createScene(container: HTMLElement): SceneHandle {
   return {
     canvas: renderer.domElement,
     setTownship(t) {
-      for (const obj of [terrain]) {
-        if (!obj) continue;
-        scene.remove(obj);
-        obj.geometry.dispose();
+      if (terrain) {
+        scene.remove(terrain);
+        terrain.geometry.dispose();
       }
       if (water) {
         scene.remove(water.mesh);
@@ -77,6 +112,11 @@ export function createScene(container: HTMLElement): SceneHandle {
       water = new WaterSurface(t.grid);
       network = new NetworkView(t.grid, t.network);
       scene.add(terrain, water.mesh, network.group);
+      if (!rain) {
+        rain = new Rain(t.grid.nx * t.grid.dx, t.grid.ny * t.grid.dx);
+        scene.add(rain.object);
+      }
+      if (!pinsBuilt) buildPins();
       frame = null;
     },
     showFrame(f) {
@@ -88,6 +128,25 @@ export function createScene(container: HTMLElement): SceneHandle {
       raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
       const hit = raycaster.intersectObjects(network.nodeMeshes, false)[0];
       return hit ? (hit.object.userData.nodeId as string) : null;
+    },
+    setRain(mmHr) {
+      rain?.setIntensity(mmHr);
+    },
+    setPins(specs) {
+      pinSpecs = specs;
+      buildPins();
+    },
+    setInstalled(ids) {
+      pins.setInstalled(ids);
+    },
+    setPinsVisible(v) {
+      pins.setVisible(v);
+    },
+    setPinsDisabled(b) {
+      pins.setDisabled(b);
+    },
+    onPinToggle(fn) {
+      pins.setOnToggle(fn);
     },
   };
 }
