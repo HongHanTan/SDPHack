@@ -8,6 +8,7 @@ import { useViewLook } from './ViewLookContext';
 import { blendTheme, blendThemeInto } from './xrayTheme';
 
 const CHEVRON_SPACING = 12; // world units between chevrons
+const PLAN_END_TRIM_M = 1.3; // plan mode: stop short of each node so manhole discs stay visible and clickable
 
 const vertexShader = /* glsl */ `
 varying vec2 vUv;
@@ -65,6 +66,12 @@ function buildRibbons(nodes: AssetNode[], conduits: AssetConduit[], mode: Mode):
     const a = at(from);
     const b = at(to);
     if (a.distanceTo(b) <= 0) continue;
+    if (mode === 'plan') {
+      if (a.distanceTo(b) < 2 * PLAN_END_TRIM_M) continue;
+      const dir = b.clone().sub(a).normalize();
+      a.addScaledVector(dir, PLAN_END_TRIM_M);
+      b.addScaledVector(dir, -PLAN_END_TRIM_M);
+    }
     const radius = mode === 'xray' ? Math.max(0.6, d * 1.2) : Math.max(1.0, d * 2.5);
     const geometry = new THREE.TubeGeometry(new THREE.LineCurve3(a, b), 8, radius, 8, false);
     const material = new THREE.ShaderMaterial({

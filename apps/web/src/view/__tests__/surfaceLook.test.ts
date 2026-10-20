@@ -40,6 +40,20 @@ describe('applySurfaceLook', () => {
     applySurfaceLook(root, false, false);
     expect(house.material).toBe(fresh);
   });
+  it('hides text inside a noGhost group in 2D without touching its material', () => {
+    const root = new THREE.Group();
+    const grp = new THREE.Group();
+    grp.userData.noGhost = true;
+    const mat = new THREE.MeshBasicMaterial();
+    const t = Object.assign(new THREE.Mesh(new THREE.PlaneGeometry(), mat), { text: 'x', sync: () => {} });
+    grp.add(t);
+    root.add(grp);
+    applySurfaceLook(root, true, true);
+    expect(t.visible).toBe(false);
+    expect(t.material).toBe(mat);
+    applySurfaceLook(root, true, false);
+    expect(t.visible).toBe(true);
+  });
   it('hides text labels in 2D and shows them again in 3D', () => {
     const { root, label } = scene();
     applySurfaceLook(root, false, true);

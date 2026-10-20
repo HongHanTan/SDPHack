@@ -60,6 +60,9 @@ export function ViewRig({
       go('to2d');
     } else if (!is2d && (p === '2d' || p === 'to2d')) {
       const top = topPose();
+      // R3F only resizes the default camera; ours was parked while the ortho camera was active.
+      persp.aspect = size.width / size.height;
+      persp.updateProjectionMatrix();
       let from: Pose;
       if (p === '2d') {
         persp.position.copy(top.pos);

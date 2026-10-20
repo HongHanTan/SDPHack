@@ -26,6 +26,16 @@ import { RainEffect } from './RainEffect';
 import { NetworkHighlightOverlay } from './NetworkHighlightOverlay';
 import { FieldInspector } from '../types';
 
+// Bloom (X-ray) renders at Hud priority 1; the gizmo must come after it or it vanishes.
+function ViewGizmo() {
+  const { ghost } = useViewLook();
+  return (
+    <GizmoHelper alignment="bottom-right" margin={[80, 80]} renderPriority={ghost ? 2 : 1}>
+      <GizmoViewport axisColors={['#f43f5e', '#10b981', '#38bdf8']} labelColor="#ffffff" />
+    </GizmoHelper>
+  );
+}
+
 // Convert local coordinates {x (East), y (North), z (Elevation)} to Three.js [x, z, -y]
 // per Section 6.1 of md/TEAM_WORKFLOW.md
 export function toThreeCoords(pos: Position3D): [number, number, number] {
@@ -792,9 +802,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         )}
 
         {/* Axis Orientation Gizmo */}
-        <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
-          <GizmoViewport axisColors={['#f43f5e', '#10b981', '#38bdf8']} labelColor="#ffffff" />
-        </GizmoHelper>
+        <ViewGizmo />
         <XrayBloom />
         </ViewLookProvider>
       </Canvas>

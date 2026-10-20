@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
+import { useViewLook } from '../view/ViewLookContext';
 import {
   AssetConduit,
   AssetNode,
@@ -60,6 +61,7 @@ const GlowingJunctionMarker: React.FC<{
   }, [status, isSelected]);
 
   const label = MANHOLE_LABELS[node.node_id] || node.node_id;
+  const { is2d } = useViewLook();
 
   // Gentle floating animation
   useFrame((state) => {
@@ -121,6 +123,7 @@ const GlowingJunctionMarker: React.FC<{
       {/* Floating Mockup-style Node ID Badge */}
       <group position={[0, groundY + 3.2, 0]}>
         <Text
+          visible={!is2d}
           fontSize={1.1}
           color={isSelected ? '#38bdf8' : '#f8fafc'}
           anchorX="center"
