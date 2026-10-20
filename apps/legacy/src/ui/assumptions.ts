@@ -1,4 +1,4 @@
-import { GRID, INFILTRATION_MMHR, MANHOLE, RIVER_STAGE, SIM, THRESHOLDS } from '@floodops/engine/scenario/config';
+import { GRID, INFILTRATION_MMHR, TAILWATER, SIM, THRESHOLDS } from '@floodops/engine/scenario/config';
 import { BLOCK_S, IDF, STORM_DURATION_S } from '@floodops/engine/scenario/storms';
 import { ORIFICE_CD, WEIR_C } from '@floodops/engine/sim/coupling';
 import { MANNING_N, MIN_SLOPE } from '@floodops/engine/sim/pipes';
@@ -15,11 +15,14 @@ export function renderAssumptions(el: HTMLElement): void {
     ['Infiltration (mm/hr)', Object.entries(INFILTRATION_MMHR).map(([k, v]) => `${k.toLowerCase()} ${v}`).join(', ')],
     ['Pipes', `Manning n = ${MANNING_N}; minimum grade ${MIN_SLOPE}`],
     ['Custom pipes', 'Routed by capacity only; uphill pipes are rejected.'],
-    ['Inlets', `Weir C = ${WEIR_C}; perimeter ${MANHOLE.inletPerimeter} m per manhole`],
+    ['Inlets', `Weir C = ${WEIR_C}; perimeter = 4·√(grate area)·(1 − blockage) per inlet`],
     ['Outfall', `Orifice Cd = ${ORIFICE_CD}`],
-    ['River stage', RIVER_STAGE.times.map((t, k) => `${t / 60} min: ${RIVER_STAGE.levels[k]} m`).join(' · ')],
+    ['Canal level (tailwater)', `normal ${TAILWATER.normal} m · high ${TAILWATER.high} m (constant)`],
     ['Flood thresholds', `road ${THRESHOLDS.road} m, home ${THRESHOLDS.home} m`],
     ['Live mode', 'Changes made mid-storm are applied in place (water kept where it is); use Compare for fair before/after numbers. Effect badges are pre-computed single-intervention runs (npm run effects).'],
+    ['Town', 'Taman Kyra synthetic zone: drainage network by Tay Zheheng (data/synthetic/taman_kyra_assets.json), street/house layout by TEH JIA JIE (TownshipEnvironment.tsx). Grid-local metres = team datum − (−80, −140).'],
+    ['Grate D07', 'Baseline 40% blocked (team demo_inlet_40pct); grate edge = 4·√area·(1 − blockage).'],
+    ['SWMM cross-check', 'Pipe peaks compared with EPA SWMM 5.2.4 runs by Tay Zheheng — see docs/swmm-crosscheck.md.'],
     ['Costs','Indicative placeholders — replace with SDP quantity-surveyor rates.'],
   ];
   el.innerHTML = `<h2>Assumptions</h2><table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>`;

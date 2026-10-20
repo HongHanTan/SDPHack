@@ -19,7 +19,7 @@ export class CameraRig {
   readonly pan: OrbitControls;
   private view: ViewMode = '3d';
   private usingOrtho = false;
-  private saved: Pose = { pos: new THREE.Vector3(-120, 380, 520), target: new THREE.Vector3(0, 20, 0) };
+  private saved: Pose = { pos: new THREE.Vector3(-80, 230, 300), target: new THREE.Vector3(0, 40, 0) };
   private anim: { from: Pose; to: Pose; start: number | null; then: () => void } | null = null;
   private w = 1;
   private h = 1;

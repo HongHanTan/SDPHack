@@ -1,4 +1,6 @@
-import { BIOSWALE, GRID, NODE_LAYOUT, POND, TANK } from '@floodops/engine/scenario/config';
+import { TANK } from '@floodops/engine/scenario/config';
+import { LAYOUT, toLocal } from '@floodops/engine/scenario/layout';
+import { nodeSite } from '@floodops/engine/scenario/network';
 import { INTERVENTIONS, type Intervention, type InterventionId } from '@floodops/engine/scenario/interventions';
 
 export const GROUPS = [
@@ -17,28 +19,15 @@ export interface InterventionDisplay {
   site: { x: number; y: number }; // township metres: x east, y north
 }
 
-function nodeSite(id: string): { x: number; y: number } {
-  const n = NODE_LAYOUT.find(([nid]) => nid === id);
-  if (!n) throw new Error(`Unknown node ${id}`);
-  return { x: n[1], y: n[2] };
-}
-
-const OUTFALL = nodeSite('O');
+const OUT01 = nodeSite('NODE-OUT01');
 
 export const DISPLAY: Record<InterventionId, InterventionDisplay> = {
-  'flap-gate': { label: 'One-way valve at the river', short: 'valve', icon: '🚪', group: 'Stop the river coming back', site: OUTFALL },
-  'detention-tank': { label: 'Underground storage tank', short: 'tank', icon: '🛢️', group: 'Store water for later', site: { x: TANK.x, y: TANK.y } },
-  'relief-pond': { label: 'Overflow pipe to pond', short: 'overflow pipe', icon: '↪️', group: 'Store water for later', site: { x: POND.x, y: POND.y } },
-  'sag-inlets': { label: 'More drain grates in the low area', short: 'grates', icon: '🕳️', group: 'Get water into the drains', site: nodeSite('S1') },
-  bioswales: {
-    label: 'Rain gardens on the slope',
-    short: 'rain gardens',
-    icon: '🌿',
-    group: 'Get water into the drains',
-    site: { x: BIOSWALE.xMax / 2, y: (BIOSWALE.roadJ + 0.5) * GRID.dx },
-  },
-  'upsize-trunk': { label: 'Bigger main drain', short: 'bigger drain', icon: '⬇️', group: 'Move water out faster', site: nodeSite('T4') },
-  pump: { label: 'Pump station', short: 'pump', icon: '⚡', group: 'Move water out faster', site: { x: OUTFALL.x + 12, y: OUTFALL.y } },
+  'desilt-d07': { label: 'Desilt grate D07', short: 'desilt D07', icon: '🧹', group: 'Get water into the drains', site: nodeSite('NODE-J07') },
+  'upsize-p07': { label: 'Bigger pipe P07 (Ø750)', short: 'upsize P07', icon: '⬇️', group: 'Move water out faster', site: (() => { const a = nodeSite('NODE-J07'); const b = nodeSite('NODE-J08'); return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; })() },
+  'flap-gate': { label: 'One-way valve at the outfall', short: 'valve', icon: '🚪', group: 'Stop the river coming back', site: OUT01 },
+  'storage-tank': { label: 'Underground storage tank', short: 'tank', icon: '🛢️', group: 'Store water for later', site: toLocal(TANK.x, TANK.y) },
+  'lake-overflow': { label: 'Overflow to Maple Grove pond', short: 'lake overflow', icon: '↪️', group: 'Store water for later', site: toLocal(LAYOUT.lake.x, LAYOUT.lake.y) },
+  pump: { label: 'Pump station at J08', short: 'pump', icon: '⚡', group: 'Move water out faster', site: nodeSite('NODE-J08') },
 };
 
 export interface Combo {
@@ -48,8 +37,8 @@ export interface Combo {
 }
 
 export const COMBOS: Combo[] = [
-  { label: 'Cheapest fix', hint: 'valve + tank', ids: ['flap-gate', 'detention-tank'] },
-  { label: 'Clear the roads', hint: 'grates + pump', ids: ['sag-inlets', 'pump'] },
+  { label: 'Combined desilt + upsize', hint: 'team option 3', ids: ['desilt-d07', 'upsize-p07'] },
+  { label: 'High-river defence', hint: 'valve + pump', ids: ['flap-gate', 'pump'] },
 ];
 
 export function costScale(costRM: number): 1 | 2 | 3 | 4 {

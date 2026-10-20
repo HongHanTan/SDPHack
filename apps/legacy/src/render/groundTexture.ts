@@ -36,7 +36,8 @@ export function landColor(code: number, look: Look, bioswale = false): string {
 /** Paints the land-use grid into a square texture (north at the top), matching the terrain's cell-centre UVs. */
 export function paintGround(grid: Grid, look: Look, size: number): THREE.CanvasTexture {
   const { nx, ny, land } = grid;
-  const s = size / nx;
+  const sx = size / nx;
+  const sy = size / ny;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -44,8 +45,8 @@ export function paintGround(grid: Grid, look: Look, size: number): THREE.CanvasT
   const pal = GROUND[look];
   const rnd = mulberry32(7);
   const tmp = new THREE.Color();
-  const px = (i: number) => i * s;
-  const py = (j: number) => (ny - 1 - j) * s;
+  const px = (i: number) => i * sx;
+  const py = (j: number) => (ny - 1 - j) * sy;
 
   for (let c = 0; c < nx * ny; c++) {
     if (land[c] === LandUse.ROOF) continue;
@@ -54,26 +55,26 @@ export function paintGround(grid: Grid, look: Look, size: number): THREE.CanvasT
     let col = landColor(land[c], look, isBioswale(grid, c));
     if (look === 'day' && land[c] === LandUse.LAWN) col = tmp.set(col).offsetHSL(0, 0, (rnd() - 0.5) * 0.06).getStyle();
     ctx.fillStyle = col;
-    ctx.fillRect(px(i), py(j), s + 0.5, s + 0.5);
+    ctx.fillRect(px(i), py(j), sx + 0.5, sy + 0.5);
   }
 
-  const off = Math.max(1, s * 0.15);
+  const off = Math.max(1, sx * 0.15);
   if (pal.lotShadow) {
     ctx.fillStyle = pal.lotShadow;
     for (let c = 0; c < nx * ny; c++) {
       if (land[c] !== LandUse.ROOF) continue;
-      ctx.fillRect(px(c % nx) + off, py(Math.floor(c / nx)) + off, s, s);
+      ctx.fillRect(px(c % nx) + off, py(Math.floor(c / nx)) + off, sx, sy);
     }
   }
   ctx.fillStyle = pal.fills[LandUse.ROOF];
   for (let c = 0; c < nx * ny; c++) {
     if (land[c] !== LandUse.ROOF) continue;
-    ctx.fillRect(px(c % nx), py(Math.floor(c / nx)), s + 0.5, s + 0.5);
+    ctx.fillRect(px(c % nx), py(Math.floor(c / nx)), sx + 0.5, sy + 0.5);
   }
 
   const edges = (pred: (c: number) => boolean, color: string) => {
     ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(1, s * 0.12);
+    ctx.lineWidth = Math.max(1, Math.min(sx, sy) * 0.12);
     ctx.beginPath();
     for (let j = 0; j < ny; j++) {
       for (let i = 0; i < nx; i++) {
@@ -81,11 +82,11 @@ export function paintGround(grid: Grid, look: Look, size: number): THREE.CanvasT
         const here = pred(c);
         if (i < nx - 1 && here !== pred(c + 1)) {
           ctx.moveTo(px(i + 1), py(j));
-          ctx.lineTo(px(i + 1), py(j) + s);
+          ctx.lineTo(px(i + 1), py(j) + sy);
         }
         if (j < ny - 1 && here !== pred(c + nx)) {
           ctx.moveTo(px(i), py(j));
-          ctx.lineTo(px(i) + s, py(j));
+          ctx.lineTo(px(i) + sx, py(j));
         }
       }
     }

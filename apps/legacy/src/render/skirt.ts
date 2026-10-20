@@ -3,7 +3,6 @@ import type { Grid } from '@floodops/engine/sim/types';
 import { worldX, worldY, worldZ } from './coords';
 
 const TOPSOIL_M = 0.6;
-const BASE_ELEV = -4;
 
 /** Soil cross-section on the four sides: topsoil band over clay; the south (river) face in river colour. */
 export class SkirtView {
@@ -14,6 +13,9 @@ export class SkirtView {
 
   constructor(grid: Grid) {
     const { nx, ny, dx, z } = grid;
+    let minZ = Infinity;
+    for (const v of z) minZ = Math.min(minZ, v);
+    const base = worldY(minZ - 2);
     const ring: Array<{ c: number; south: boolean }> = [];
     for (let i = 0; i < nx; i++) ring.push({ c: i, south: true });
     for (let j = 1; j < ny; j++) ring.push({ c: j * nx + nx - 1, south: false });
@@ -39,7 +41,6 @@ export class SkirtView {
       const yB = worldY(z[q.c]);
       const mA = worldY(z[p.c] - TOPSOIL_M);
       const mB = worldY(z[q.c] - TOPSOIL_M);
-      const base = worldY(BASE_ELEV);
       const v = (x: number, y: number, zz: number) => new THREE.Vector3(x, y, zz);
       quad(v(A.x, yA, A.zz), v(B.x, yB, B.zz), v(A.x, mA, A.zz), v(B.x, mB, B.zz), south ? 2 : 0);
       quad(v(A.x, mA, A.zz), v(B.x, mB, B.zz), v(A.x, base, A.zz), v(B.x, base, B.zz), south ? 2 : 1);

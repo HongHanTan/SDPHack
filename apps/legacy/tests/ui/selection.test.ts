@@ -16,25 +16,25 @@ describe('Selection', () => {
   it('orders interventions like INTERVENTIONS regardless of click order', () => {
     const s = new Selection();
     s.set('pump', true);
-    s.set('upsize-trunk', true);
-    expect(s.state.interventions).toEqual(['upsize-trunk', 'pump']);
+    s.set('upsize-p07', true);
+    expect(s.state.interventions).toEqual(['upsize-p07', 'pump']);
   });
 
   it('applying a combo replaces interventions and keeps custom pipes', () => {
     const s = new Selection();
-    s.set('upsize-trunk', true);
-    s.addPipe({ from: 'SL0', to: 'O', diameter: 0.6 });
-    s.applyCombo(['flap-gate', 'detention-tank'], 'Cheapest fix');
-    expect(s.state.interventions).toEqual(['detention-tank', 'flap-gate']);
-    expect(s.state.custom).toEqual([{ from: 'SL0', to: 'O', diameter: 0.6 }]);
+    s.set('upsize-p07', true);
+    s.addPipe({ from: 'NODE-J06', to: 'NODE-J08', diameter: 0.6 });
+    s.applyCombo(['flap-gate', 'storage-tank'], 'Cheapest fix');
+    expect(s.state.interventions).toEqual(['flap-gate', 'storage-tank']);
+    expect(s.state.custom).toEqual([{ from: 'NODE-J06', to: 'NODE-J08', diameter: 0.6 }]);
   });
 
   it('applyCombo with an unchanged set emits nothing', () => {
     const s = new Selection();
-    s.applyCombo(['flap-gate', 'detention-tank'], 'Cheapest fix');
+    s.applyCombo(['flap-gate', 'storage-tank'], 'Cheapest fix');
     const labels: string[] = [];
     s.subscribe((_st, label) => labels.push(label));
-    s.applyCombo(['detention-tank', 'flap-gate'], 'Cheapest fix');
+    s.applyCombo(['storage-tank', 'flap-gate'], 'Cheapest fix');
     expect(labels).toEqual([]);
     s.applyCombo(['flap-gate'], 'Less');
     expect(labels).toEqual(['Less']);
@@ -42,7 +42,7 @@ describe('Selection', () => {
 
   it('state is a copy', () => {
     const s = new Selection();
-    s.addPipe({ from: 'SL0', to: 'O', diameter: 0.6 });
+    s.addPipe({ from: 'NODE-J06', to: 'NODE-J08', diameter: 0.6 });
     s.state.custom.pop();
     expect(s.state.custom.length).toBe(1);
   });
@@ -59,13 +59,13 @@ describe('Selection', () => {
 
 describe('activePipes / selectionCost', () => {
   it('drops pipes whose node is not in the scenario', () => {
-    const state = { interventions: [], custom: [{ from: 'S3', to: 'P', diameter: 0.6 }, { from: 'SL0', to: 'O', diameter: 0.6 }] };
-    expect(activePipes(state)).toEqual([{ from: 'SL0', to: 'O', diameter: 0.6 }]);
-    expect(activePipes({ ...state, interventions: ['relief-pond'] }).length).toBe(2);
+    const state = { interventions: [], custom: [{ from: 'NODE-J04', to: 'LK', diameter: 0.6 }, { from: 'NODE-J06', to: 'NODE-J08', diameter: 0.6 }] };
+    expect(activePipes(state)).toEqual([{ from: 'NODE-J06', to: 'NODE-J08', diameter: 0.6 }]);
+    expect(activePipes({ ...state, interventions: ['lake-overflow'] }).length).toBe(2);
   });
 
   it('costs interventions plus active pipes', () => {
     expect(selectionCost({ interventions: ['flap-gate', 'pump'], custom: [] })).toBe(totalCost(['flap-gate', 'pump']));
-    expect(selectionCost({ interventions: [], custom: [{ from: 'SL0', to: 'O', diameter: 0.6 }] })).toBeGreaterThan(0);
+    expect(selectionCost({ interventions: [], custom: [{ from: 'NODE-J06', to: 'NODE-J08', diameter: 0.6 }] })).toBeGreaterThan(0);
   });
 });

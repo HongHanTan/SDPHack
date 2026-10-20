@@ -41,7 +41,7 @@ export interface SceneHandle {
 
 const PIN_LIFT = 14; // world units above ground
 const XRAY_FADE_S = 0.6;
-const SITE_SIZE = 512;
+const SITE_SIZE = 290; // Taman Kyra grid: 145 cells × 2 m
 const SUN_ELEV = THREE.MathUtils.degToRad(40);
 // From the south-west: west = −X, south = +Z.
 const SUN_DIR = new THREE.Vector3(-Math.cos(SUN_ELEV) * Math.SQRT1_2, Math.sin(SUN_ELEV), Math.cos(SUN_ELEV) * Math.SQRT1_2);

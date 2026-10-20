@@ -1,5 +1,5 @@
 import type { SceneHandle } from '../render/scene';
-import type { StormId } from '@floodops/engine/scenario/storms';
+import { STORMS, type StormId } from '@floodops/engine/scenario/storms';
 import type { LiveCommand, LiveMessage } from '@floodops/engine/worker/liveProtocol';
 import { formatRM } from './format';
 import { createLiveChart } from './liveChart';
@@ -183,7 +183,8 @@ export function createLiveMode(o: LiveOptions): LiveMode {
   $('live-seek').addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-seek]');
     if (!btn || !started || failed) return;
-    const minute = Number(btn.dataset.seek);
+    const storm = STORMS[o.storm()];
+    const minute = btn.dataset.seek === 'peak' ? storm.peakMinute : btn.dataset.seek === 'end' ? (storm.intensity.length * storm.blockS) / 60 : 0;
     chart.reset();
     ended = false;
     lastFrame = null;

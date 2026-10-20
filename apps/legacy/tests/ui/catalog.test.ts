@@ -16,8 +16,8 @@ describe('catalog', () => {
     const valid = new Set(INTERVENTIONS.map((iv) => iv.id));
     for (const c of COMBOS) for (const id of c.ids) expect(valid.has(id)).toBe(true);
     expect(COMBOS.map((c) => c.ids)).toEqual([
-      ['flap-gate', 'detention-tank'],
-      ['sag-inlets', 'pump'],
+      ['desilt-d07', 'upsize-p07'],
+      ['flap-gate', 'pump'],
     ]);
   });
 
@@ -39,7 +39,7 @@ describe('catalog', () => {
 
   it('places node-based pins on their manholes', () => {
     const nodes = new Map(baseTownship().network.nodes.map((n) => [n.id, n]));
-    for (const [id, node] of [['flap-gate', 'O'], ['sag-inlets', 'S1'], ['upsize-trunk', 'T4']] as const) {
+    for (const [id, node] of [['flap-gate', 'NODE-OUT01'], ['desilt-d07', 'NODE-J07'], ['pump', 'NODE-J08']] as const) {
       expect(DISPLAY[id].site).toEqual({ x: nodes.get(node)!.x, y: nodes.get(node)!.y });
     }
   });

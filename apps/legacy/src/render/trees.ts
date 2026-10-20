@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BIOSWALE, BOULEVARD_I, POND, TANK } from '@floodops/engine/scenario/config';
 import { cellAt } from '@floodops/engine/scenario/terrain';
 import { LandUse, type Grid } from '@floodops/engine/sim/types';
 import { worldX, worldY, worldZ } from './coords';
@@ -15,20 +14,26 @@ export interface TreeSpot {
 
 export const TREE_COUNT = 400;
 export const NODE_CLEARANCE_M = 6;
-const BOULEVARD_BAND_M = 12;
-const JITTER_M = 1.5;
-const TANK_CLEAR_M = 32;
+const JITTER_M = 0.9; // keeps a jittered tree inside its 2 m cell
 
-/** Park/hill cells (not bioswales), or lawn within 12 m of the boulevard. */
+const ROAD_BAND_CELLS = 4; // 8 m at dx = 2
+
+/** Park cells, or lawn within ~8 m of a road (street trees). */
 export function treeCellAllowed(grid: Grid, c: number): boolean {
   const land = grid.land[c];
-  const j = Math.floor(c / grid.nx);
-  const x0 = ((c % grid.nx) + 0.5) * grid.dx;
-  if (Math.abs(j - BIOSWALE.roadJ) <= 2 && x0 <= BIOSWALE.xMax + grid.dx) return false; // bioswale rows ±1
   if (land === LandUse.PARK) return !isBioswale(grid, c);
   if (land !== LandUse.LAWN) return false;
-  const x = ((c % grid.nx) + 0.5) * grid.dx;
-  return Math.abs(x - (BOULEVARD_I + 0.5) * grid.dx) <= BOULEVARD_BAND_M;
+  const i = c % grid.nx;
+  const j = Math.floor(c / grid.nx);
+  for (let dj = -ROAD_BAND_CELLS; dj <= ROAD_BAND_CELLS; dj++) {
+    for (let di = -ROAD_BAND_CELLS; di <= ROAD_BAND_CELLS; di++) {
+      const ii = i + di;
+      const jj = j + dj;
+      if (ii < 0 || jj < 0 || ii >= grid.nx || jj >= grid.ny) continue;
+      if (grid.land[jj * grid.nx + ii] === LandUse.ROAD) return true;
+    }
+  }
+  return false;
 }
 
 /** Deterministic tree positions (township metres), kept clear of drain nodes. */
@@ -45,7 +50,6 @@ export function placeTrees(
     if (!treeCellAllowed(grid, c)) continue;
     const x = ((c % nx) + 0.5) * dx;
     const y = (Math.floor(c / nx) + 0.5) * dx;
-    if (Math.hypot(TANK.x - x, TANK.y - y) < TANK_CLEAR_M || Math.hypot(POND.x - x, POND.y - y) < POND.r + 4) continue;
     if (nodes.some((n) => Math.hypot(n.x - x, n.y - y) < clearance)) continue;
     candidates.push(c);
   }
