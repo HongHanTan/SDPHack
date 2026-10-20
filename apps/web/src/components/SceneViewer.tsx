@@ -22,7 +22,9 @@ import { SceneLook } from '../view/SceneLook';
 import { FieldInspectorsManager } from './FieldInspectorsManager';
 import { TownshipEnvironment } from './TownshipEnvironment';
 import { EngineWater } from '../engine/EngineWater';
-import { TAMAN_KYRA } from '@floodops/engine/scenario/site';
+import { TAMAN_KYRA, type SiteSpec } from '@floodops/engine/scenario/site';
+import { SiteEnvironment } from '../site/SiteEnvironment';
+import { siteFrame } from '../site/siteFrame';
 import { RainEffect } from './RainEffect';
 import { NetworkHighlightOverlay } from './NetworkHighlightOverlay';
 import { FieldInspector } from '../types';
@@ -73,6 +75,8 @@ interface SceneViewerProps {
   /** 2D plan / 3D view (legacy viewer port). Absent handler: no switch. */
   viewDim?: '3d' | '2d';
   onChangeViewDim?: (d: '3d' | '2d') => void;
+  /** Engine mode: the active site. Imported sites render SiteEnvironment and frame their own extent. Default Taman Kyra. */
+  site?: SiteSpec;
 }
 
 // 3D Node Mesh with physical chamber drop from ground down to invert
@@ -411,8 +415,12 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   onToggleXray,
   viewDim = '3d',
   onChangeViewDim,
+  site = TAMAN_KYRA,
 }) => {
   const is2d = viewDim === '2d';
+  // Imported sites only exist in engine mode; mock/SWMM keep the built-in scene.
+  const importedSite = engineDepth !== undefined && !site.builtIn;
+  const frame = useMemo(() => (importedSite ? siteFrame(site) : undefined), [importedSite, site]);
   const [metresPerPixel, setMetresPerPixel] = useState<number>(1);
   const controlsRef = useRef<any>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
@@ -475,7 +483,13 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   // Camera preset handler
   const handlePreset = (type: 'overview' | 'd07' | 'outfall' | 'north') => {
     if (!controlsRef.current) return;
-    if (type === 'overview') {
+    if (frame) {
+      // Imported site: only Overview applies (the other presets are Taman Kyra places).
+      if (type !== 'overview') return;
+      const span = Math.max(frame.w, frame.h);
+      controlsRef.current.target.set(frame.cx, frame.groundY, frame.cz);
+      controlsRef.current.object.position.set(frame.cx + 15, frame.groundY + span * 0.45, frame.cz + span * 0.55);
+    } else if (type === 'overview') {
       controlsRef.current.target.set(50, 10, 0);
       controlsRef.current.object.position.set(60, 90, 130);
     } else if (type === 'd07') {
@@ -609,21 +623,21 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           </button>
           <button
             onClick={() => handlePreset('d07')}
-            disabled={is2d}
+            disabled={is2d || importedSite}
             className="px-2 py-0.5 rounded-lg hover:bg-amber-100 text-amber-800 transition cursor-pointer font-bold disabled:opacity-40 disabled:cursor-not-allowed"
           >
             D07 Lowland
           </button>
           <button
             onClick={() => handlePreset('outfall')}
-            disabled={is2d}
+            disabled={is2d || importedSite}
             className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Outfall
           </button>
           <button
             onClick={() => handlePreset('north')}
-            disabled={is2d}
+            disabled={is2d || importedSite}
             className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Upstream
@@ -656,7 +670,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         <directionalLight ref={fillLightRef} position={[-80, 60, -60]} intensity={0.8} color="#93c5fd" />
         <SceneLook ambient={ambientRef} keyLight={keyLightRef} fill={fillLightRef} />
 
-        <ViewRig is2d={is2d} controlsRef={controlsRef} onMetresPerPixel={setMetresPerPixel} />
+        <ViewRig is2d={is2d} controlsRef={controlsRef} onMetresPerPixel={setMetresPerPixel} frame={frame} />
 
         {/* Spatial Metric Reference Grid */}
         <Grid
@@ -681,6 +695,9 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
 
         {/* Full Residential Township Digital Twin (Houses, Roads, Lawns, Lake, Canal, and Rising Ponding Water) */}
         {/* Engine mode passes no frame: the township is static there and only the engine water moves. */}
+        {importedSite ? (
+          <SiteEnvironment site={site} showUndergroundOnly={currentMode === 'underground_only'} />
+        ) : (
         <TownshipEnvironment
           showUndergroundOnly={currentMode === 'underground_only'}
           floodingActive={
@@ -699,7 +716,8 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           currentFrame={engineDepth !== undefined ? null : currentFrame}
           engineMode={engineDepth !== undefined}
         />
-        {engineDepth !== undefined && <EngineWater depth={engineDepth} site={TAMAN_KYRA} />}
+        )}
+        {engineDepth !== undefined && <EngineWater depth={engineDepth} site={site} />}
 
         {/* Glowing Surface Road Flow Ribbons & 3D Glowing Junction Markers (Mockup View) */}
         <NetworkHighlightOverlay

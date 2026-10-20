@@ -680,6 +680,7 @@ export function App() {
         xray={xray}
         viewDim={viewDim}
         onChangeViewDim={setViewDim}
+        site={site}
         onToggleXray={() => setXray((v) => !v)}
         isRainActive={isRainActive}
         rainEnabled={rainEnabled}

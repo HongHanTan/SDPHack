@@ -67,7 +67,7 @@ const ParkedCar: React.FC<{
 };
 
 // Realistic Suburban House with multi-gable roof, garage, driveway, and landscaping
-const RealisticSuburbanHouse: React.FC<{
+export const RealisticSuburbanHouse: React.FC<{
   position: [number, number, number];
   rotationY?: number;
   roofColor?: string;
@@ -221,7 +221,7 @@ const RealisticSuburbanHouse: React.FC<{
 };
 
 // Lush Multi-Sphere Suburban Tree
-const LushTree: React.FC<{
+export const LushTree: React.FC<{
   position: [number, number, number];
   scale?: number;
   color?: string;
@@ -256,7 +256,7 @@ const LushTree: React.FC<{
 };
 
 // Realistic Street Segment with Asphalt, White Markings & Curbs
-const DetailedRoadSegment: React.FC<{
+export const DetailedRoadSegment: React.FC<{
   position: [number, number, number];
   width: number;
   length: number;
@@ -358,7 +358,7 @@ const DetailedRoadSegment: React.FC<{
 };
 
 // Circular Cul-De-Sac Turnaround Loop
-const CulDeSac: React.FC<{
+export const CulDeSac: React.FC<{
   position: [number, number, number];
   radius: number;
   /** Engine mode: absolute surface height at a team-datum point (road dips). */
