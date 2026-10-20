@@ -8,6 +8,8 @@ export interface TerrainView {
   mesh: THREE.Mesh;
   setLook(look: Look): void;
   setOpacity(o: number): void;
+  /** Paints (and caches) the texture for a look ahead of its first use. */
+  warm(look: Look): void;
   dispose(): void;
 }
 
@@ -51,6 +53,9 @@ export function createTerrain(grid: Grid, textureSize = 2048): TerrainView {
       look = next;
       material.map = groundTexture(grid, next, textureSize);
       material.needsUpdate = true;
+    },
+    warm(l) {
+      groundTexture(grid, l, textureSize);
     },
     setOpacity(o) {
       const transparent = o < 0.999;

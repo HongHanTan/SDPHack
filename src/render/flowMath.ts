@@ -11,8 +11,8 @@ export function arrowsVisible(load: number): boolean {
   return load >= MIN_ARROW_LOAD;
 }
 
-/** Advances a chevron phase in [0, 1). */
-export function advancePhase(phase: number, dtS: number, load: number): number {
-  const p = (phase + arrowSpeed(load) * Math.max(0, dtS)) % 1;
+/** Advances a chevron phase in [0, 1), in chevron units: `scale` = ribbon length / chevron spacing. */
+export function advancePhase(phase: number, dtS: number, load: number, scale = 1): number {
+  const p = (phase + arrowSpeed(load) * Math.max(0, dtS) * scale) % 1;
   return p < 0 ? p + 1 : p;
 }

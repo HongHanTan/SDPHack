@@ -11,7 +11,7 @@ export class PostFx {
   private readonly bloom: UnrealBloomPass;
 
   constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
-    this.composer = new EffectComposer(renderer);
+    this.composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { samples: 4, type: THREE.HalfFloatType }));
     this.renderPass = new RenderPass(scene, camera);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0, 0.4, 0.6);
     this.composer.addPass(this.renderPass);

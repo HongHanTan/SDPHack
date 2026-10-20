@@ -76,11 +76,20 @@ xrayBtn.addEventListener('click', () => {
 
 const planOverlay = $('plan-overlay');
 const scaleBar = $('scalebar-bar');
+const scaleLabel = $('scalebar-label');
+const SCALE_STEPS_M = [10, 20, 50, 100, 200];
 let planOn = false;
+let scaleLoop = false;
 const updateScaleBar = () => {
-  if (!planOn) return;
-  const px = 50 / Math.max(1e-6, view.planMetresPerPixel());
-  scaleBar.style.width = `${Math.round(Math.min(240, px))}px`;
+  if (!planOn) {
+    scaleLoop = false;
+    return;
+  }
+  const mpp = Math.max(1e-6, view.planMetresPerPixel());
+  let m = SCALE_STEPS_M[0];
+  for (const s of SCALE_STEPS_M) if (s / mpp <= 160) m = s;
+  scaleBar.style.width = `${Math.round(m / mpp)}px`;
+  scaleLabel.textContent = `${m} m`;
   requestAnimationFrame(updateScaleBar);
 };
 $('view-toggle').addEventListener('click', (e) => {
@@ -91,7 +100,10 @@ $('view-toggle').addEventListener('click', (e) => {
   view.setView(v);
   planOn = v === 'plan';
   planOverlay.hidden = !planOn;
-  if (planOn) requestAnimationFrame(updateScaleBar);
+  if (planOn && !scaleLoop) {
+    scaleLoop = true;
+    requestAnimationFrame(updateScaleBar);
+  }
 });
 
 const qualityToggle = $('quality-toggle');

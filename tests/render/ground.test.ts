@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { GROUND, isBioswale, landColor } from '../../src/render/groundTexture';
 import { NODE_CLEARANCE_M, placeTrees, TREE_COUNT, treeCellAllowed } from '../../src/render/trees';
 import { buildTownship } from '../../src/scenario/index';
+import { BIOSWALE } from '../../src/scenario/config';
 import { LandUse } from '../../src/sim/types';
 
 describe('ground colours', () => {
@@ -26,6 +27,19 @@ describe('ground colours', () => {
     const count = (g: typeof base) => Array.from(g.land).filter((_l, c) => isBioswale(g, c)).length;
     expect(count(base)).toBe(0);
     expect(count(swale)).toBeGreaterThan(0);
+  });
+});
+
+describe('trees vs bioswales', () => {
+  it('never lands on or beside a bioswale cell', () => {
+    const t = buildTownship(['bioswales']);
+    const { nx, dx } = t.grid;
+    for (const s of placeTrees(t.grid, t.network.nodes)) {
+      const c = Math.floor(s.y / dx) * nx + Math.floor(s.x / dx);
+      expect(isBioswale(t.grid, c)).toBe(false);
+      const j = Math.floor(s.y / dx);
+      if (s.x <= BIOSWALE.xMax) expect(Math.abs(j - BIOSWALE.roadJ)).toBeGreaterThan(1);
+    }
   });
 });
 

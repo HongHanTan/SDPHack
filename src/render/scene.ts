@@ -12,7 +12,7 @@ import { Rain } from './rain';
 import { SkirtView } from './skirt';
 import { createSky } from './sky';
 import { createTerrain, type TerrainView } from './terrain';
-import { blendTheme, type Theme } from './theme';
+import { blendThemeInto, DAY, type Theme } from './theme';
 import { placeTrees, TreesView } from './trees';
 import { WaterSurface } from './water';
 
@@ -51,6 +51,7 @@ export function createScene(container: HTMLElement): SceneHandle {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
+  renderer.setClearColor(DAY.skyHorizon);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
@@ -58,7 +59,7 @@ export function createScene(container: HTMLElement): SceneHandle {
   const scene = new THREE.Scene();
   const sky = createSky();
   scene.add(sky.mesh);
-  scene.fog = new THREE.Fog('#e9eef2', 900, 1800);
+  scene.fog = new THREE.Fog(DAY.fog, DAY.fogNear, DAY.fogFar);
 
   const rig = new CameraRig(renderer.domElement, SITE_SIZE);
 
@@ -67,10 +68,10 @@ export function createScene(container: HTMLElement): SceneHandle {
   sun.position.copy(SUN_DIR).multiplyScalar(800);
   sun.castShadow = true;
   const sc = sun.shadow.camera;
-  sc.left = -320;
-  sc.right = 320;
-  sc.top = 320;
-  sc.bottom = -320;
+  sc.left = -380;
+  sc.right = 380;
+  sc.top = 380;
+  sc.bottom = -380;
   sc.near = 1;
   sc.far = 2000;
   sun.shadow.mapSize.set(2048, 2048);
@@ -97,18 +98,24 @@ export function createScene(container: HTMLElement): SceneHandle {
   let xrayT = 0;
   let view: ViewMode = '3d';
   let waterFallback = false;
+  let prewarmed = false;
   let notice: (text: string) => void = () => {};
   let autoDrop: () => void = () => {};
   const guard = new FpsGuard();
 
   const networkMode = (): NetworkMode => (view === 'plan' ? 'plan' : xrayT >= 0.5 ? 'xray' : 'day');
 
+  const themeScratch: Theme = blendThemeInto(0, { ...DAY });
+  const currentTheme = () => blendThemeInto(xrayT, themeScratch);
+
   const applyTheme = (th: Theme) => {
     sky.setColors(th.skyTop, th.skyHorizon);
     const fog = scene.fog as THREE.Fog;
     fog.color.set(th.fog);
-    fog.near = th.fogNear;
-    fog.far = th.fogFar;
+    // Plan camera sits ~2000 units up; keep the fog out of the way so the terrain is not flattened to fog colour.
+    fog.near = view === 'plan' ? 1e5 : th.fogNear;
+    fog.far = view === 'plan' ? 2e5 : th.fogFar;
+    renderer.setClearColor(th.skyHorizon);
     hemi.color.set(th.hemiSky);
     hemi.groundColor.set(th.hemiGround);
     hemi.intensity = th.hemiIntensity;
@@ -172,16 +179,24 @@ export function createScene(container: HTMLElement): SceneHandle {
     });
     water?.setRipples(q === 'high');
     rebuildTerrain();
-    applyTheme(blendTheme(xrayT));
+    applyTheme(currentTheme());
     resize();
   };
 
+  let genericShaderNotice = false;
   renderer.debug.onShaderError = (gl, _program, vs, fs) => {
     console.error('Shader compile failed', gl.getShaderInfoLog(vs), gl.getShaderInfoLog(fs));
-    if (!waterFallback) {
-      waterFallback = true;
-      water?.useFallback();
-      notice('Using simplified water shading (the graphics driver could not compile the water shader).');
+    const src = (sh: WebGLShader) => gl.getShaderSource(sh) ?? '';
+    if (src(vs).includes('aDepth') || src(fs).includes('aDepth')) {
+      if (!waterFallback) {
+        waterFallback = true;
+        water?.useFallback();
+        applyTheme(currentTheme());
+        notice('Using simplified water shading (the graphics driver could not compile the water shader).');
+      }
+    } else if (!genericShaderNotice) {
+      genericShaderNotice = true;
+      notice('Some graphics effects could not be compiled on this device and may look wrong.');
     }
   };
 
@@ -197,7 +212,7 @@ export function createScene(container: HTMLElement): SceneHandle {
     const target = xrayOn ? 1 : 0;
     if (xrayT !== target) {
       xrayT = target > xrayT ? Math.min(1, xrayT + dt / XRAY_FADE_S) : Math.max(0, xrayT - dt / XRAY_FADE_S);
-      applyTheme(blendTheme(xrayT));
+      applyTheme(currentTheme());
     }
     rig.update(now);
     rain?.update(dt);
@@ -253,7 +268,14 @@ export function createScene(container: HTMLElement): SceneHandle {
       }
       if (!pinsBuilt) buildPins();
       frame = null;
-      applyTheme(blendTheme(xrayT));
+      applyTheme(currentTheme());
+      if (!prewarmed) {
+        prewarmed = true;
+        renderer.compile(scene, rig.active);
+        const warm = () => terrain?.warm('xray');
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 3000 });
+        else setTimeout(warm, 1500);
+      }
     },
     showFrame(f) {
       frame = f;
@@ -285,13 +307,15 @@ export function createScene(container: HTMLElement): SceneHandle {
       pins.setOnToggle(fn);
     },
     setXray(on) {
+      pins.closePopover();
       xrayOn = on;
     },
     setView(v) {
+      pins.closePopover();
       view = v;
       rig.setView(v);
       sun.castShadow = quality === 'high' && v === '3d';
-      applyTheme(blendTheme(xrayT));
+      applyTheme(currentTheme());
     },
     setQuality,
     onQualityAutoDrop(fn) {

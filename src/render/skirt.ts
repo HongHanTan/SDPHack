@@ -10,6 +10,7 @@ export class SkirtView {
   readonly mesh: THREE.Mesh;
   private readonly bands: Uint8Array; // per vertex: 0 topsoil, 1 clay, 2 river
   private readonly colors: Float32Array;
+  private readonly cols = [new THREE.Color(), new THREE.Color(), new THREE.Color()];
 
   constructor(grid: Grid) {
     const { nx, ny, dx, z } = grid;
@@ -54,7 +55,10 @@ export class SkirtView {
   }
 
   setColors(top: string, bottom: string, river: string): void {
-    const cols = [new THREE.Color(top), new THREE.Color(bottom), new THREE.Color(river)];
+    const cols = this.cols;
+    cols[0].set(top);
+    cols[1].set(bottom);
+    cols[2].set(river);
     for (let k = 0; k < this.bands.length; k++) {
       const c = cols[this.bands[k]];
       this.colors[3 * k] = c.r;

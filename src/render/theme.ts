@@ -29,7 +29,7 @@ export interface Theme {
 export const DAY: Theme = {
   skyTop: '#f6f3ee',
   skyHorizon: '#dde9f2',
-  fog: '#e9eef2',
+  fog: '#dde9f2',
   fogNear: 900,
   fogFar: 1800,
   hemiSky: '#ffffff',
@@ -89,14 +89,17 @@ export function lerpHex(a: string, b: string, t: number): string {
 }
 
 /** t = 0 → DAY, t = 1 → XRAY; colours per channel, numbers linearly. */
-export function blendTheme(t: number): Theme {
-  if (!(t > 0)) return { ...DAY };
-  if (t >= 1) return { ...XRAY };
-  const out: Record<string, string | number> = {};
+export function blendThemeInto(t: number, out: Theme): Theme {
+  const o = out as unknown as Record<string, string | number>;
+  const k = !(t > 0) ? 0 : t >= 1 ? 1 : t;
   for (const key of Object.keys(DAY) as Array<keyof Theme>) {
     const a = DAY[key];
     const b = XRAY[key];
-    out[key] = typeof a === 'string' ? lerpHex(a, b as string, t) : a + ((b as number) - a) * t;
+    o[key] = k === 0 ? a : k === 1 ? b : typeof a === 'string' ? lerpHex(a, b as string, k) : a + ((b as number) - a) * k;
   }
-  return out as unknown as Theme;
+  return out;
+}
+
+export function blendTheme(t: number): Theme {
+  return blendThemeInto(t, { ...DAY });
 }

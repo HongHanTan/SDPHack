@@ -56,6 +56,9 @@ describe('flow maths', () => {
     expect(advancePhase(0, 0.5, 1)).toBeCloseTo(0, 12);
     expect(advancePhase(0.9, 0.1, 0)).toBeCloseTo(0.92, 12);
     expect(advancePhase(0.3, -1, 1)).toBeCloseTo(0.3, 12);
+    // scale = ribbon length / chevron spacing: a 120 m pipe at load 0 (0.2 ribbons/s) moves 2 chevrons/s.
+    expect(advancePhase(0, 0.25, 0, 10)).toBeCloseTo(0.5, 12);
+    expect(advancePhase(0.9, 0.1, 0, 10)).toBeCloseTo(0.1, 12);
   });
 });
 

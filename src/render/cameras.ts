@@ -23,13 +23,15 @@ export class CameraRig {
   private anim: { from: Pose; to: Pose; start: number | null; then: () => void } | null = null;
   private w = 1;
   private h = 1;
-  private readonly topHeight: number;
+  private readonly scratch = new THREE.Vector3();
 
   constructor(dom: HTMLElement, private readonly siteSize: number) {
     this.persp.position.copy(this.saved.pos);
     this.orbit = new OrbitControls(this.persp, dom);
     this.orbit.target.copy(this.saved.target);
     this.orbit.enableDamping = true;
+    this.orbit.maxDistance = 1300;
+    this.orbit.maxPolarAngle = Math.PI * 0.48;
 
     this.ortho.position.set(0, 2000, 0);
     this.ortho.up.set(0, 0, -1); // north (−Z) at the top of the screen
@@ -40,8 +42,6 @@ export class CameraRig {
     this.pan.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
     this.pan.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
     this.pan.enabled = false;
-
-    this.topHeight = (siteSize * 0.6) / Math.tan(THREE.MathUtils.degToRad(25));
   }
 
   get active(): THREE.Camera {
@@ -78,7 +78,9 @@ export class CameraRig {
   setView(v: ViewMode): void {
     if (v === this.view) return;
     this.view = v;
-    const top: Pose = { pos: new THREE.Vector3(0, this.topHeight, 0.01), target: new THREE.Vector3(0, 0, 0) };
+    // Perspective height whose frame matches the ortho frame (half-height = ortho.top / zoom).
+    const topHeight = this.ortho.top / Math.tan(THREE.MathUtils.degToRad(this.persp.fov / 2));
+    const top: Pose = { pos: new THREE.Vector3(0, topHeight, 0.01), target: new THREE.Vector3(0, 0, 0) };
     if (v === 'plan') {
       this.saved = { pos: this.persp.position.clone(), target: this.orbit.target.clone() };
       this.orbit.enabled = false;
@@ -108,7 +110,7 @@ export class CameraRig {
       const k = Math.min(1, (nowS - a.start) / SWITCH_S);
       const e = k * k * (3 - 2 * k);
       this.persp.position.lerpVectors(a.from.pos, a.to.pos, e);
-      const target = new THREE.Vector3().lerpVectors(a.from.target, a.to.target, e);
+      const target = this.scratch.lerpVectors(a.from.target, a.to.target, e);
       this.persp.lookAt(target);
       if (k >= 1) {
         this.anim = null;

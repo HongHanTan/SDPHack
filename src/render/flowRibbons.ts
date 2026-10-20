@@ -23,7 +23,7 @@ uniform float uArrows;
 uniform float uGlow;
 varying vec2 vUv;
 void main() {
-  float s = fract((vUv.x - uPhase) * uLen / ${CHEVRON_SPACING.toFixed(1)});
+  float s = fract(vUv.x * uLen / ${CHEVRON_SPACING.toFixed(1)} - uPhase);
   float v = abs(fract(vUv.y * 2.0) - 0.5);
   float d = s - v * 0.6;
   float chevron = smoothstep(0.0, 0.06, d) * (1.0 - smoothstep(0.16, 0.24, d));
@@ -90,7 +90,7 @@ export class FlowRibbons {
     for (let p = 0; p < this.mats.length; p++) {
       const load = f ? f.pipeLoad[p] : 0;
       const u = this.mats[p].uniforms;
-      this.phases[p] = advancePhase(this.phases[p], dtS, load);
+      this.phases[p] = advancePhase(this.phases[p], dtS, load, (u.uLen.value as number) / CHEVRON_SPACING);
       u.uPhase.value = this.phases[p];
       u.uArrows.value = arrowsVisible(load) ? 1 : 0;
       loadColorBetween(load, this.low, this.mid, this.high, u.uColor.value as THREE.Color);

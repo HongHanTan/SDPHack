@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { BOULEVARD_I } from '../scenario/config';
+import { BIOSWALE, BOULEVARD_I, POND, TANK } from '../scenario/config';
 import { cellAt } from '../scenario/terrain';
 import { LandUse, type Grid } from '../sim/types';
 import { worldX, worldY, worldZ } from './coords';
@@ -17,10 +17,14 @@ export const TREE_COUNT = 400;
 export const NODE_CLEARANCE_M = 6;
 const BOULEVARD_BAND_M = 12;
 const JITTER_M = 1.5;
+const TANK_CLEAR_M = 32;
 
 /** Park/hill cells (not bioswales), or lawn within 12 m of the boulevard. */
 export function treeCellAllowed(grid: Grid, c: number): boolean {
   const land = grid.land[c];
+  const j = Math.floor(c / grid.nx);
+  const x0 = ((c % grid.nx) + 0.5) * grid.dx;
+  if (Math.abs(j - BIOSWALE.roadJ) <= 2 && x0 <= BIOSWALE.xMax + grid.dx) return false; // bioswale rows ±1
   if (land === LandUse.PARK) return !isBioswale(grid, c);
   if (land !== LandUse.LAWN) return false;
   const x = ((c % grid.nx) + 0.5) * grid.dx;
@@ -41,6 +45,7 @@ export function placeTrees(
     if (!treeCellAllowed(grid, c)) continue;
     const x = ((c % nx) + 0.5) * dx;
     const y = (Math.floor(c / nx) + 0.5) * dx;
+    if (Math.hypot(TANK.x - x, TANK.y - y) < TANK_CLEAR_M || Math.hypot(POND.x - x, POND.y - y) < POND.r + 4) continue;
     if (nodes.some((n) => Math.hypot(n.x - x, n.y - y) < clearance)) continue;
     candidates.push(c);
   }
