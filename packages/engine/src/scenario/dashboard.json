@@ -1,0 +1,206 @@
+{
+  "synthetic_80mmh_60min": {
+    "baseline": {
+      "j07PeakM": 0.666,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 78,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1172
+    },
+    "desilt-d07": {
+      "j07PeakM": 0.667,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 80,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1168
+    },
+    "upsize-p07": {
+      "j07PeakM": 0.129,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 0,
+      "p07PeakUtilPct": 75,
+      "floodedRoadAreaM2": 0
+    },
+    "storage-tank": {
+      "j07PeakM": 0.129,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 0,
+      "p07PeakUtilPct": 64,
+      "floodedRoadAreaM2": 0
+    },
+    "lake-overflow": {
+      "j07PeakM": 0.481,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 66,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 844
+    },
+    "combined": {
+      "j07PeakM": 0.069,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 0,
+      "p07PeakUtilPct": 75,
+      "floodedRoadAreaM2": 0
+    },
+    "store-peak": {
+      "j07PeakM": 0.129,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 0,
+      "p07PeakUtilPct": 61,
+      "floodedRoadAreaM2": 0
+    }
+  },
+  "synthetic_120mmh_60min": {
+    "baseline": {
+      "j07PeakM": 0.783,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 92.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1496
+    },
+    "desilt-d07": {
+      "j07PeakM": 0.786,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 94.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1496
+    },
+    "upsize-p07": {
+      "j07PeakM": 0.373,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 55.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 740
+    },
+    "storage-tank": {
+      "j07PeakM": 0.281,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 34.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 392
+    },
+    "lake-overflow": {
+      "j07PeakM": 0.782,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 90.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1420
+    },
+    "combined": {
+      "j07PeakM": 0.355,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 60,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 660
+    },
+    "store-peak": {
+      "j07PeakM": 0.213,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 28.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 168
+    }
+  },
+  "10yr": {
+    "baseline": {
+      "j07PeakM": 0.71,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 68.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1384
+    },
+    "desilt-d07": {
+      "j07PeakM": 0.71,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 70,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1384
+    },
+    "upsize-p07": {
+      "j07PeakM": 0.397,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 22.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 820
+    },
+    "storage-tank": {
+      "j07PeakM": 0.363,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 21,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 724
+    },
+    "lake-overflow": {
+      "j07PeakM": 0.644,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 58,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1184
+    },
+    "combined": {
+      "j07PeakM": 0.387,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 25.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 772
+    },
+    "store-peak": {
+      "j07PeakM": 0.353,
+      "homesFlooded": 0,
+      "p07SurchargeMin": 18.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 616
+    }
+  },
+  "100yr": {
+    "baseline": {
+      "j07PeakM": 0.783,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 91,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1580
+    },
+    "desilt-d07": {
+      "j07PeakM": 0.787,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 93,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1580
+    },
+    "upsize-p07": {
+      "j07PeakM": 0.638,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 42.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1344
+    },
+    "storage-tank": {
+      "j07PeakM": 0.614,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 47.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1300
+    },
+    "lake-overflow": {
+      "j07PeakM": 0.782,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 86,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1564
+    },
+    "combined": {
+      "j07PeakM": 0.635,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 47,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1336
+    },
+    "store-peak": {
+      "j07PeakM": 0.608,
+      "homesFlooded": 2,
+      "p07SurchargeMin": 45.5,
+      "p07PeakUtilPct": 100,
+      "floodedRoadAreaM2": 1260
+    }
+  }
+}

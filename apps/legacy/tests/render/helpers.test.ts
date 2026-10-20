@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { advancePhase, arrowSpeed, arrowsVisible } from '../../src/render/flowMath';
 import { FpsGuard } from '../../src/render/fpsGuard';
-import { smoothDepth } from '../../src/render/smoothDepth';
+import { smoothDepth } from '@floodops/engine/client/smoothDepth';
 import { blendTheme, DAY, lerpHex, XRAY } from '../../src/render/theme';
 
 describe('theme', () => {

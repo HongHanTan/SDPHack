@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { Frame, Metrics } from '@floodops/engine/sim/types';
-import { MAX_CACHE, SimRunError, SimRunner, type WorkerLike } from '../../src/ui/runner';
-import type { InterventionId } from '@floodops/engine/scenario/interventions';
-import type { StormId } from '@floodops/engine/scenario/storms';
-import type { RunRequest, WorkerMessage } from '@floodops/engine/worker/protocol';
+import type { Frame, Metrics } from '../../src/sim/types';
+import { MAX_CACHE, SimRunError, SimRunner, type WorkerLike } from '../../src/client/runner';
+import type { InterventionId } from '../../src/scenario/interventions';
+import type { StormId } from '../../src/scenario/storms';
+import type { RunRequest, WorkerMessage } from '../../src/worker/protocol';
 
 const frame: Frame = { t: 30, depth: new Float32Array(1), nodeFill: new Float32Array(0), pipeLoad: new Float32Array(0) };
 const metrics = { homesFlooded: 3 } as Metrics;
@@ -89,5 +89,14 @@ describe('SimRunner', () => {
     expect(keys.length).toBe(MAX_CACHE + 1);
     expect(runner.isCached(keys[0][0], keys[0][1])).toBe(false);
     expect(runner.isCached(keys[6][0], keys[6][1])).toBe(true);
+  });
+
+  it('keys the cache by scenario options', async () => {
+    const w = new FakeWorker();
+    const runner = new SimRunner(() => w);
+    await runner.run([], 'synthetic_80mmh_60min');
+    await runner.run([], 'synthetic_80mmh_60min', undefined, [], { tailwater: 'high' });
+    expect(w.posted.length).toBe(2);
+    expect(w.posted[1].opts).toEqual({ tailwater: 'high' });
   });
 });

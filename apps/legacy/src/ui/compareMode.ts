@@ -4,7 +4,7 @@ import type { StormId } from '@floodops/engine/scenario/storms';
 import { clearSagChart, renderSagChart } from './chart';
 import { Player } from './player';
 import { clearResults, renderBalance, renderResults } from './results';
-import { SimRunError, SimRunner, type WorkerLike } from './runner';
+import { SimRunError, SimRunner, type WorkerLike } from '@floodops/engine/client/runner';
 import { activePipes, selectionCost, type Selection } from './selection';
 
 export interface CompareMode {

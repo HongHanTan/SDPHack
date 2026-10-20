@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     "./scenario/effects.json": "./src/scenario/effects.json",
+    "./client/*": "./src/client/*.ts",
     "./sim/*": "./src/sim/*.ts",
+    "./scenario/dashboard.json": "./src/scenario/dashboard.json",
     "./scenario/*": "./src/scenario/*.ts",
     "./worker/*": "./src/worker/*.ts"
   },
@@ -14,6 +16,7 @@
     "story": "vitest run tests/story.test.ts tests/effects.drift.test.ts tests/swmm.crosscheck.test.ts",
     "effects": "tsx scripts/effects.ts",
     "tune": "tsx scripts/tune.ts",
+    "dashboard": "tsx scripts/computeDashboard.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

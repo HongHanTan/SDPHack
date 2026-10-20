@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { Grid } from '@floodops/engine/sim/types';
 import { worldY } from './coords';
 import { createGridGeometry } from './gridGeometry';
-import { smoothDepth, WET } from './smoothDepth';
+import { smoothDepth, WET } from '@floodops/engine/client/smoothDepth';
 import { DAY, type Theme } from './theme';
 import { createWaterMaterial } from './waterMaterial';
 

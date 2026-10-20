@@ -1,4 +1,4 @@
-import type { CustomPipe } from '../scenario/index';
+import type { CustomPipe, ScenarioOptions } from '../scenario/index';
 import type { InterventionId } from '../scenario/interventions';
 import type { StormId } from '../scenario/storms';
 import type { Frame, Metrics } from '../sim/types';
@@ -9,6 +9,7 @@ export interface RunRequest {
   interventions: InterventionId[];
   stormId: StormId;
   custom: CustomPipe[];
+  opts?: ScenarioOptions;
 }
 
 export type WorkerMessage =

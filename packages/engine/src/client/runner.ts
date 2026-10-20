@@ -1,8 +1,8 @@
-import { scenarioKey, type CustomPipe } from '@floodops/engine/scenario/index';
-import type { InterventionId } from '@floodops/engine/scenario/interventions';
-import type { StormId } from '@floodops/engine/scenario/storms';
-import type { Frame, Metrics } from '@floodops/engine/sim/types';
-import type { RunRequest, WorkerMessage } from '@floodops/engine/worker/protocol';
+import { scenarioKey, type CustomPipe, type ScenarioOptions } from '../scenario/index';
+import type { InterventionId } from '../scenario/interventions';
+import type { StormId } from '../scenario/storms';
+import type { Frame, Metrics } from '../sim/types';
+import type { RunRequest, WorkerMessage } from '../worker/protocol';
 
 export const MAX_CACHE = 6;
 
@@ -39,18 +39,18 @@ export class SimRunner {
     this.worker = createWorker();
   }
 
-  run(ids: InterventionId[], stormId: StormId, onFrame?: (f: Frame) => void, custom: CustomPipe[] = []): Promise<RunResult> {
-    const job = this.queue.then(() => this.execute(ids, stormId, onFrame, custom));
+  run(ids: InterventionId[], stormId: StormId, onFrame?: (f: Frame) => void, custom: CustomPipe[] = [], opts: ScenarioOptions = {}): Promise<RunResult> {
+    const job = this.queue.then(() => this.execute(ids, stormId, onFrame, custom, opts));
     this.queue = job.catch(() => undefined);
     return job;
   }
 
-  isCached(ids: InterventionId[], stormId: StormId, custom: CustomPipe[] = []): boolean {
-    return this.cache.has(scenarioKey(ids, stormId, custom));
+  isCached(ids: InterventionId[], stormId: StormId, custom: CustomPipe[] = [], opts: ScenarioOptions = {}): boolean {
+    return this.cache.has(scenarioKey(ids, stormId, custom, opts));
   }
 
-  private execute(ids: InterventionId[], stormId: StormId, onFrame: ((f: Frame) => void) | undefined, custom: CustomPipe[]): Promise<RunResult> {
-    const key = scenarioKey(ids, stormId, custom);
+  private execute(ids: InterventionId[], stormId: StormId, onFrame: ((f: Frame) => void) | undefined, custom: CustomPipe[], opts: ScenarioOptions): Promise<RunResult> {
+    const key = scenarioKey(ids, stormId, custom, opts);
     const hit = this.cache.get(key);
     if (hit) {
       this.cache.delete(key);
@@ -81,7 +81,7 @@ export class SimRunner {
       };
       this.worker.onerror = (e) => replaceWorker(e.message || 'Simulation worker crashed');
       this.worker.onmessageerror = () => replaceWorker('Simulation worker sent an unreadable message');
-      this.worker.postMessage({ type: 'run', key, interventions: [...ids].sort(), stormId, custom });
+      this.worker.postMessage({ type: 'run', key, interventions: [...ids].sort(), stormId, custom, opts });
     });
   }
 
