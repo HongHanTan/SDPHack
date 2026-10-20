@@ -125,3 +125,8 @@ Plan: `docs/superpowers/plans/2026-10-23-taman-kyra-engine.md`
   - The high canal level never reaches the streets, so the flap gate and pump show no effect.
   - The SWMM cross-check is report-only. The engine is 35–68% below Tay's SWMM peaks, because the engine caps each pipe at its full-bore capacity and limits intake at the grates, while SWMM loads catchments directly into the nodes.
 - Details are in `docs/tuning.md` and `docs/swmm-crosscheck.md`.
+
+| # | Task | Status |
+|---|---|---|
+| P5-7 | SWMM-style catchment loading (engine + scenario) | ✅ done (9de10df) — note: J02 catchment only 0.59 ha (grid edge) |
+| P5-8 | Retune with catchments; restore claims; cross-check; badges | ✅ done (3cfa486) — claims 1,3,4,6,7 pass; 2 (desilt) & 5 (tailwater) removed; cross-check report-only |
