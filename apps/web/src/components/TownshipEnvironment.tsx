@@ -1,13 +1,29 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Text } from '@react-three/drei';
+import * as THREE from 'three';
+import layout from '../../../../data/synthetic/taman_kyra_layout.json';
 import { SimulationFrame, AppMode } from '../types';
 import { PondingWaterAnimation } from './PondingWaterAnimation';
+import { displaceFlat } from '../engine/displaceFlat';
+import { EngineWater } from '../engine/EngineWater';
+import { bowlDrop, lawnHeight } from '../engine/visualGround';
+
+type HeightAt = (tx: number, ty: number) => number;
+
+/** Disposes a memoised geometry when it is replaced or the component unmounts. */
+function useDisposable(geom: THREE.BufferGeometry | null) {
+  useEffect(() => () => geom?.dispose(), [geom]);
+}
 
 interface TownshipEnvironmentProps {
   showUndergroundOnly?: boolean;
   floodingActive?: boolean;
   appMode?: AppMode;
   currentFrame?: SimulationFrame | null;
+  /** Engine mode: simulated depth grid for the current frame. */
+  engineDepth?: Float32Array | null;
+  /** Engine mode: dips on lawn/roads, data-driven heights, engine water surface. */
+  engineMode?: boolean;
 }
 
 // Low-poly parked suburban vehicle (Sedan / SUV)
@@ -246,7 +262,73 @@ const DetailedRoadSegment: React.FC<{
   width: number;
   length: number;
   rotationY?: number;
-}> = ({ position, width, length, rotationY = 0 }) => {
+  /** Engine mode: absolute surface height at a team-datum point (road dips). */
+  heightAt?: HeightAt;
+}> = ({ position, width, length, rotationY = 0, heightAt }) => {
+  const [px, py, pz] = position;
+  const engine = heightAt !== undefined;
+  // heightAt for a given segment is a pure function of its position, so memos key on `engine`, not its identity.
+  const asphaltGeom = useMemo(
+    () =>
+      heightAt
+        ? displaceFlat(
+            new THREE.PlaneGeometry(width, length, Math.max(1, Math.ceil(width / 2)), Math.max(1, Math.ceil(length / 2))),
+            { x: px, y: py, z: pz, rotY: rotationY, meshY: 0.02 },
+            heightAt,
+          )
+        : null,
+    [engine, width, length, px, py, pz, rotationY],
+  );
+  const lineGeom = useMemo(
+    () =>
+      heightAt
+        ? displaceFlat(
+            new THREE.PlaneGeometry(0.22, length * 0.95, 1, Math.max(1, Math.ceil(length / 2))),
+            { x: px, y: py, z: pz, rotY: rotationY, meshY: 0.03 },
+            heightAt,
+          )
+        : null,
+    [engine, length, px, py, pz, rotationY],
+  );
+  const curbs = useMemo(() => {
+    if (!heightAt) return null;
+    const n = Math.ceil(length / 4);
+    const pieceLen = length / n;
+    const c = Math.cos(rotationY);
+    const s = Math.sin(rotationY);
+    const pieces: Array<{ key: string; pos: [number, number, number] }> = [];
+    for (const lx of [-width / 2 - 0.7, width / 2 + 0.7]) {
+      for (let k = 0; k < n; k++) {
+        const lz = -length / 2 + (k + 0.5) * pieceLen;
+        const sx = px + lx * c + lz * s;
+        const sz = pz - lx * s + lz * c;
+        pieces.push({ key: `${lx}-${k}`, pos: [lx, 0.09 + (heightAt(sx, -sz) - py), lz] });
+      }
+    }
+    return { pieceLen, pieces };
+  }, [engine, width, length, px, py, pz, rotationY]);
+  useDisposable(asphaltGeom);
+  useDisposable(lineGeom);
+
+  if (asphaltGeom && lineGeom && curbs) {
+    return (
+      <group position={position} rotation={[0, rotationY, 0]}>
+        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow geometry={asphaltGeom}>
+          <meshStandardMaterial color="#1e293b" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={lineGeom}>
+          <meshStandardMaterial color="#e2e8f0" roughness={0.6} />
+        </mesh>
+        {curbs.pieces.map((p) => (
+          <mesh key={p.key} position={p.pos}>
+            <boxGeometry args={[1.4, 0.18, curbs.pieceLen]} />
+            <meshStandardMaterial color="#94a3b8" roughness={0.7} />
+          </mesh>
+        ))}
+      </group>
+    );
+  }
+
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
       {/* Asphalt Surface */}
@@ -280,7 +362,37 @@ const DetailedRoadSegment: React.FC<{
 const CulDeSac: React.FC<{
   position: [number, number, number];
   radius: number;
-}> = ({ position, radius }) => {
+  /** Engine mode: absolute surface height at a team-datum point (road dips). */
+  heightAt?: HeightAt;
+}> = ({ position, radius, heightAt }) => {
+  const [px, py, pz] = position;
+  const engine = heightAt !== undefined;
+  const circleGeom = useMemo(
+    () => (heightAt ? displaceFlat(new THREE.CircleGeometry(radius, 32), { x: px, y: py, z: pz, rotY: 0, meshY: 0.02 }, heightAt) : null),
+    [engine, radius, px, py, pz],
+  );
+  useDisposable(circleGeom);
+
+  if (heightAt && circleGeom) {
+    const off = heightAt(px, -pz) - py;
+    return (
+      <group position={position}>
+        <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow geometry={circleGeom}>
+          <meshStandardMaterial color="#1e293b" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.1 + off, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[radius * 0.38, 24]} />
+          <meshStandardMaterial color="#15803d" roughness={0.9} />
+        </mesh>
+        <mesh position={[0, 0.15 + off, 0]}>
+          <cylinderGeometry args={[radius * 0.4, radius * 0.4, 0.2, 24]} />
+          <meshStandardMaterial color="#94a3b8" roughness={0.8} />
+        </mesh>
+        <LushTree position={[0, 0.2 + off, 0]} scale={0.9} color="#16a34a" />
+      </group>
+    );
+  }
+
   return (
     <group position={position}>
       {/* Asphalt Turnaround Circle */}
@@ -308,7 +420,10 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
   floodingActive = true,
   appMode = 'diagnose',
   currentFrame,
+  engineDepth,
+  engineMode = false,
 }) => {
+  // Placement data extracted from this component's original loops (TEH JIA JIE) into data/synthetic/taman_kyra_layout.json
   // Houses Layout across all neighborhood zones
   const houses = useMemo(() => {
     const list: Array<{
@@ -321,129 +436,39 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
       scale: number;
     }> = [];
 
-    const roofStyles = ['#334155', '#7c2d12', '#1e293b', '#475569', '#991b1b', '#0369a1'];
-    const wallStyles = ['#f8fafc', '#f1f5f9', '#fef3c7', '#fdf4ff', '#e2e8f0'];
-    const carColors = ['#2563eb', '#dc2626', '#1e293b', '#f8fafc', '#ca8a04', '#475569'];
-
-    // 1. North Ridge Subdivision (Row along North Street y=120, Three.js z = -120)
-    for (let x = -20; x <= 105; x += 18) {
+    for (const h of layout.houses) {
       list.push({
-        pos: [x, 12.2, -138],
-        rotY: 0,
-        roof: roofStyles[Math.abs(Math.floor(x / 17)) % roofStyles.length],
-        wall: wallStyles[Math.abs(Math.floor(x / 13)) % wallStyles.length],
-        hasCar: (x % 2 === 0),
-        carColor: carColors[Math.abs(Math.floor(x / 11)) % carColors.length],
-        scale: 1.05,
-      });
-    }
-
-    // 2. Mid Block North Row (z = -102, facing street)
-    for (let x = -10; x <= 95; x += 18) {
-      list.push({
-        pos: [x, 12.0, -102],
-        rotY: Math.PI,
-        roof: roofStyles[(Math.abs(Math.floor(x / 15)) + 1) % roofStyles.length],
-        wall: wallStyles[(Math.abs(Math.floor(x / 14)) + 1) % wallStyles.length],
-        hasCar: (x % 3 === 0),
-        carColor: carColors[Math.abs(Math.floor(x / 7)) % carColors.length],
-        scale: 1.0,
-      });
-    }
-
-    // 3. Pinecrest Residential North Row (z = -22, facing central main street z=0)
-    for (let x = -30; x <= 95; x += 18) {
-      if (Math.abs(x - 40) < 10) continue; // Leave opening for D07 junction
-      list.push({
-        pos: [x, 11.0, -22],
-        rotY: 0,
-        roof: roofStyles[Math.abs(Math.floor(x / 14)) % roofStyles.length],
-        wall: wallStyles[Math.abs(Math.floor(x / 12)) % wallStyles.length],
-        hasCar: (x % 2 === 1),
-        carColor: carColors[Math.abs(Math.floor(x / 9)) % carColors.length],
-        scale: 1.05,
-      });
-    }
-
-    // 4. Pinecrest Residential South Row (z = 22, facing central main street z=0)
-    for (let x = -30; x <= 95; x += 18) {
-      if (Math.abs(x - 40) < 10) continue;
-      list.push({
-        pos: [x, 10.9, 22],
-        rotY: Math.PI,
-        roof: roofStyles[(Math.abs(Math.floor(x / 16)) + 2) % roofStyles.length],
-        wall: wallStyles[(Math.abs(Math.floor(x / 13)) + 2) % wallStyles.length],
-        hasCar: (x % 2 === 0),
-        carColor: carColors[Math.abs(Math.floor(x / 8)) % carColors.length],
-        scale: 1.05,
-      });
-    }
-
-    // 5. Cedar View Estates (West residential wing along x = -26, facing East)
-    for (let z = -85; z <= 45; z += 20) {
-      list.push({
-        pos: [-28, 11.3, z],
-        rotY: Math.PI / 2,
-        roof: roofStyles[(Math.abs(Math.floor(z / 18)) + 3) % roofStyles.length],
-        wall: wallStyles[(Math.abs(Math.floor(z / 15)) + 1) % wallStyles.length],
-        hasCar: true,
-        carColor: carColors[Math.abs(Math.floor(z / 10)) % carColors.length],
-        scale: 1.0,
-      });
-    }
-
-    // 6. Riverside Heights (Near Outfall, south residential street z = 70)
-    for (let x = 65; x <= 105; x += 18) {
-      list.push({
-        pos: [x, 10.5, 70],
-        rotY: 0,
-        roof: roofStyles[Math.abs(Math.floor(x / 16)) % roofStyles.length],
-        wall: wallStyles[Math.abs(Math.floor(x / 14)) % wallStyles.length],
-        hasCar: true,
-        carColor: carColors[Math.abs(Math.floor(x / 5)) % carColors.length],
-        scale: 1.0,
+        pos: [h.x, engineMode ? lawnHeight(h.x, h.y) : h.sceneY, -h.y],
+        rotY: (h.rotationDeg * Math.PI) / 180,
+        roof: h.roof,
+        wall: h.wall,
+        hasCar: h.hasCar,
+        carColor: h.carColor,
+        scale: h.scale,
       });
     }
 
     return list;
-  }, []);
+  }, [engineMode]);
 
   // Trees Layout (Clusters of rich lush trees around parcels and parks)
   const trees = useMemo(() => {
     const list: Array<{ pos: [number, number, number]; scale: number; color: string }> = [];
-    const colors = ['#15803d', '#16a34a', '#14532d', '#166534', '#15803d'];
-
-    // Street trees along North Street
-    for (let x = -25; x <= 115; x += 14) {
-      list.push({ pos: [x, 12.2, -128], scale: 1.0 + (x % 3) * 0.1, color: colors[Math.abs(x) % colors.length] });
-    }
-
-    // Street trees along Central Main Street
-    for (let x = -35; x <= 105; x += 12) {
-      list.push({ pos: [x, 11.0, -10], scale: 0.95 + (x % 2) * 0.15, color: colors[Math.abs(x) % colors.length] });
-      list.push({ pos: [x, 10.9, 10], scale: 0.9 + (x % 3) * 0.15, color: colors[(Math.abs(x) + 1) % colors.length] });
-    }
-
-    // Lush park canopy around Maple Grove Retention Pond
-    for (let angle = 0; angle < Math.PI * 2; angle += 0.35) {
-      const dist = 22 + (Math.sin(angle * 3) * 3);
-      const rx = 130 + Math.cos(angle) * dist;
-      const rz = -30 + Math.sin(angle) * (dist * 0.85);
-      list.push({
-        pos: [rx, 11.2, rz],
-        scale: 1.1 + Math.sin(angle * 5) * 0.25,
-        color: colors[Math.floor(angle * 2) % colors.length],
-      });
-    }
-
-    // Backyard grove trees
-    for (let x = -15; x <= 85; x += 22) {
-      list.push({ pos: [x, 12.1, -150], scale: 1.3, color: '#14532d' });
-      list.push({ pos: [x, 10.8, 35], scale: 1.25, color: '#166534' });
+    for (const t of layout.trees) {
+      list.push({ pos: [t.x, engineMode ? lawnHeight(t.x, t.y) : t.sceneY, -t.y], scale: t.scale, color: t.color });
     }
 
     return list;
-  }, []);
+  }, [engineMode]);
+
+  const lawnGeom = useMemo(
+    () => (engineMode ? displaceFlat(new THREE.PlaneGeometry(240, 280, 120, 140), { x: 45, y: 10.8, z: -10, rotY: 0, meshY: 0 }, lawnHeight) : null),
+    [engineMode],
+  );
+  useDisposable(lawnGeom);
+  // Engine mode: each road's own surface level minus the engine's dips; undefined keeps the original flat roads.
+  const roadHeight = (surfaceY: number): HeightAt | undefined =>
+    engineMode ? (tx, ty) => surfaceY - bowlDrop(tx, ty) : undefined;
 
   if (showUndergroundOnly) {
     // Underground Highlight Mode: Show faint blueprint footprint
@@ -460,6 +485,11 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
   return (
     <group position={[0, 0, 0]}>
       {/* 1. Base Neighborhood Lawn & Terrain Surface */}
+      {lawnGeom ? (
+        <mesh position={[45, 10.8, -10]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow geometry={lawnGeom}>
+          <meshStandardMaterial color="#1e3a24" roughness={0.95} />
+        </mesh>
+      ) : (
       <mesh position={[45, 10.8, -10]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[240, 280]} />
         <meshStandardMaterial
@@ -467,6 +497,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
           roughness={0.95}
         />
       </mesh>
+      )}
 
       {/* 2. Detailed Asphalt Roadways, Curbs & Markings */}
       <group position={[0, 0, 0]}>
@@ -476,6 +507,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
           width={13}
           length={145}
           rotationY={Math.PI / 2}
+          heightAt={roadHeight(12.15)}
         />
 
         {/* Mid Residential Street (y = 80, z = -80) */}
@@ -484,6 +516,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
           width={11}
           length={105}
           rotationY={Math.PI / 2}
+          heightAt={roadHeight(11.85)}
         />
 
         {/* Central Main Avenue (y = 0, z = 0) */}
@@ -492,6 +525,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
           width={15}
           length={155}
           rotationY={Math.PI / 2}
+          heightAt={roadHeight(10.98)}
         />
 
         {/* North-South Main Drainage Boulevard (x = 40, z = -140 to 70) */}
@@ -500,6 +534,7 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
           width={13}
           length={195}
           rotationY={0}
+          heightAt={roadHeight(11.2)}
         />
 
         {/* East Diagonal Connector */}
@@ -508,10 +543,11 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
           width={10}
           length={95}
           rotationY={Math.PI / 4}
+          heightAt={roadHeight(11.5)}
         />
 
         {/* Cul-De-Sac Turnaround Loop at East End of Mid Street */}
-        <CulDeSac position={[120, 11.86, -80]} radius={10.5} />
+        <CulDeSac position={[120, 11.86, -80]} radius={10.5} heightAt={roadHeight(11.86)} />
       </group>
 
       {/* 3. Realistic Suburban Villas (Houses with garages, porches & parked cars) */}
@@ -619,11 +655,15 @@ export const TownshipEnvironment: React.FC<TownshipEnvironmentProps> = ({
       </group>
 
       {/* 7. Dynamic Street Surface Ponding Water Animation (Physically rises with runoff) */}
-      <PondingWaterAnimation
-        currentFrame={currentFrame}
-        floodingActive={Boolean(floodingActive)}
-        appMode={appMode}
-      />
+      {engineMode ? (
+        <EngineWater depth={engineDepth ?? null} />
+      ) : (
+        <PondingWaterAnimation
+          currentFrame={currentFrame}
+          floodingActive={Boolean(floodingActive)}
+          appMode={appMode}
+        />
+      )}
 
       {/* 8. 3D Floating Neighborhood Badges (Matching the Mockup Exactly) */}
       <group position={[0, 0, 0]}>

@@ -376,6 +376,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   appMode = 'diagnose',
   onSelectInspector,
   selectedInspectorId,
+  engineDepth,
   showInspectors,
 }) => {
   const controlsRef = useRef<any>(null);
@@ -622,6 +623,8 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           )}
           appMode={appMode}
           currentFrame={currentFrame}
+          engineMode={engineDepth !== undefined}
+          engineDepth={engineDepth}
         />
 
         {/* Glowing Surface Road Flow Ribbons & 3D Glowing Junction Markers (Mockup View) */}
