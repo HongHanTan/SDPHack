@@ -144,3 +144,28 @@ export function runSimulation(sc: Scenario, onFrame?: (f: Frame) => void): SimRe
   }
   return { frames, metrics: tracker.finish(stormEnd, balanceError(sc, st)) };
 }
+
+/**
+ * Swaps in a new scenario mid-run (interventions or custom pipes changed) without creating or losing water.
+ * Surface depths and fluxes are kept as they are. Node volumes carry over by node id; volume above a node's
+ * new capacity, and the whole volume of nodes that no longer exist, spills onto the surface at that node's
+ * cell. Pipe flows restart from 0. Use `newSc` for every later step.
+ */
+export function patchEngine(oldSc: Scenario, st: EngineState, newSc: Scenario): void {
+  if (oldSc.grid.nx !== newSc.grid.nx || oldSc.grid.ny !== newSc.grid.ny) throw new Error('patchEngine: grid size changed');
+  const area = newSc.grid.dx * newSc.grid.dx;
+  const next = createNetworkState(newSc.network);
+  oldSc.network.nodes.forEach((node, k) => {
+    const v = st.net.vol[k];
+    if (v <= 0) return;
+    const j = next.index.get(node.id);
+    if (j === undefined) {
+      st.surf.h[node.cell] += v / area;
+      return;
+    }
+    const keep = Math.min(v, next.vmax[j]);
+    next.vol[j] = keep;
+    if (v > keep) st.surf.h[newSc.network.nodes[j].cell] += (v - keep) / area;
+  });
+  st.net = next;
+}
