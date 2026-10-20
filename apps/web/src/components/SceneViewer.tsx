@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Grid, Text, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
@@ -480,6 +480,17 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
     return map;
   }, [currentFrame]);
 
+  // Overview pose of the active site; ViewRig moves the camera here when the site changes.
+  const resetPose = useMemo(() => {
+    if (!frame) return { key: site.key, pos: [60, 90, 130] as [number, number, number], target: [50, 10, 0] as [number, number, number] };
+    const span = Math.max(frame.w, frame.h);
+    return {
+      key: site.key,
+      pos: [frame.cx + 15, frame.groundY + span * 0.45, frame.cz + span * 0.55] as [number, number, number],
+      target: [frame.cx, frame.groundY, frame.cz] as [number, number, number],
+    };
+  }, [frame, site.key]);
+
   // Camera preset handler
   const handlePreset = (type: 'overview' | 'd07' | 'outfall' | 'north') => {
     if (!controlsRef.current) return;
@@ -504,15 +515,6 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
     }
     controlsRef.current.update();
   };
-
-  // A different site: move the 3D camera to its Overview pose (not on first mount).
-  const siteKeyRef = useRef(site.key);
-  useEffect(() => {
-    if (siteKeyRef.current === site.key) return;
-    siteKeyRef.current = site.key;
-    handlePreset('overview');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [site.key]);
 
   return (
     <div className="w-full h-full relative bg-slate-100">
@@ -679,7 +681,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         <directionalLight ref={fillLightRef} position={[-80, 60, -60]} intensity={0.8} color="#93c5fd" />
         <SceneLook ambient={ambientRef} keyLight={keyLightRef} fill={fillLightRef} />
 
-        <ViewRig is2d={is2d} controlsRef={controlsRef} onMetresPerPixel={setMetresPerPixel} frame={frame} />
+        <ViewRig is2d={is2d} controlsRef={controlsRef} onMetresPerPixel={setMetresPerPixel} frame={frame} resetPose={resetPose} />
 
         {/* Spatial Metric Reference Grid */}
         <Grid

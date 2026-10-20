@@ -44,10 +44,12 @@ export function useSiteFiles({ onChange, onWatchError }: { onChange?: (names: st
   const onErrorRef = useRef(onWatchError);
   onChangeRef.current = onChange;
   onErrorRef.current = onWatchError;
+  // lastModified of each file as last read (Check files / apply); the watch compares against this.
+  const baselineRef = useRef<Record<string, number> | null>(null);
 
   const canWatch = entries.length > 0 && entries.every((e) => !!e.handle);
 
-  const pick = useCallback(async () => {
+  const pick = useCallback(async (): Promise<boolean> => {
     let picked: SiteFileEntry[];
     try {
       const picker = (window as unknown as { showOpenFilePicker?: OpenPicker }).showOpenFilePicker;
@@ -60,32 +62,40 @@ export function useSiteFiles({ onChange, onWatchError }: { onChange?: (names: st
       } else {
         picked = await pickWithInput();
       }
-    } catch {
-      return; // cancelled
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return false; // cancelled
+      onErrorRef.current?.(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
+      return false;
     }
-    if (picked.length === 0) return;
+    if (picked.length === 0) return false;
     setWatching(false);
+    baselineRef.current = null;
     setEntries(picked);
+    return true;
   }, []);
 
   /** Reads the picked files; null when no .inp is present. Throws on read errors. */
   const read = useCallback(async (): Promise<ImportFiles | null> => {
     const cls = classifySiteFiles(entries.map((e) => e.name));
     if (!cls.inp) return null;
+    const snap: Record<string, number> = {};
     const text = async (name: string) => {
       const e = entries.find((x) => x.name === name)!;
-      return { name, text: await (await entryFile(e)).text() };
+      const f = await entryFile(e);
+      snap[name] = f.lastModified;
+      return { name, text: await f.text() };
     };
     const files: ImportFiles = { inp: await text(cls.inp) };
     if (cls.geojson) files.geojson = await text(cls.geojson);
     if (cls.asc) files.asc = await text(cls.asc);
+    baselineRef.current = snap;
     return files;
   }, [entries]);
 
   useEffect(() => {
     if (!watching || !canWatch) return;
     let cancelled = false;
-    let prev: Record<string, number> | null = null;
+    let prev: Record<string, number> | null = baselineRef.current;
     let busy = false;
     const tick = async () => {
       if (busy) return;
@@ -102,10 +112,11 @@ export function useSiteFiles({ onChange, onWatchError }: { onChange?: (names: st
           }
         }
         prev = next;
+        baselineRef.current = next;
       } catch (err) {
         if (cancelled) return;
         setWatching(false);
-        onErrorRef.current?.(err instanceof Error ? err.message : String(err));
+        onErrorRef.current?.(`Watching stopped: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         busy = false;
       }

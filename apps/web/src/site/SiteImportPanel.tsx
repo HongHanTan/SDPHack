@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { buildSiteFromFiles, type ImportFiles, type ImportReport } from '@floodops/engine/import/buildSite';
 import type { SiteSpec } from '@floodops/engine/scenario/site';
 import { classifySiteFiles } from './siteFiles';
@@ -25,11 +25,20 @@ export function SiteImportPanel({ activeSite, onApply, onReset, onClose }: Props
   const [busy, setBusy] = useState(false);
   const readRef = useRef<() => Promise<ImportFiles | null>>(async () => null);
   const stopWatchRef = useRef<() => void>(() => undefined);
+  const seqRef = useRef(0);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleChange = async (names: string[]) => {
+    const seq = ++seqRef.current;
     try {
       const files = await readRef.current();
-      if (!files) return;
+      if (!files || !mountedRef.current || seq !== seqRef.current) return;
       const result = buildSiteFromFiles(files);
       setChecked(result);
       setReadErrors([]);
@@ -40,6 +49,7 @@ export function SiteImportPanel({ activeSite, onApply, onReset, onClose }: Props
         setStatus({ kind: 'bad', text: `Changes in ${names.join(', ')} have errors; the current city is kept.` });
       }
     } catch (err) {
+      if (!mountedRef.current || seq !== seqRef.current) return;
       setReadErrors([err instanceof Error ? err.message : String(err)]);
       stopWatchRef.current();
     }
@@ -47,7 +57,7 @@ export function SiteImportPanel({ activeSite, onApply, onReset, onClose }: Props
 
   const siteFiles = useSiteFiles({
     onChange: (names) => void handleChange(names),
-    onWatchError: (m) => setReadErrors([`Watching stopped: ${m}`]),
+    onWatchError: (m) => mountedRef.current && setReadErrors([m]),
   });
   readRef.current = siteFiles.read;
   stopWatchRef.current = () => siteFiles.setWatching(false);
@@ -66,7 +76,7 @@ export function SiteImportPanel({ activeSite, onApply, onReset, onClose }: Props
   const warnName = (n: string) => cls.unknown.includes(n) || cls.duplicates.includes(n);
 
   const doPick = async () => {
-    await siteFiles.pick();
+    if (!(await siteFiles.pick())) return;
     setChecked(null);
     setStatus(null);
     setReadErrors([]);

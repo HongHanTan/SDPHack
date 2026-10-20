@@ -24,12 +24,15 @@ export function ViewRig({
   controlsRef,
   onMetresPerPixel,
   frame,
+  resetPose,
 }: {
   is2d: boolean;
   controlsRef: MutableRefObject<any>;
   onMetresPerPixel: (mpp: number) => void;
   /** Area the plan view frames (scene x/z centre, extent, ground y). Default: the built-in scene's SITE and GROUND_Y. */
   frame?: { cx: number; cz: number; w: number; h: number; groundY: number };
+  /** When `key` changes (not on mount) the 3D pose to return to; moves the camera there from 3D, 2D or mid-glide. */
+  resetPose?: { key: string; pos: [number, number, number]; target: [number, number, number] };
 }) {
   const f = frame ?? { cx: SITE.cx, cz: SITE.cz, w: SITE.w, h: SITE.h, groundY: GROUND_Y };
   const size = useThree((s) => s.size);
@@ -75,7 +78,7 @@ export function ViewRig({
       } else {
         from = { pos: persp.position.clone(), target: lookRef.current.clone() };
       }
-      const to = saved.current ?? DEFAULT_POSE;
+      const to: Pose = saved.current ?? DEFAULT_POSE;
       anim.current = {
         from,
         to,
@@ -84,7 +87,7 @@ export function ViewRig({
           go('3d');
           const c = controlsRef.current;
           if (c) {
-            c.target.copy(to.target);
+            c.target.copy((saved.current ?? to).target);
             c.update();
           }
         },
@@ -93,6 +96,27 @@ export function ViewRig({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [is2d]);
+
+  const poseKeyRef = useRef(resetPose?.key);
+  useEffect(() => {
+    if (!resetPose || poseKeyRef.current === resetPose.key) return;
+    poseKeyRef.current = resetPose.key;
+    const pose: Pose = { pos: new THREE.Vector3(...resetPose.pos), target: new THREE.Vector3(...resetPose.target) };
+    saved.current = pose;
+    const p = phaseRef.current;
+    if (p === '3d') {
+      const persp = perspRef.current!;
+      persp.position.copy(pose.pos);
+      const c = controlsRef.current;
+      if (c) {
+        c.target.copy(pose.target);
+        c.update();
+      } else persp.lookAt(pose.target);
+    } else if (p === 'to3d' && anim.current) {
+      anim.current.to = pose; // the glide (already heading back to 3D) now ends at the new pose
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetPose?.key]);
 
   useFrame(({ clock }) => {
     const a = anim.current;
