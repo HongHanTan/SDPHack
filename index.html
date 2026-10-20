@@ -13,12 +13,45 @@
     </header>
     <main class="layout">
       <aside class="panel">
+        <div class="tabs">
+          <button id="tab-live" class="tab active">Live</button>
+          <button id="tab-compare" class="tab">Compare</button>
+        </div>
         <h2>Storm</h2>
         <select id="storm"></select>
         <p id="storm-note" class="note"></p>
+
+        <section id="live-controls">
+          <div id="live-clock" class="big-clock">0 min</div>
+          <div class="live-row">
+            <button id="live-play" class="secondary">Pause</button>
+            <button id="live-restart" class="secondary">Restart</button>
+          </div>
+          <div id="live-speed" class="seg">
+            <button data-speed="0.5">½×</button>
+            <button data-speed="1" class="active">1×</button>
+            <button data-speed="2">2×</button>
+            <button data-speed="4">4×</button>
+          </div>
+          <div id="live-seek" class="seg seg3">
+            <button data-seek="0">Start</button>
+            <button data-seek="60">Peak rain</button>
+            <button data-seek="120">Rain stops</button>
+          </div>
+        </section>
+
+        <section id="compare-controls" hidden>
+          <button id="run" class="primary">Run storm</button>
+          <h2>Timeline</h2>
+          <input id="scrubber" type="range" min="0" max="0" value="0" />
+          <div id="clock">0 min</div>
+          <button id="play" class="secondary">Pause</button>
+        </section>
+
         <h2>Interventions</h2>
         <div id="interventions"></div>
         <p class="note">Costs are indicative placeholders — replace with SDP quantity-surveyor rates.</p>
+
         <h2>Custom pipes</h2>
         <select id="pipe-d">
           <option value="0.3">300 mm</option>
@@ -28,11 +61,6 @@
         </select>
         <button id="draw" class="secondary">Draw pipe: off</button>
         <ul id="custom-list" class="custom-list"></ul>
-        <button id="run" class="primary">Run storm</button>
-        <h2>Timeline</h2>
-        <input id="scrubber" type="range" min="0" max="0" value="0" />
-        <div id="clock">0 min</div>
-        <button id="play" class="secondary">Pause</button>
         <p id="status" class="status"></p>
       </aside>
       <div id="viewport">
@@ -45,11 +73,20 @@
         <button id="pins-toggle" class="pins-toggle">📍 Pins: on</button>
       </div>
       <aside class="panel right">
-        <h2>Results vs baseline</h2>
-        <div id="cards"><p class="note">Run a storm to see results.</p></div>
-        <h2>Water depth at the sag</h2>
-        <div id="chart"></div>
-        <div id="balance"></div>
+        <section id="live-results">
+          <h2>Live readouts</h2>
+          <div id="live-cards"><p class="note">Starting the storm…</p></div>
+          <h2>Sag depth so far</h2>
+          <div id="live-chart"></div>
+          <div id="live-balance"></div>
+        </section>
+        <section id="compare-results" hidden>
+          <h2>Results vs baseline</h2>
+          <div id="cards"><p class="note">Run a storm to see results.</p></div>
+          <h2>Water depth at the sag</h2>
+          <div id="chart"></div>
+          <div id="balance"></div>
+        </section>
       </aside>
     </main>
     <dialog id="assumptions">

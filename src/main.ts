@@ -10,6 +10,7 @@ import { renderStormSelect } from './ui/controls';
 import { mountDrawPipes } from './ui/drawPipes';
 import { formatRM } from './ui/format';
 import { mountInterventionPanel } from './ui/interventionPanel';
+import { createLiveMode } from './ui/liveMode';
 import { mountRainGauge } from './ui/rainGauge';
 import { activePipes, Selection } from './ui/selection';
 
@@ -75,19 +76,48 @@ const draw = mountDrawPipes({
   },
 });
 
+const tabLive = $<HTMLButtonElement>('tab-live');
+const tabCompare = $<HTMLButtonElement>('tab-compare');
+
+/** Locks shared controls while a Compare run is in progress. */
 const setBusy = (b: boolean) => {
   stormSel.disabled = b;
+  tabLive.disabled = b;
+  tabCompare.disabled = b;
   panel.setDisabled(b);
   draw.setDisabled(b);
   view.setPinsDisabled(b);
 };
 
 const compare = createCompareMode({ view, selection, storm, status, setBusy, showRain });
+const live = createLiveMode({ view, selection, storm, status, showRain });
 
-selection.subscribe(() => {
+type Mode = 'live' | 'compare';
+let mode: Mode = 'live';
+
+const setMode = (m: Mode) => {
+  if (m === mode || compare.isBusy()) return;
+  (mode === 'live' ? live : compare).leave();
+  mode = m;
+  tabLive.classList.toggle('active', m === 'live');
+  tabCompare.classList.toggle('active', m === 'compare');
+  $('live-controls').hidden = m !== 'live';
+  $('live-results').hidden = m !== 'live';
+  $('compare-controls').hidden = m !== 'compare';
+  $('compare-results').hidden = m !== 'compare';
+  syncTownship();
+  view.setRain(0);
+  gauge.clear();
+  (m === 'live' ? live : compare).enter();
+};
+tabLive.addEventListener('click', () => setMode('live'));
+tabCompare.addEventListener('click', () => setMode('compare'));
+
+selection.subscribe((_state, label) => {
   syncTownship();
   panel.refresh();
   draw.renderList();
+  live.onSelectionChange(label);
 });
 
 const updateStormNote = () => {
@@ -99,6 +129,7 @@ const updateStormNote = () => {
 stormSel.addEventListener('change', () => {
   updateStormNote();
   panel.refresh();
+  if (mode === 'live') live.onStormChange();
 });
 updateStormNote();
 
@@ -106,4 +137,4 @@ renderAssumptions($('assumptions-body'));
 $('assumptions-btn').addEventListener('click', () => $<HTMLDialogElement>('assumptions').showModal());
 $('assumptions-close').addEventListener('click', () => $<HTMLDialogElement>('assumptions').close());
 
-compare.enter();
+live.enter();
