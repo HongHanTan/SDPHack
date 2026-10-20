@@ -32,6 +32,8 @@ interface StatusHeaderProps {
   apiError: string | null;
   /** Engine mode only: opens the site import panel. The button is hidden when absent. */
   onOpenSiteImport?: () => void;
+  /** Engine mode only: shown while site files are being watched. */
+  siteWatch?: { count: number; updatedAt: Date | null; onStop: () => void };
 }
 
 export const StatusHeader: React.FC<StatusHeaderProps> = ({
@@ -47,6 +49,7 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
   onRefresh,
   apiError,
   onOpenSiteImport,
+  siteWatch,
 }) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'map' | 'assets' | 'analytics' | 'reports'>('dashboard');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -212,6 +215,24 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
               className="w-full bg-slate-100/80 hover:bg-slate-100 focus:bg-white text-xs text-slate-800 placeholder-slate-400 pl-9 pr-4 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/10 focus:outline-none transition shadow-inner"
             />
           </div>
+
+          {siteWatch && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium">
+              <span>
+                👁 Watching {siteWatch.count} files ·{' '}
+                {siteWatch.updatedAt
+                  ? 'updated ' + siteWatch.updatedAt.toLocaleTimeString('en-GB', { hour12: false })
+                  : 'no changes yet'}
+              </span>
+              <button
+                onClick={siteWatch.onStop}
+                title="Stop watching"
+                className="text-emerald-600 hover:text-emerald-900 cursor-pointer"
+              >
+                ✕
+              </button>
+            </span>
+          )}
 
           {onOpenSiteImport && (
             <button

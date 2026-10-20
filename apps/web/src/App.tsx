@@ -705,7 +705,30 @@ export function App() {
         onRefresh={loadData}
         onOpenSiteImport={engineMode ? () => setStage('import') : undefined}
         apiError={shownError}
+        siteWatch={
+          engineMode && imp.watching
+            ? { count: imp.files.length, updatedAt: imp.lastChange?.at ?? null, onStop: () => imp.setWatching(false) }
+            : undefined
+        }
       />
+
+      {engineMode && stage === 'dashboard' && imp.status?.kind === 'bad' && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-30 max-w-xl w-[90vw] bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl shadow-lg px-4 py-2.5 flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-rose-900">{imp.status.text}</div>
+            {imp.status.firstError && <div className="text-rose-700 mt-0.5 break-words">{imp.status.firstError}</div>}
+          </div>
+          <button
+            onClick={() => setStage('import')}
+            className="shrink-0 px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 border border-rose-300 font-medium cursor-pointer"
+          >
+            Open Import site
+          </button>
+          <button onClick={imp.dismissStatus} title="Dismiss" className="shrink-0 text-rose-500 hover:text-rose-800 cursor-pointer">
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Main 3D WebGL Digital Twin Canvas */}
       <SceneViewer
