@@ -106,5 +106,5 @@ export function scenarioKey(
   opts: ScenarioOptions = {},
 ): string {
   const pipes = custom.map((c) => `${c.from}>${c.to}@${c.diameter}`).join(',');
-  return `${(opts.site ?? TAMAN_KYRA).key}|${stormId}|${opts.tailwater ?? 'normal'}|${blockageKey(opts.blockage ?? BASELINE_BLOCKAGE)}|${[...ids].sort().join(',')}|${pipes}` + '|' + (opts.catchments === false ? 'nocatch' : 'catch');
+  return `${(opts.site ?? TAMAN_KYRA).key}|${stormId}|${opts.tailwater ?? 'normal'}|${blockageKey(opts.blockage ?? ((opts.site ?? TAMAN_KYRA).builtIn ? BASELINE_BLOCKAGE : {}))}|${[...ids].sort().join(',')}|${pipes}` + '|' + (opts.catchments === false ? 'nocatch' : 'catch');
 }

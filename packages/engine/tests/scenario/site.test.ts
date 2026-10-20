@@ -30,5 +30,8 @@ describe('site abstraction', () => {
     const imported: SiteSpec = { ...TAMAN_KYRA, key: 'import-test', builtIn: false };
     expect(() => buildScenario(['upsize-p07'], 'synthetic_80mmh_60min', [], { site: imported })).toThrow(/built-in township/);
     expect(buildScenario([], 'synthetic_80mmh_60min', [], { site: imported }).grid.nx).toBe(GRID.nx);
+    expect(scenarioKey([], 'synthetic_80mmh_60min', [], { site: imported })).not.toBe(
+      scenarioKey([], 'synthetic_80mmh_60min', [], { site: imported, blockage: { 'INLET-D07': 0.4 } }),
+    );
   });
 });
