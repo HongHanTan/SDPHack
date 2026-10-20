@@ -34,7 +34,9 @@ export class Selection {
   }
 
   applyCombo(ids: readonly InterventionId[], label: string): void {
-    this.ids = new Set(ids);
+    const next = new Set(ids);
+    if (next.size === this.ids.size && [...next].every((id) => this.ids.has(id))) return;
+    this.ids = next;
     this.emit(label);
   }
 

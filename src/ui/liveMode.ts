@@ -36,6 +36,11 @@ export function createLiveMode(o: LiveOptions): LiveMode {
   let userPaused = false;
   let ended = false;
   let seeking = false;
+  let failed = false;
+  let sessionId = 0;
+  let lastFrame: FrameMsg | null = null;
+  let pendingError: string | null = null;
+  let lastKey = '';
   let dirtyLabel: string | null = null;
   let runStorm: StormId = o.storm();
   let speed = 1;
@@ -50,10 +55,25 @@ export function createLiveMode(o: LiveOptions): LiveMode {
       w.terminate();
       worker = spawn();
       started = false;
-      o.status(`Live simulation crashed: ${e.message || 'unknown error'}. Click Restart.`, true);
+      ended = true;
+      failed = true;
+      lastFrame = null;
+      updatePlay();
+      reportError(`Live simulation crashed: ${e.message || 'unknown error'}. Click Restart.`);
     };
     return w;
   }
+
+  /** Errors surface immediately when Live is showing; otherwise they wait for the next enter(). */
+  const reportError = (text: string) => {
+    if (active) o.status(text, true);
+    else pendingError = text;
+  };
+
+  const configKey = () => {
+    const st = o.selection.state;
+    return JSON.stringify([st.interventions, activePipes(st)]);
+  };
 
   const send = (c: LiveCommand) => worker.postMessage(c);
 
@@ -67,9 +87,15 @@ export function createLiveMode(o: LiveOptions): LiveMode {
     cost = selectionCost(st);
     chart.reset();
     ended = false;
+    failed = false;
+    seeking = false;
     userPaused = false;
     dirtyLabel = null;
-    send({ type: 'start', stormId: runStorm, interventions: st.interventions, custom: activePipes(st) });
+    pendingError = null;
+    lastFrame = null;
+    lastKey = configKey();
+    sessionId++;
+    send({ type: 'start', session: sessionId, stormId: runStorm, interventions: st.interventions, custom: activePipes(st) });
     send({ type: 'setSpeed', speed });
     started = true;
     updatePlay();
@@ -77,6 +103,7 @@ export function createLiveMode(o: LiveOptions): LiveMode {
   };
 
   const sendPatch = (label: string) => {
+    lastKey = configKey();
     const st = o.selection.state;
     send({ type: 'patch', interventions: st.interventions, custom: activePipes(st), label });
   };
@@ -97,19 +124,26 @@ export function createLiveMode(o: LiveOptions): LiveMode {
     balance.textContent = `Water balance ${ok ? '✓' : '⚠'} ${(r.balanceError * 100).toFixed(3)}%`;
   };
 
+  /** Paints a frame; rain is held off while the user has paused so the scene does not keep raining. */
+  const applyFrame = (m: FrameMsg) => {
+    o.view.showFrame(m.frame);
+    o.showRain(runStorm, m.t);
+    if (userPaused) o.view.setRain(0);
+    clock.textContent = `${Math.floor(m.t / 60)} min`;
+    renderReadouts(m);
+  };
+
   function onMessage(m: LiveMessage): void {
-    if (!active) return;
+    if (m.session !== sessionId) return; // from a superseded start/seek
     switch (m.type) {
       case 'frame':
         if (seeking) {
           seeking = false;
-          o.status(userPaused ? 'Live: paused.' : 'Live: the storm is running.');
+          if (active) o.status(userPaused ? 'Live: paused.' : 'Live: the storm is running.');
         }
-        o.view.showFrame(m.frame);
-        o.showRain(runStorm, m.t);
-        clock.textContent = `${Math.floor(m.t / 60)} min`;
+        lastFrame = m;
         chart.push(m.t / 60, m.readouts.sagNow);
-        renderReadouts(m);
+        if (active) applyFrame(m);
         break;
       case 'patched':
         chart.annotate(m.t / 60, `${m.label} @ ${Math.round(m.t / 60)} min`);
@@ -117,12 +151,14 @@ export function createLiveMode(o: LiveOptions): LiveMode {
       case 'ended':
         ended = true;
         updatePlay();
-        o.status('Storm over — click Restart to run it again.');
+        if (active) o.status('Storm over � click Restart to run it again.');
         break;
       case 'error':
         userPaused = true;
+        ended = true;
+        failed = true;
         updatePlay();
-        o.status(`Simulation stopped at step ${m.step}: ${m.message}. Click Restart.`, true);
+        reportError(`Simulation stopped at step ${m.step}: ${m.message}. Click Restart.`);
         break;
     }
   }
@@ -131,6 +167,7 @@ export function createLiveMode(o: LiveOptions): LiveMode {
     if (ended || !started) return start();
     userPaused = !userPaused;
     send({ type: userPaused ? 'pause' : 'resume' });
+    if (userPaused) o.view.setRain(0);
     updatePlay();
   });
   $('live-restart').addEventListener('click', start);
@@ -145,22 +182,32 @@ export function createLiveMode(o: LiveOptions): LiveMode {
 
   $('live-seek').addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-seek]');
-    if (!btn || !started) return;
+    if (!btn || !started || failed) return;
     const minute = Number(btn.dataset.seek);
     chart.reset();
     ended = false;
+    lastFrame = null;
+    sessionId++;
     updatePlay();
     seeking = true;
     o.status(minute > 0 ? `Fast-forwarding to ${minute} min…` : 'Restarting from 0 min…');
-    send({ type: 'seek', minute });
+    send({ type: 'seek', session: sessionId, minute });
   });
 
   return {
     enter() {
       active = true;
-      if (!started || runStorm !== o.storm()) return start();
+      if (started && runStorm !== o.storm()) return start();
+      if (!started && !pendingError) return start();
+      if (lastFrame) applyFrame(lastFrame);
+      if (pendingError) {
+        o.status(pendingError, true);
+        pendingError = null;
+        return;
+      }
+      if (ended) o.status('Storm over � click Restart to run it again.');
       if (dirtyLabel) {
-        sendPatch(dirtyLabel);
+        if (configKey() !== lastKey) sendPatch(dirtyLabel);
         dirtyLabel = null;
       }
       if (!userPaused && !ended) send({ type: 'resume' });
@@ -172,8 +219,9 @@ export function createLiveMode(o: LiveOptions): LiveMode {
     onSelectionChange(label) {
       cost = selectionCost(o.selection.state);
       if (!started) return;
-      if (active) sendPatch(label);
-      else dirtyLabel = dirtyLabel ? 'changes' : label;
+      if (active) {
+        if (configKey() !== lastKey) sendPatch(label);
+      } else dirtyLabel = dirtyLabel ? 'changes' : label;
     },
     onStormChange() {
       if (active) start();

@@ -29,6 +29,17 @@ describe('Selection', () => {
     expect(s.state.custom).toEqual([{ from: 'SL0', to: 'O', diameter: 0.6 }]);
   });
 
+  it('applyCombo with an unchanged set emits nothing', () => {
+    const s = new Selection();
+    s.applyCombo(['flap-gate', 'detention-tank'], 'Cheapest fix');
+    const labels: string[] = [];
+    s.subscribe((_st, label) => labels.push(label));
+    s.applyCombo(['detention-tank', 'flap-gate'], 'Cheapest fix');
+    expect(labels).toEqual([]);
+    s.applyCombo(['flap-gate'], 'Less');
+    expect(labels).toEqual(['Less']);
+  });
+
   it('state is a copy', () => {
     const s = new Selection();
     s.addPipe({ from: 'SL0', to: 'O', diameter: 0.6 });

@@ -17,6 +17,8 @@ export function mountInterventionPanel(el: HTMLElement, selection: Selection, st
   let disabled = false;
 
   const render = () => {
+    const focusedId = (document.activeElement as HTMLElement | null)?.dataset?.id;
+    const hadFocus = !!focusedId && el.contains(document.activeElement);
     const state = selection.state;
     const s = storm();
     const dis = disabled ? 'disabled' : '';
@@ -53,6 +55,7 @@ export function mountInterventionPanel(el: HTMLElement, selection: Selection, st
     el.innerHTML = `<div class="combos">${combos}</div>${groups}
       <div class="iv-footer"><span>${installed} installed</span><span>${formatRM(selectionCost(state))}</span></div>
       <p class="note">Badges: sag peak depth vs baseline for this storm. Costs are indicative placeholders.</p>`;
+    if (hadFocus) el.querySelector<HTMLInputElement>(`input.switch[data-id="${focusedId}"]`)?.focus();
   };
 
   el.addEventListener('change', (e) => {

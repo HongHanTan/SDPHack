@@ -36,6 +36,11 @@ export function createCompareMode(o: CompareOptions): CompareMode {
   });
   const runBtn = $<HTMLButtonElement>('run');
   let busy = false;
+  let lastRunKey: string | null = null;
+  const runKey = () => {
+    const st = o.selection.state;
+    return JSON.stringify([st.interventions, activePipes(st), o.storm()]);
+  };
 
   const setBusy = (b: boolean) => {
     busy = b;
@@ -74,6 +79,8 @@ export function createCompareMode(o: CompareOptions): CompareMode {
     const ids = state.interventions;
     const pipes = activePipes(state);
     const storm = o.storm();
+    const key = runKey();
+    lastRunKey = null;
     setBusy(true);
     clearResults($('cards'), $('balance'));
     clearSagChart();
@@ -88,6 +95,7 @@ export function createCompareMode(o: CompareOptions): CompareMode {
       renderResults($('cards'), base.metrics, cur.metrics, selectionCost({ interventions: ids, custom: pipes }));
       renderSagChart($('chart'), base.metrics, cur.metrics);
       renderBalance($('balance'), base.metrics.balance.error, cur.metrics.balance.error);
+      lastRunKey = key;
       o.status('Done.');
     } catch (e) {
       errorStatus(e);
@@ -99,6 +107,11 @@ export function createCompareMode(o: CompareOptions): CompareMode {
   return {
     enter() {
       player.setEnabled(true);
+      if (lastRunKey !== null && lastRunKey !== runKey()) {
+        lastRunKey = null;
+        clearResults($('cards'), $('balance'), 'Selection changed — click Run storm.');
+        clearSagChart();
+      }
       preloadBaseline();
     },
     leave() {

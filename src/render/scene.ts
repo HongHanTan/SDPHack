@@ -40,6 +40,7 @@ export function createScene(container: HTMLElement): SceneHandle {
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 20, 0);
   controls.enableDamping = true;
+  controls.addEventListener('start', () => pins.closePopover());
 
   scene.add(new THREE.HemisphereLight(0xffffff, 0x445544, 1.2));
   const sun = new THREE.DirectionalLight(0xffffff, 1.5);
@@ -71,6 +72,7 @@ export function createScene(container: HTMLElement): SceneHandle {
   };
 
   const resize = () => {
+    pins.closePopover();
     const { clientWidth: w, clientHeight: h } = container;
     renderer.setSize(w, h);
     pins.setSize(w, h);

@@ -116,6 +116,10 @@ export class PinLayer {
     this.popover.hidden = false;
   }
 
+  closePopover(): void {
+    this.close();
+  }
+
   private close(): void {
     this.openId = null;
     this.popover.hidden = true;
