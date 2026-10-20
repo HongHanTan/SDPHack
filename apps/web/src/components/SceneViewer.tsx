@@ -45,6 +45,10 @@ interface SceneViewerProps {
   appMode?: AppMode;
   onSelectInspector?: (inspector: FieldInspector) => void;
   selectedInspectorId?: string | null;
+  /** Engine mode: depth grid for the current frame (consumed by the engine water surface). */
+  engineDepth?: Float32Array | null;
+  /** Engine mode hides the scripted field-inspector patrol. Default true. */
+  showInspectors?: boolean;
 }
 
 // 3D Node Mesh with physical chamber drop from ground down to invert
@@ -372,6 +376,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   appMode = 'diagnose',
   onSelectInspector,
   selectedInspectorId,
+  showInspectors,
 }) => {
   const controlsRef = useRef<any>(null);
 
@@ -688,27 +693,29 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         })}
 
         {/* Real-Time Assigned Field Inspectors Patrol Team (Azman, Siti, Muthu, Kevin) */}
-        <FieldInspectorsManager
-          appMode={appMode}
-          selectedInspectorId={selectedInspectorId}
-          onSelectInspector={(inspector) => {
-            if (onSelectInspector) {
-              onSelectInspector(inspector);
-            } else {
-              // Default selection of assigned asset
-              if (inspector.assignedAssetId.startsWith('INLET')) {
-                const inlet = inlets.find((i) => i.inlet_id === inspector.assignedAssetId);
-                if (inlet) onSelectAsset({ type: 'inlet', id: inlet.inlet_id, data: inlet });
-              } else if (inspector.assignedAssetId.startsWith('PIPE')) {
-                const pipe = conduits.find((c) => c.conduit_id === inspector.assignedAssetId);
-                if (pipe) onSelectAsset({ type: 'conduit', id: pipe.conduit_id, data: pipe });
+        {showInspectors !== false && (
+          <FieldInspectorsManager
+            appMode={appMode}
+            selectedInspectorId={selectedInspectorId}
+            onSelectInspector={(inspector) => {
+              if (onSelectInspector) {
+                onSelectInspector(inspector);
               } else {
-                const node = nodes.find((n) => n.node_id === inspector.assignedAssetId);
-                if (node) onSelectAsset({ type: 'node', id: node.node_id, data: node });
+                // Default selection of assigned asset
+                if (inspector.assignedAssetId.startsWith('INLET')) {
+                  const inlet = inlets.find((i) => i.inlet_id === inspector.assignedAssetId);
+                  if (inlet) onSelectAsset({ type: 'inlet', id: inlet.inlet_id, data: inlet });
+                } else if (inspector.assignedAssetId.startsWith('PIPE')) {
+                  const pipe = conduits.find((c) => c.conduit_id === inspector.assignedAssetId);
+                  if (pipe) onSelectAsset({ type: 'conduit', id: pipe.conduit_id, data: pipe });
+                } else {
+                  const node = nodes.find((n) => n.node_id === inspector.assignedAssetId);
+                  if (node) onSelectAsset({ type: 'node', id: node.node_id, data: node });
+                }
               }
-            }
-          }}
-        />
+            }}
+          />
+        )}
 
         {/* Axis Orientation Gizmo */}
         <GizmoHelper alignment="bottom-right" margin={[80, 80]}>

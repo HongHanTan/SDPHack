@@ -23,9 +23,12 @@ import { InspectionModal } from './components/InspectionModal';
 import { VirtualDebrisLab } from './components/VirtualDebrisLab';
 import { InterventionDashboard } from './components/InterventionDashboard';
 import { LiveTelemetryTicker } from './components/LiveTelemetryTicker';
+import { engineSource } from './engine/engineSource';
+import { rainIntensityAt, STORMS, type StormId } from '@floodops/engine/scenario/storms';
 
 export function App() {
   const [mode, setMode] = useState<DataMode>(apiClient.getDataMode());
+  const engineMode = mode === 'engine';
   const [appMode, setAppMode] = useState<AppMode>('diagnose');
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [bootstrap, setBootstrap] = useState<BootstrapResponse | null>(null);
@@ -36,7 +39,9 @@ export function App() {
 
   // Simulation scenario parameters
   const [selectedStormId, setSelectedStormId] = useState<string>('synthetic_80mmh_60min');
-  const [selectedDebrisId, setSelectedDebrisId] = useState<string>('demo_inlet_clean');
+  const [selectedDebrisId, setSelectedDebrisId] = useState<string>(
+    apiClient.getDataMode() === 'engine' ? 'engine_d07_40pct' : 'demo_inlet_clean'
+  );
   const [selectedTailwater, setSelectedTailwater] = useState<string>('normal');
 
   // J4: Intervention Dashboard state
@@ -100,18 +105,23 @@ export function App() {
       const inspRes = await apiClient.getInspections();
       setInspections(inspRes.items);
 
-      // Load initial offline verified SWMM 5.2.4 run
-      const offlineFrames = apiClient.getOfflineFrames(selectedStormId);
-      const offlineMetrics = apiClient.getOfflineMetrics(selectedStormId);
-      setFrames(offlineFrames.frames);
-      setMetrics(offlineMetrics);
+      if (mode !== 'engine') {
+        // Load initial offline verified SWMM 5.2.4 run
+        const offlineFrames = apiClient.getOfflineFrames(selectedStormId);
+        const offlineMetrics = apiClient.getOfflineMetrics(selectedStormId);
+        setFrames(offlineFrames.frames);
+        setMetrics(offlineMetrics);
+      } else {
+        setFrames([]);
+        setMetrics(null);
+      }
     } catch (err: unknown) {
       console.error('Failed to load foundational data:', err);
       setApiError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  }, [selectedStormId]);
+  }, [selectedStormId, mode]);
 
   useEffect(() => {
     loadData();
@@ -124,6 +134,11 @@ export function App() {
     activePollRef.current = false;
     apiClient.setDataMode(newMode);
     setMode(newMode);
+    if (newMode === 'engine') {
+      setSelectedDebrisId('engine_d07_40pct');
+    } else if (mode === 'engine') {
+      setSelectedDebrisId('demo_inlet_clean');
+    }
   };
 
   // Explicit switch between verified offline SWMM 5.2.4 runs
@@ -202,12 +217,12 @@ export function App() {
       // Poll until succeeded or failed
       let currentStatus = initialStatus;
       let attempts = 0;
-      const maxAttempts = 60; // 60 * 800ms = 48s max poll
+      const maxAttempts = mode === 'engine' ? 300 : 60; // 60 * 800ms = 48s max poll (engine: 240s)
 
       while (activePollRef.current && (currentStatus === 'queued' || currentStatus === 'running')) {
         attempts++;
         if (attempts > maxAttempts) {
-          throw new Error('Simulation polling timed out after 48 seconds.');
+          throw new Error(`Simulation polling timed out after ${Math.round(maxAttempts * 0.8)} seconds.`);
         }
 
         await new Promise((r) => setTimeout(r, 800));
@@ -217,7 +232,7 @@ export function App() {
           const run = await apiClient.getSimulation(run_id);
           currentStatus = run.status;
           setRunProgressMessage(
-            `EPA SWMM Solving (${run.status})... [${(attempts * 0.8).toFixed(1)}s]`
+            `${mode === 'engine' ? 'Engine solving' : 'EPA SWMM Solving'} (${run.status})... [${(attempts * 0.8).toFixed(1)}s]`
           );
 
           if (run.status === 'failed') {
@@ -288,6 +303,7 @@ export function App() {
   // Dynamic blockage tuning & real-time hydraulic simulation recalculation
   const handleUpdateBlockage = (assetId: string, fraction: number) => {
     setCustomBlockages((prev) => ({ ...prev, [assetId]: fraction }));
+    if (engineMode) return;
 
     if (assetId === 'INLET-D07' || assetId === 'NODE-J07') {
       setDebrisRestrictionFraction(fraction);
@@ -469,10 +485,13 @@ export function App() {
     }
   };
 
-  const stormIntensity = selectedStormId === 'synthetic_120mmh_60min' ? 120 : 80;
   const currentTimestamp = frames[currentFrameIndex]?.timestamp_s ?? 0;
-  const isRainActive =
-    rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && currentTimestamp <= 3600;
+  const stormIntensity = engineMode
+    ? rainIntensityAt(STORMS[selectedStormId as StormId] ?? STORMS.synthetic_80mmh_60min, currentTimestamp)
+    : selectedStormId === 'synthetic_120mmh_60min' ? 120 : 80;
+  const isRainActive = engineMode
+    ? rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && stormIntensity > 0
+    : rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && currentTimestamp <= 3600;
 
   const handleSelectTab = (tab: 'dashboard' | 'map' | 'assets' | 'analytics' | 'reports') => {
     if (tab === 'dashboard') {
@@ -559,6 +578,8 @@ export function App() {
         appMode={appMode}
         onSelectInspector={handleSelectInspector}
         selectedInspectorId={selectedInspectorId}
+        showInspectors={!engineMode}
+        engineDepth={engineMode ? engineSource.surfaceAt(currentTimestamp) : undefined}
       />
 
       {/* Selected Asset Details Drawer with Live Site Photos, CCTV, and Blockage Slider */}
@@ -597,7 +618,8 @@ export function App() {
           selectedTailwater={selectedTailwater}
           onSelectTailwater={(id) => setSelectedTailwater(id)}
           onRunSimulation={handleRunSimulation}
-          onLoadVerifiedRun={handleLoadVerifiedRun}
+          onLoadVerifiedRun={engineMode ? () => {} : handleLoadVerifiedRun}
+          hideVerifiedRun={engineMode}
           isRunning={isRunning}
           runProgressMessage={runProgressMessage}
           hasSimulationStarted={hasSimulationStarted}
@@ -626,7 +648,7 @@ export function App() {
       )}
 
       {/* J3: Virtual Debris Lab (Close-up modal for INLET-D07) */}
-      {isDebrisLabOpen && (
+      {!engineMode && isDebrisLabOpen && (
         <VirtualDebrisLab
           inletId="INLET-D07"
           onClose={() => setIsDebrisLabOpen(false)}
@@ -641,7 +663,7 @@ export function App() {
       )}
 
       {/* Field Inspection Logging Modal */}
-      {inspectingAssetId && (
+      {!engineMode && inspectingAssetId && (
         <InspectionModal
           assetId={inspectingAssetId}
           onClose={() => setInspectingAssetId(null)}

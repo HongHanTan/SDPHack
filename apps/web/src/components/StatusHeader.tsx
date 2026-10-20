@@ -13,6 +13,7 @@ import {
   Database,
   Server,
   RefreshCw,
+  Cpu,
 } from 'lucide-react';
 import { DataMode } from '../api/client';
 import { HealthResponse, AppMode } from '../types';
@@ -51,11 +52,11 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
   return (
     <header className="absolute top-0 left-0 right-0 z-30 flex flex-col pointer-events-none">
       {/* Real API Error Alert (Minimalistic banner) */}
-      {mode === 'api' && apiError && (
+      {(mode === 'api' || mode === 'engine') && apiError && (
         <div className="bg-rose-50 border-b border-rose-200 text-rose-800 text-xs px-6 py-1.5 flex items-center justify-between backdrop-blur-md pointer-events-auto">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-            <span className="font-semibold text-rose-900">API Error:</span>
+            <span className="font-semibold text-rose-900">{mode === 'engine' ? 'Engine Error:' : 'API Error:'}</span>
             <span className="text-rose-700 truncate max-w-xl">{apiError}</span>
           </div>
           <button
@@ -269,7 +270,17 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
           {/* Data Mode Switcher */}
           <div>
             <label className="text-slate-500 text-[11px] block mb-1 font-medium">Data Source Mode</label>
-            <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button
+                onClick={() => onToggleMode('engine')}
+                className={`py-1 rounded-lg text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  mode === 'engine'
+                    ? 'bg-emerald-600 text-white font-medium shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Cpu className="w-3 h-3" /> Engine
+              </button>
               <button
                 onClick={() => onToggleMode('mock')}
                 className={`py-1 rounded-lg text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${

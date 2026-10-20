@@ -59,6 +59,8 @@ interface SimulationHUDProps {
   onOpenInspect?: () => void;
   appMode?: AppMode;
   onChangeAppMode?: (mode: AppMode) => void;
+  /** Engine mode: hide the verified-SWMM-run storm slider (it loads offline SWMM fixtures). */
+  hideVerifiedRun?: boolean;
 }
 
 export const SimulationHUD: React.FC<SimulationHUDProps> = ({
@@ -95,6 +97,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
   onOpenInspect,
   appMode,
   onChangeAppMode,
+  hideVerifiedRun,
 }) => {
   const [localIsPlaying, setLocalIsPlaying] = useState(false);
   const isPlaying = isPlayingProp !== undefined ? isPlayingProp : localIsPlaying;
@@ -241,40 +244,42 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
             {leftTab === 'scenario' && (
               <div className="space-y-4">
                 {/* Rainfall Intensity Slider */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-slate-700">Rainfall Intensity</span>
-                    <span className="text-xs font-mono font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
-                      {currentIntensity} mm/hr
-                    </span>
+                {!hideVerifiedRun && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-slate-700">Rainfall Intensity</span>
+                      <span className="text-xs font-mono font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-red-200">
+                        {currentIntensity} mm/hr
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="25"
+                      value={currentIntensity <= 50 ? 50 : currentIntensity <= 80 ? 75 : 100}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (val <= 50) {
+                          onSelectStorm('synthetic_80mmh_60min');
+                          onLoadVerifiedRun('synthetic_80mmh_60min');
+                        } else if (val <= 75) {
+                          onSelectStorm('synthetic_80mmh_60min');
+                          onLoadVerifiedRun('synthetic_80mmh_60min');
+                        } else {
+                          onSelectStorm('synthetic_120mmh_60min');
+                          onLoadVerifiedRun('synthetic_120mmh_60min');
+                        }
+                      }}
+                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600"
+                    />
+                    <div className="flex justify-between text-[10px] text-slate-400 font-mono px-0.5">
+                      <span>50 mm/h</span>
+                      <span>80 mm/h</span>
+                      <span>120 mm/h</span>
+                    </div>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="25"
-                    value={currentIntensity <= 50 ? 50 : currentIntensity <= 80 ? 75 : 100}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      if (val <= 50) {
-                        onSelectStorm('synthetic_80mmh_60min');
-                        onLoadVerifiedRun('synthetic_80mmh_60min');
-                      } else if (val <= 75) {
-                        onSelectStorm('synthetic_80mmh_60min');
-                        onLoadVerifiedRun('synthetic_80mmh_60min');
-                      } else {
-                        onSelectStorm('synthetic_120mmh_60min');
-                        onLoadVerifiedRun('synthetic_120mmh_60min');
-                      }
-                    }}
-                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600"
-                  />
-                  <div className="flex justify-between text-[10px] text-slate-400 font-mono px-0.5">
-                    <span>50 mm/h</span>
-                    <span>80 mm/h</span>
-                    <span>120 mm/h</span>
-                  </div>
-                </div>
+                )}
 
                 {/* Workflow Mode Switcher (Idle, Diagnose, Anticipate) */}
                 <div className="space-y-1.5">

@@ -26,8 +26,9 @@ import {
   MOCK_RUN_BASELINE,
   MOCK_RUN_STRONGER,
 } from '../mocks/fixtures';
+import { engineSource } from '../engine/engineSource';
 
-export type DataMode = 'mock' | 'api';
+export type DataMode = 'engine' | 'mock' | 'api';
 
 const STORAGE_KEY_MODE = 'floodops_data_mode';
 const STORAGE_KEY_BASE_URL = 'floodops_api_base_url';
@@ -38,7 +39,7 @@ export class ApiClient {
   private baseUrl: string;
 
   constructor() {
-    const envMode = (import.meta.env.VITE_DATA_MODE as DataMode) || 'mock';
+    const envMode = (import.meta.env.VITE_DATA_MODE as DataMode) || 'engine';
     const savedMode = (typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY_MODE)) as DataMode | null;
     this.mode = savedMode || envMode;
 
@@ -109,6 +110,9 @@ export class ApiClient {
   // --- API Methods ---
 
   public async getHealth(): Promise<HealthResponse> {
+    if (this.mode === 'engine') {
+      return engineSource.getHealth();
+    }
     if (this.mode === 'mock') {
       return MOCK_HEALTH;
     }
@@ -116,6 +120,9 @@ export class ApiClient {
   }
 
   public async getBootstrap(): Promise<BootstrapResponse> {
+    if (this.mode === 'engine') {
+      return engineSource.getBootstrap();
+    }
     if (this.mode === 'mock') {
       return MOCK_BOOTSTRAP;
     }
@@ -123,6 +130,9 @@ export class ApiClient {
   }
 
   public async getTownshipAssets(townshipId: string = 'taman_kyra_demo'): Promise<TownshipAssetsResponse> {
+    if (this.mode === 'engine') {
+      return engineSource.getTownshipAssets();
+    }
     if (this.mode === 'mock') {
       return MOCK_ASSETS;
     }
@@ -135,6 +145,9 @@ export class ApiClient {
     duration_s: number;
     source_type?: SourceType;
   }): Promise<StormPreset> {
+    if (this.mode === 'engine') {
+      throw new Error('[ENGINE] Not supported in engine mode — switch to Mock or SWMM API');
+    }
     if (this.mode === 'mock') {
       return {
         storm_id: `mock-storm-${Date.now()}`,
@@ -155,6 +168,9 @@ export class ApiClient {
 
   // Load inspections from backend or local storage
   public async getInspections(assetId?: string): Promise<{ items: InspectionRecord[] }> {
+    if (this.mode === 'engine') {
+      return { items: [] };
+    }
     if (this.mode === 'mock') {
       let local: InspectionRecord[] = [];
       try {
@@ -173,6 +189,9 @@ export class ApiClient {
   }
 
   public async createInspection(data: Partial<InspectionRecord>): Promise<InspectionRecord> {
+    if (this.mode === 'engine') {
+      throw new Error('[ENGINE] Not supported in engine mode — switch to Mock or SWMM API');
+    }
     const isGrateAsset = (data.asset_id || '').startsWith('INLET');
     const isoTimestamp = data.timestamp || new Date().toISOString();
 
@@ -231,6 +250,9 @@ export class ApiClient {
     inspectionId: string,
     file: File
   ): Promise<InspectionMediaItem> {
+    if (this.mode === 'engine') {
+      throw new Error('[ENGINE] Not supported in engine mode — switch to Mock or SWMM API');
+    }
     const maxBytes = 10 * 1024 * 1024; // 10 MiB limit
     if (file.size > maxBytes) {
       throw new Error(`File size ${(file.size / (1024 * 1024)).toFixed(1)}MB exceeds maximum 10 MiB limit.`);
@@ -306,6 +328,9 @@ export class ApiClient {
   public async createDebrisScenario(
     data: DebrisCreateRequest | Partial<DebrisPreset>
   ): Promise<DebrisPreset> {
+    if (this.mode === 'engine') {
+      throw new Error('[ENGINE] Not supported in engine mode — switch to Mock or SWMM API');
+    }
     if (this.mode === 'mock') {
       const clogging =
         'hydraulic_inlet_clogging_fraction' in data
@@ -333,6 +358,9 @@ export class ApiClient {
   }
 
   public async createSimulation(req: SimulationCreateRequest): Promise<{ run_id: string; status: string }> {
+    if (this.mode === 'engine') {
+      return engineSource.createSimulation(req);
+    }
     if (this.mode === 'mock') {
       const isStronger = req.storm_id === 'synthetic_120mmh_60min';
       return {
@@ -347,6 +375,9 @@ export class ApiClient {
   }
 
   public async getSimulation(runId: string): Promise<SimulationRun> {
+    if (this.mode === 'engine') {
+      return engineSource.getSimulation(runId);
+    }
     if (this.mode === 'mock' || runId === 't1_baseline' || runId === 't1_stronger') {
       return runId === 't1_stronger' ? MOCK_RUN_STRONGER : MOCK_RUN_BASELINE;
     }
@@ -354,6 +385,9 @@ export class ApiClient {
   }
 
   public async getSimulationFrames(runId: string): Promise<SimulationFramesResponse> {
+    if (this.mode === 'engine') {
+      return engineSource.getSimulationFrames(runId);
+    }
     if (this.mode === 'mock' || runId === 't1_baseline' || runId === 't1_stronger') {
       return runId === 't1_stronger' ? MOCK_FRAMES_STRONGER : MOCK_FRAMES_BASELINE;
     }
@@ -361,6 +395,9 @@ export class ApiClient {
   }
 
   public async getSimulationMetrics(runId: string): Promise<SimulationMetricsResponse> {
+    if (this.mode === 'engine') {
+      return engineSource.getSimulationMetrics(runId);
+    }
     if (this.mode === 'mock' || runId === 't1_baseline' || runId === 't1_stronger') {
       return runId === 't1_stronger' ? MOCK_METRICS_STRONGER : MOCK_METRICS_BASELINE;
     }
