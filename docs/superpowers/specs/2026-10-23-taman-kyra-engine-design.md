@@ -55,7 +55,7 @@ Then retune the demo story around the team's options plus ours, and cross-check 
 - **Houses:** cells inside a house footprint are ROOF and carry a building id.
 - **Lake:** cells within the radius are POND. Ground is a bowl down to `LAKE.bedZ` (default 9.2). The initial water level is `LAKE.waterLevel` (default 9.8). It must stay below NODE-J04's invert of 10.0, so that a relief pipe from J04 can discharge by gravity.
 - **Park:** cells within the lake radius plus 12 m are PARK.
-- **Canal:** cells inside the canal rectangle are RIVER, with bed `CANAL.bedZ` (default 7.6). The wall cells along both long edges are raised to `ground + CANAL.wallHeight`.
+- **Canal:** cells inside the canal rectangle are RIVER, with bed `CANAL.bedZ` (default 7.6). The `wallHeight` is visual only (used in part 3). Physics banks stay at local ground so overland flow can drain into the canal; the high stage, 9.4 m, stays below the bank ground (≈ 10 m).
 - **J07 dip:** a bowl centred on NODE-J07 (40, 0), radius `DIP.radius` (default 30 m) and depth `DIP.depth` (default 0.5 m). It is applied to non-canal cells, so water gathers at the junction. All three values are tunable.
 - **Other cells:** LAWN.
 - **Infiltration:** unchanged per land use.
