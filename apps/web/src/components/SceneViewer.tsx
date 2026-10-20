@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, Text, GizmoHelper, GizmoViewport } from '@react-three/drei';
+import { Grid, Text, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   AssetConduit,
@@ -16,6 +16,8 @@ import {
 import { ViewLookProvider, useViewLook } from '../view/ViewLookContext';
 import { FlowRibbons } from '../view/FlowRibbons';
 import { XrayBloom } from '../view/XrayBloom';
+import { ViewRig } from '../view/ViewRig';
+import { ScaleBar } from '../view/ScaleBarOverlay';
 import { SceneLook } from '../view/SceneLook';
 import { FieldInspectorsManager } from './FieldInspectorsManager';
 import { TownshipEnvironment } from './TownshipEnvironment';
@@ -57,6 +59,9 @@ interface SceneViewerProps {
   /** X-ray look toggle (legacy viewer port). Absent handler: no X-ray button. */
   xray?: boolean;
   onToggleXray?: () => void;
+  /** 2D plan / 3D view (legacy viewer port). Absent handler: no switch. */
+  viewDim?: '3d' | '2d';
+  onChangeViewDim?: (d: '3d' | '2d') => void;
 }
 
 // 3D Node Mesh with physical chamber drop from ground down to invert
@@ -69,7 +74,7 @@ const NodeMesh: React.FC<{
   showUndergroundOnly: boolean;
   isTwinHighlight?: boolean;
 }> = ({ node, status, depthM = 0, isSelected, onClick, showUndergroundOnly, isTwinHighlight }) => {
-  const { ghost } = useViewLook();
+  const { ghost, is2d } = useViewLook();
   const [hovered, setHovered] = useState(false);
 
   // Bottom invert position
@@ -171,15 +176,17 @@ const NodeMesh: React.FC<{
       )}
 
       {/* Node ID Tag */}
-      <Text
-        position={[0, invertPos[1] + chamberHeight + 1.2, 0]}
-        fontSize={1.2}
-        color={isSelected ? '#38bdf8' : '#f8fafc'}
-        anchorX="center"
-        anchorY="bottom"
-      >
-        {node.node_id}
-      </Text>
+      {!is2d && (
+        <Text
+          position={[0, invertPos[1] + chamberHeight + 1.2, 0]}
+          fontSize={1.2}
+          color={isSelected ? '#38bdf8' : '#f8fafc'}
+          anchorX="center"
+          anchorY="bottom"
+        >
+          {node.node_id}
+        </Text>
+      )}
     </group>
   );
 };
@@ -196,6 +203,7 @@ const ConduitMesh: React.FC<{
   appMode?: AppMode;
   isTwinHighlight?: boolean;
 }> = ({ conduit, fromNode, toNode, status, isSelected, onClick, appMode, isTwinHighlight }) => {
+  const { is2d } = useViewLook();
   const [hovered, setHovered] = useState(false);
 
   const { midpoint, length, orientation } = useMemo(() => {
@@ -275,7 +283,7 @@ const ConduitMesh: React.FC<{
       )}
 
       {/* 3D Label for bottleneck conduit PIPE-P07 */}
-      {conduit.conduit_id === 'PIPE-P07' && (
+      {conduit.conduit_id === 'PIPE-P07' && !is2d && (
         <group position={[0, radius + 1.2, 0]}>
           <Text
             fontSize={0.9}
@@ -300,6 +308,7 @@ const InletMesh: React.FC<{
   onClick: () => void;
   appMode?: AppMode;
 }> = ({ inlet, associatedNode, cloggingFraction = 0, isSelected, onClick, appMode }) => {
+  const { is2d } = useViewLook();
   const [hovered, setHovered] = useState(false);
 
   const position = useMemo(() => {
@@ -338,7 +347,7 @@ const InletMesh: React.FC<{
       </mesh>
 
       {/* Focus Tag for INLET-D07 */}
-      {isFocusInlet && (
+      {isFocusInlet && !is2d && (
         <group position={[0, 2.2, 0]}>
           <Text
             fontSize={1.1}
@@ -389,7 +398,11 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   showInspectors,
   xray = false,
   onToggleXray,
+  viewDim = '3d',
+  onChangeViewDim,
 }) => {
+  const is2d = viewDim === '2d';
+  const [metresPerPixel, setMetresPerPixel] = useState<number>(1);
   const controlsRef = useRef<any>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const keyLightRef = useRef<THREE.DirectionalLight>(null);
@@ -521,6 +534,22 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           </button>
         )}
 
+        {onChangeViewDim && (
+          <div className="flex items-center rounded-xl bg-slate-100 p-0.5 border border-slate-200" title="3D view or 2D plan (north up)">
+            {(['3d', '2d'] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => onChangeViewDim(d)}
+                className={`px-2.5 py-1 rounded-lg transition cursor-pointer font-medium ${
+                  viewDim === d ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {d.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* 2. Rain FX Toggle */}
         <button
           onClick={handleToggleRain}
@@ -562,25 +591,29 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           <span className="text-[10px] text-slate-400 font-semibold px-1">View:</span>
           <button
             onClick={() => handlePreset('overview')}
-            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium"
+            disabled={is2d}
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed\"
           >
             Overview
           </button>
           <button
             onClick={() => handlePreset('d07')}
-            className="px-2 py-0.5 rounded-lg hover:bg-amber-100 text-amber-800 transition cursor-pointer font-bold"
+            disabled={is2d}
+            className="px-2 py-0.5 rounded-lg hover:bg-amber-100 text-amber-800 transition cursor-pointer font-bold disabled:opacity-40 disabled:cursor-not-allowed\"
           >
             D07 Lowland
           </button>
           <button
             onClick={() => handlePreset('outfall')}
-            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium"
+            disabled={is2d}
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed\"
           >
             Outfall
           </button>
           <button
             onClick={() => handlePreset('north')}
-            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium"
+            disabled={is2d}
+            className="px-2 py-0.5 rounded-lg hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition cursor-pointer font-medium disabled:opacity-40 disabled:cursor-not-allowed\"
           >
             Upstream
           </button>
@@ -604,7 +637,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         camera={{ position: [60, 90, 130], fov: 45, near: 0.1, far: 1000 }}
         shadows
       >
-        <ViewLookProvider xray={xray} is2d={false}>
+        <ViewLookProvider xray={xray} is2d={is2d}>
         <color attach="background" args={['#f1f5f9']} />
         <fog attach="fog" args={['#f1f5f9', 200, 480]} />
         <ambientLight ref={ambientRef} intensity={1.3} color="#ffffff" />
@@ -612,15 +645,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         <directionalLight ref={fillLightRef} position={[-80, 60, -60]} intensity={0.8} color="#93c5fd" />
         <SceneLook ambient={ambientRef} keyLight={keyLightRef} fill={fillLightRef} />
 
-        <OrbitControls
-          ref={controlsRef}
-          makeDefault
-          enableDamping
-          dampingFactor={0.05}
-          maxPolarAngle={Math.PI / 2 - 0.05}
-          minDistance={10}
-          maxDistance={350}
-        />
+        <ViewRig is2d={is2d} controlsRef={controlsRef} onMetresPerPixel={setMetresPerPixel} />
 
         {/* Spatial Metric Reference Grid */}
         <Grid
@@ -773,6 +798,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         <XrayBloom />
         </ViewLookProvider>
       </Canvas>
+      {is2d && <ScaleBar metresPerPixel={metresPerPixel} />}
     </div>
   );
 };

@@ -69,6 +69,7 @@ export function App() {
   const [inspectingAssetId, setInspectingAssetId] = useState<string | null>(null);
   const [twinViewMode, setTwinViewMode] = useState<TwinViewMode>('twin_highlight');
   const [xray, setXray] = useState<boolean>(false);
+  const [viewDim, setViewDim] = useState<'3d' | '2d'>('3d');
   const [rainEnabled, setRainEnabled] = useState<boolean>(true);
 
   // J3: Virtual Debris Lab states
@@ -653,6 +654,8 @@ export function App() {
         twinViewMode={twinViewMode}
         onChangeTwinViewMode={(m) => setTwinViewMode(m)}
         xray={xray}
+        viewDim={viewDim}
+        onChangeViewDim={setViewDim}
         onToggleXray={() => setXray((v) => !v)}
         isRainActive={isRainActive}
         rainEnabled={rainEnabled}

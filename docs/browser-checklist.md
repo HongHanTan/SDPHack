@@ -47,3 +47,12 @@ Run `npm run dev`, open http://localhost:5173.
 32. Live toggle: storm plays continuously; Apply mid-storm changes the water in place; speed/pause/jumps work.
 33. Switch to Mock: the team's original app (inspectors, debris lab, offline SWMM run) works unchanged. Switch to SWMM API with the backend stopped: a clear error, no silent fallback.
 34. `npm run build` passes; the built app loads both engine workers.
+
+## Team UI: X-ray and 2D — `npm run dev:web`
+35. 🔬 X-ray off by default; the scene looks exactly as before. Turning it on fades (≈0.6 s) to a dark navy scene: houses/roads ghosted, trees gone, pipes glowing with chevrons, manholes glowing, bloom.
+36. X-ray works with each of Digital Twin, Realistic Surface and Underground Only (Underground + X-ray: no surface, glowing network).
+37. Engine mode, 80 mm/h storm with X-ray on: chevrons speed up as pipes load; P07 turns red; flood water is bright cyan.
+38. 3D | 2D: 2D glides overhead (≈0.5 s), north up; drag pans, wheel zooms, no rotation; camera presets are disabled; the scale bar changes step as you zoom.
+39. In 2D: trees and 3D labels hidden; pipes drawn on top of roofs; clicking a pipe opens the asset panel. Back to 3D returns to the previous angle.
+40. 2D + X-ray: dark map with glowing pipes.
+41. Mock and SWMM API modes: both toggles work; with both off the team's original views are unchanged.
