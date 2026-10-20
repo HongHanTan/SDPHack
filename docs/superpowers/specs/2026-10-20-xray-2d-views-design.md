@@ -21,9 +21,10 @@ Jiajie's three twin views (Digital Twin, Realistic Surface, Underground Only) al
   - `viewDim: '3d' | '2d'`
 
   Both are independent of his `twinViewMode`.
-- **`view/ViewLookContext.tsx`:** provides `{ xrayT: number, is2d: boolean }` to scene components.
-  - `xrayT` eases 0 → 1 (or back) over **0.6 s**, as in the legacy `XRAY_FADE_S`.
-  - Components outside the provider get `{ xrayT: 0, is2d: false }`, which is Jiajie's original look.
+- **`view/ViewLookContext.tsx`:** provides `{ lookRef, ghost, is2d }` to scene components (the provider sits inside the R3F `Canvas`).
+  - `lookRef.current.xrayT` eases 0 → 1 (or back) over **0.6 s**, as in the legacy `XRAY_FADE_S`. Continuous effects (lights, fog, water colour, pipe colours) read it in `useFrame`, so the fade doesn't re-render React.
+  - `ghost` is `xrayT >= 0.5`, a React state for the discrete switches (ghost materials, ribbons, bloom, hidden trees).
+  - Components outside the provider get `xrayT = 0`, `ghost = false`, `is2d = false`, which is Jiajie's original look.
 
 ## 3. X-ray
 
@@ -35,11 +36,11 @@ Jiajie's three twin views (Digital Twin, Realistic Surface, Underground Only) al
 - **Surface (`TownshipEnvironment`):**
   - Houses, roads, lawn, cul-de-sac, cars, lake and canal are drawn **ghosted**: dark blue `#1c2c44`, opacity about 0.35, no depth writes.
   - Trees are hidden.
-  - Text labels stay, with a lighter colour.
+  - Text labels stay as they are.
   - In practice, ghosting means one shared ghost material that replaces each mesh's material while `xrayT ≥ 0.5`; below 0.5 the original materials are used.
 - **Water:**
   - Engine mode: `EngineWater` blends to the x-ray water colours and adds emissive glow.
-  - Mock/API: `PondingWaterAnimation` keeps its own behaviour, tinted with the x-ray water colour.
+  - Mock/API: `PondingWaterAnimation` keeps its own look (it is excluded from ghosting).
 - **Pipes:** `view/FlowRibbons.tsx` ports the legacy `FlowRibbons`, with these behaviours:
   - one tube per conduit, at its true depth (inverts);
   - a chevron shader whose scroll speed comes from the frame's `capacity_fraction` (the legacy `flowMath` `advancePhase` / `arrowsVisible`);
@@ -54,7 +55,7 @@ Jiajie's three twin views (Digital Twin, Realistic Surface, Underground Only) al
 - **Toggle:** a "3D | 2D" switch in the SceneViewer top bar.
 - **`view/ViewRig.tsx`** ports the legacy `CameraRig`:
   - **3D → 2D:** save the current orbit pose, then animate the perspective camera to straight overhead over **0.5 s** with smoothstep easing. At the end, switch to an orthographic camera (drei `OrthographicCamera` `makeDefault`, `up = (0,0,-1)` so north is at the top) with `MapControls` (rotation off, pan + zoom).
-  - **Frame size:** the ortho frame fits the site (the team scene's extent, 290 m) with a 16 px margin, as in the legacy `resize`.
+  - **Frame size:** the ortho frame fits the site (the team lawn extent, 240 × 280 m centred at scene x 45, z −10) with a 16 px margin, as in the legacy `resize`.
   - **2D → 3D:** swap back to perspective at the overhead pose, then animate back to the saved pose.
   - **Camera presets:** Jiajie's presets (Overview, D07 Lowland, Outfall, Upstream) are disabled in 2D.
 - **What 2D draws:**
