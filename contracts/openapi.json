@@ -1,0 +1,3322 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Township FloodOps API",
+    "description": "Synthetic uncalibrated network. Immutable storms, inspection/media provenance, debris mass accounting and asynchronous real SWMM runs are persisted in SQLite. Native finite inlet capture supports independent hydraulic loss hypotheses; retained direct-node baseline remains available. Poll run status before fetching results. High tailwater and interventions remain unsupported. One API worker per runtime directory.",
+    "version": "1.2.0"
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Health",
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bootstrap": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Bootstrap",
+        "operationId": "bootstrap_api_bootstrap_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BootstrapResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/townships/{township_id}/assets": {
+      "get": {
+        "tags": [
+          "catalog"
+        ],
+        "summary": "Assets",
+        "operationId": "assets_api_townships__township_id__assets_get",
+        "parameters": [
+          {
+            "name": "township_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Township Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storms": {
+      "post": {
+        "tags": [
+          "storms"
+        ],
+        "summary": "Create Storm",
+        "description": "Save a new immutable constant storm; send the new storm_id when starting a run.",
+        "operationId": "create_storm_api_storms_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StormCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StormRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/storms/{storm_id}": {
+      "get": {
+        "tags": [
+          "storms"
+        ],
+        "summary": "Get Storm",
+        "operationId": "get_storm_api_storms__storm_id__get",
+        "parameters": [
+          {
+            "name": "storm_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Storm Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StormRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inspections": {
+      "post": {
+        "tags": [
+          "inspections"
+        ],
+        "summary": "Create Inspection",
+        "operationId": "create_inspection_api_inspections_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InspectionCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectionRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "inspections"
+        ],
+        "summary": "List Inspections",
+        "operationId": "list_inspections_api_inspections_get",
+        "parameters": [
+          {
+            "name": "asset_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Asset Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectionList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inspections/{inspection_id}": {
+      "get": {
+        "tags": [
+          "inspections"
+        ],
+        "summary": "Get Inspection",
+        "operationId": "get_inspection_api_inspections__inspection_id__get",
+        "parameters": [
+          {
+            "name": "inspection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Inspection Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InspectionRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inspections/{inspection_id}/media": {
+      "post": {
+        "tags": [
+          "inspections"
+        ],
+        "summary": "Upload Media",
+        "operationId": "upload_media_api_inspections__inspection_id__media_post",
+        "parameters": [
+          {
+            "name": "inspection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Inspection Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_media_api_inspections__inspection_id__media_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaRecord"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "MEDIA_TOO_LARGE: maximum 10 MiB per file.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA: PNG, JPEG, WebP or PDF required, matching file signature and content type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inspections/{inspection_id}/media/{media_id}": {
+      "get": {
+        "tags": [
+          "inspections"
+        ],
+        "summary": "Get Media",
+        "operationId": "get_media_api_inspections__inspection_id__media__media_id__get",
+        "parameters": [
+          {
+            "name": "inspection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Inspection Id"
+            }
+          },
+          {
+            "name": "media_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Media Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Original media attachment; size/SHA-256 verified.",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/debris/scenarios": {
+      "post": {
+        "tags": [
+          "debris"
+        ],
+        "summary": "Create Debris",
+        "operationId": "create_debris_api_debris_scenarios_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DebrisCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebrisScenario"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/debris/scenarios/{scenario_id}": {
+      "get": {
+        "tags": [
+          "debris"
+        ],
+        "summary": "Get Debris",
+        "operationId": "get_debris_api_debris_scenarios__scenario_id__get",
+        "parameters": [
+          {
+            "name": "scenario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Scenario Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebrisScenario"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/simulations": {
+      "post": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Create Simulation",
+        "description": "Persist queued inputs and return immediately; native execution may later succeed or fail.",
+        "operationId": "create_simulation_api_simulations_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationAccepted"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "QUEUE_FULL: at most 8 queued/running jobs by default.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "SERVICE_STOPPING or SCHEDULING_FAILED; a scheduling failure includes the saved run_id.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "List Simulations",
+        "operationId": "list_simulations_api_simulations_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/simulations/{run_id}": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Get Simulation",
+        "operationId": "get_simulation_api_simulations__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/simulations/{run_id}/frames": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Get Frames",
+        "operationId": "get_frames_api_simulations__run_id__frames_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FramesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RESULTS_NOT_READY for queued/running, SIMULATION_FAILED for failed runs. Query run status; failed runs have persisted error/log references.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/simulations/{run_id}/metrics": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Get Metrics",
+        "operationId": "get_metrics_api_simulations__run_id__metrics_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "RESULTS_NOT_READY for queued/running, SIMULATION_FAILED for failed runs. Query run status; failed runs have persisted error/log references.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/simulations/{run_id}/artifacts/{artifact_name}": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Get Artifact",
+        "operationId": "get_artifact_api_simulations__run_id__artifacts__artifact_name__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "artifact_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Artifact Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Allowlisted raw SWMM artifact or API event log.",
+            "content": {
+              "application/octet-stream": {}
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "VALIDATION_ERROR, UNSUPPORTED_SCENARIO or SCENARIO_STORM_MISMATCH: invalid input, unsupported boundary or a debris scenario bound to another storm.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR, RESULT_ARTIFACT_INVALID or MEDIA_ARTIFACT_INVALID: server failure or missing/corrupt retained evidence.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssetsResponse": {
+        "properties": {
+          "township_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Township Id"
+          },
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "source_type": {
+            "type": "string",
+            "const": "synthetic",
+            "title": "Source Type"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "coordinate_system": {
+            "type": "string",
+            "const": "local_metres_east_north_elevation",
+            "title": "Coordinate System"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/Node"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Nodes"
+          },
+          "inlets": {
+            "items": {
+              "$ref": "#/components/schemas/Inlet"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Inlets"
+          },
+          "conduits": {
+            "items": {
+              "$ref": "#/components/schemas/Conduit"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Conduits"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "township_id",
+          "model_version_id",
+          "source_type",
+          "coordinate_system",
+          "nodes",
+          "inlets",
+          "conduits",
+          "assumptions"
+        ],
+        "title": "AssetsResponse"
+      },
+      "Body_upload_media_api_inspections__inspection_id__media_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_media_api_inspections__inspection_id__media_post"
+      },
+      "BootstrapResponse": {
+        "properties": {
+          "api_version": {
+            "type": "string",
+            "title": "Api Version"
+          },
+          "township_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Township Id"
+          },
+          "model_versions": {
+            "items": {
+              "$ref": "#/components/schemas/ModelVersion"
+            },
+            "type": "array",
+            "title": "Model Versions"
+          },
+          "storms": {
+            "items": {
+              "$ref": "#/components/schemas/StormRecord"
+            },
+            "type": "array",
+            "title": "Storms"
+          },
+          "debris_scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/DebrisPreset"
+            },
+            "type": "array",
+            "title": "Debris Scenarios"
+          },
+          "tailwater_cases": {
+            "items": {
+              "$ref": "#/components/schemas/TailwaterPreset"
+            },
+            "type": "array",
+            "title": "Tailwater Cases"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/Capabilities"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "api_version",
+          "township_id",
+          "model_versions",
+          "storms",
+          "debris_scenarios",
+          "tailwater_cases",
+          "capabilities",
+          "assumptions"
+        ],
+        "title": "BootstrapResponse"
+      },
+      "Capabilities": {
+        "properties": {
+          "assets": {
+            "type": "boolean",
+            "title": "Assets",
+            "default": true
+          },
+          "storm_creation": {
+            "type": "boolean",
+            "title": "Storm Creation",
+            "default": true
+          },
+          "simulations": {
+            "type": "boolean",
+            "title": "Simulations",
+            "default": true
+          },
+          "inspections": {
+            "type": "boolean",
+            "title": "Inspections",
+            "default": true
+          },
+          "debris": {
+            "type": "boolean",
+            "title": "Debris",
+            "default": true
+          },
+          "comparisons": {
+            "type": "boolean",
+            "title": "Comparisons",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "Capabilities"
+      },
+      "CleaningEvent": {
+        "properties": {
+          "timestamp_s": {
+            "type": "integer",
+            "multipleOf": 60.0,
+            "maximum": 25200.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Timestamp S"
+          },
+          "surface_removal_fraction": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Surface Removal Fraction",
+            "default": 0
+          },
+          "inlet_removal_fraction": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Inlet Removal Fraction",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "timestamp_s"
+        ],
+        "title": "CleaningEvent"
+      },
+      "Conduit": {
+        "properties": {
+          "conduit_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Conduit Id"
+          },
+          "from_node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "From Node Id"
+          },
+          "to_node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "To Node Id"
+          },
+          "diameter_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Diameter M"
+          },
+          "length_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Length M"
+          },
+          "manning_n": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Manning N"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conduit_id",
+          "from_node_id",
+          "to_node_id",
+          "diameter_m",
+          "length_m",
+          "manning_n",
+          "source_type"
+        ],
+        "title": "Conduit"
+      },
+      "DebrisCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "inlet_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inlet Id"
+          },
+          "storm_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Storm Id"
+          },
+          "inspection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Id"
+          },
+          "source_type": {
+            "type": "string",
+            "const": "assumed",
+            "title": "Source Type",
+            "default": "assumed"
+          },
+          "hydraulic_inlet_clogging_fraction": {
+            "type": "number",
+            "maximum": 0.6,
+            "minimum": 0.0,
+            "title": "Hydraulic Inlet Clogging Fraction"
+          },
+          "debris_parameters": {
+            "$ref": "#/components/schemas/DebrisMassParameters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "inlet_id",
+          "storm_id",
+          "hydraulic_inlet_clogging_fraction"
+        ],
+        "title": "DebrisCreate"
+      },
+      "DebrisMassFrame": {
+        "properties": {
+          "timestamp_s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Timestamp S"
+          },
+          "surface_mass_kg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Surface Mass Kg"
+          },
+          "retained_mass_kg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Retained Mass Kg"
+          },
+          "cumulative_added_kg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cumulative Added Kg"
+          },
+          "cumulative_washed_kg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cumulative Washed Kg"
+          },
+          "cumulative_exported_kg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cumulative Exported Kg"
+          },
+          "cumulative_removed_kg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Cumulative Removed Kg"
+          },
+          "balance_error_kg": {
+            "type": "number",
+            "title": "Balance Error Kg"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "timestamp_s",
+          "surface_mass_kg",
+          "retained_mass_kg",
+          "cumulative_added_kg",
+          "cumulative_washed_kg",
+          "cumulative_exported_kg",
+          "cumulative_removed_kg",
+          "balance_error_kg"
+        ],
+        "title": "DebrisMassFrame"
+      },
+      "DebrisMassParameters": {
+        "properties": {
+          "initial_surface_kg": {
+            "type": "number",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Initial Surface Kg",
+            "default": 2
+          },
+          "initial_retained_kg": {
+            "type": "number",
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Initial Retained Kg",
+            "default": 0
+          },
+          "loading_kg_per_day": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Loading Kg Per Day",
+            "default": 0.2
+          },
+          "wash_off_per_mm": {
+            "type": "number",
+            "maximum": 10.0,
+            "minimum": 0.0,
+            "title": "Wash Off Per Mm",
+            "default": 0.03
+          },
+          "capture_fraction": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Capture Fraction",
+            "default": 0.6
+          },
+          "cleaning_events": {
+            "items": {
+              "$ref": "#/components/schemas/CleaningEvent"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Cleaning Events"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DebrisMassParameters"
+      },
+      "DebrisMassResult": {
+        "properties": {
+          "model_assumptions_version": {
+            "type": "string",
+            "const": "debris-mass-v1",
+            "title": "Model Assumptions Version"
+          },
+          "hydraulic_parameter_mode": {
+            "type": "string",
+            "const": "independent_constant_hypothesis",
+            "title": "Hydraulic Parameter Mode"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/DebrisMassParameters"
+          },
+          "max_abs_balance_error_kg": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Max Abs Balance Error Kg"
+          },
+          "time_series": {
+            "items": {
+              "$ref": "#/components/schemas/DebrisMassFrame"
+            },
+            "type": "array",
+            "title": "Time Series"
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model_assumptions_version",
+          "hydraulic_parameter_mode",
+          "parameters",
+          "max_abs_balance_error_kg",
+          "time_series",
+          "assumptions"
+        ],
+        "title": "DebrisMassResult"
+      },
+      "DebrisParameters": {
+        "properties": {
+          "inlet_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inlet Id"
+          },
+          "hydraulic_inlet_clogging_fraction": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Hydraulic Inlet Clogging Fraction"
+          },
+          "parameter_status": {
+            "type": "string",
+            "const": "assumed_not_calibrated",
+            "title": "Parameter Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inlet_id",
+          "hydraulic_inlet_clogging_fraction",
+          "parameter_status"
+        ],
+        "title": "DebrisParameters"
+      },
+      "DebrisPreset": {
+        "properties": {
+          "debris_scenario_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Debris Scenario Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/DebrisParameters"
+          },
+          "swmm_supported": {
+            "type": "boolean",
+            "title": "Swmm Supported"
+          },
+          "capture_model": {
+            "type": "string",
+            "enum": [
+              "unlimited_direct_node_inflow_T1",
+              "swmm_native_custom_diversion_v1"
+            ],
+            "title": "Capture Model",
+            "default": "unlimited_direct_node_inflow_T1"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "debris_scenario_id",
+          "name",
+          "source_type",
+          "parameters",
+          "swmm_supported"
+        ],
+        "title": "DebrisPreset"
+      },
+      "DebrisScenario": {
+        "properties": {
+          "debris_scenario_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Debris Scenario Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/DebrisParameters"
+          },
+          "swmm_supported": {
+            "type": "boolean",
+            "title": "Swmm Supported"
+          },
+          "capture_model": {
+            "type": "string",
+            "enum": [
+              "unlimited_direct_node_inflow_T1",
+              "swmm_native_custom_diversion_v1"
+            ],
+            "title": "Capture Model",
+            "default": "unlimited_direct_node_inflow_T1"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "storm_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Storm Id"
+          },
+          "storm_snapshot": {
+            "$ref": "#/components/schemas/StormRecord"
+          },
+          "inspection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Id"
+          },
+          "inspection_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mass_balance": {
+            "$ref": "#/components/schemas/DebrisMassResult"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "debris_scenario_id",
+          "name",
+          "source_type",
+          "parameters",
+          "swmm_supported",
+          "created_at",
+          "storm_id",
+          "storm_snapshot",
+          "inspection_id",
+          "inspection_snapshot",
+          "mass_balance"
+        ],
+        "title": "DebrisScenario"
+      },
+      "EngineHealth": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "engine": {
+            "type": "string",
+            "const": "EPA SWMM",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Version"
+          },
+          "execution_verified": {
+            "type": "boolean",
+            "title": "Execution Verified"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "available",
+          "engine",
+          "engine_version",
+          "execution_verified",
+          "message"
+        ],
+        "title": "EngineHealth"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "Frame": {
+        "properties": {
+          "timestamp_s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Timestamp S"
+          },
+          "pipe_states": {
+            "items": {
+              "$ref": "#/components/schemas/PipeState"
+            },
+            "type": "array",
+            "title": "Pipe States"
+          },
+          "node_states": {
+            "items": {
+              "$ref": "#/components/schemas/NodeState"
+            },
+            "type": "array",
+            "title": "Node States"
+          },
+          "inlet_states": {
+            "items": {
+              "$ref": "#/components/schemas/InletState"
+            },
+            "type": "array",
+            "title": "Inlet States"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "timestamp_s",
+          "pipe_states",
+          "node_states",
+          "inlet_states"
+        ],
+        "title": "Frame"
+      },
+      "FramesResponse": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id"
+          },
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "result_type": {
+            "type": "string",
+            "const": "simulated",
+            "title": "Result Type"
+          },
+          "engine": {
+            "type": "string",
+            "const": "EPA SWMM",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Engine Version"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "status_definitions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Status Definitions",
+            "description": "Physical basis and thresholds used for each pipe/node status. Unestablished status is unknown."
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/Frame"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Frames",
+            "description": "Chronologically ordered; returned only after success."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "model_version_id",
+          "result_type",
+          "engine",
+          "engine_version",
+          "assumptions",
+          "warnings",
+          "status_definitions",
+          "frames"
+        ],
+        "title": "FramesResponse"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "api_version": {
+            "type": "string",
+            "title": "Api Version"
+          },
+          "swmm": {
+            "$ref": "#/components/schemas/EngineHealth"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/Capabilities"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "api_version",
+          "swmm",
+          "capabilities"
+        ],
+        "title": "HealthResponse"
+      },
+      "Inlet": {
+        "properties": {
+          "inlet_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inlet Id"
+          },
+          "node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Node Id"
+          },
+          "position_m": {
+            "$ref": "#/components/schemas/Position",
+            "description": "Surface grate position, not the node invert."
+          },
+          "grate_area_m2": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Grate Area M2"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inlet_id",
+          "node_id",
+          "position_m",
+          "grate_area_m2",
+          "source_type"
+        ],
+        "title": "Inlet"
+      },
+      "InletState": {
+        "properties": {
+          "inlet_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inlet Id"
+          },
+          "hydraulic_inlet_clogging_fraction": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Hydraulic Inlet Clogging Fraction"
+          },
+          "parameter_status": {
+            "type": "string",
+            "const": "assumed_not_calibrated",
+            "title": "Parameter Status"
+          },
+          "capture_flow_m3s": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capture Flow M3S"
+          },
+          "bypass_flow_m3s": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bypass Flow M3S"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inlet_id",
+          "hydraulic_inlet_clogging_fraction",
+          "parameter_status"
+        ],
+        "title": "InletState"
+      },
+      "InletVolumes": {
+        "properties": {
+          "inlet_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inlet Id"
+          },
+          "captured_volume_m3": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Captured Volume M3"
+          },
+          "backflow_volume_m3": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Backflow Volume M3"
+          },
+          "bypass_volume_m3": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Bypass Volume M3"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "inlet_id",
+          "captured_volume_m3",
+          "backflow_volume_m3",
+          "bypass_volume_m3"
+        ],
+        "title": "InletVolumes"
+      },
+      "InspectionCreate": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Asset Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "inspector": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Inspector"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "visual",
+              "cctv",
+              "drone",
+              "sensor"
+            ],
+            "title": "Method"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "visible_grate_coverage_fraction": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visible Grate Coverage Fraction"
+          },
+          "debris_category": {
+            "type": "string",
+            "enum": [
+              "leaf_litter",
+              "sediment",
+              "plastic",
+              "mixed",
+              "none"
+            ],
+            "title": "Debris Category"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Notes",
+            "default": ""
+          },
+          "source_reference": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Source Reference",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "asset_id",
+          "timestamp",
+          "inspector",
+          "method",
+          "source_type",
+          "debris_category"
+        ],
+        "title": "InspectionCreate"
+      },
+      "InspectionList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionRecord"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "InspectionList"
+      },
+      "InspectionRecord": {
+        "properties": {
+          "asset_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Asset Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "inspector": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Inspector"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "visual",
+              "cctv",
+              "drone",
+              "sensor"
+            ],
+            "title": "Method"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "visible_grate_coverage_fraction": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visible Grate Coverage Fraction"
+          },
+          "debris_category": {
+            "type": "string",
+            "enum": [
+              "leaf_litter",
+              "sediment",
+              "plastic",
+              "mixed",
+              "none"
+            ],
+            "title": "Debris Category"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Notes",
+            "default": ""
+          },
+          "source_reference": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Source Reference",
+            "default": ""
+          },
+          "inspection_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inspection Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "media": {
+            "items": {
+              "$ref": "#/components/schemas/MediaRecord"
+            },
+            "type": "array",
+            "title": "Media"
+          },
+          "media_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Media Urls"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "asset_id",
+          "timestamp",
+          "inspector",
+          "method",
+          "source_type",
+          "debris_category",
+          "inspection_id",
+          "created_at",
+          "model_version_id"
+        ],
+        "title": "InspectionRecord"
+      },
+      "MediaRecord": {
+        "properties": {
+          "media_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Media Id"
+          },
+          "inspection_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Inspection Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "maximum": 10485760.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Size Bytes"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Sha256"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "media_id",
+          "inspection_id",
+          "filename",
+          "content_type",
+          "size_bytes",
+          "sha256",
+          "created_at",
+          "source_type",
+          "url"
+        ],
+        "title": "MediaRecord"
+      },
+      "MetricsResponse": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id"
+          },
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "result_type": {
+            "type": "string",
+            "const": "simulated",
+            "title": "Result Type"
+          },
+          "engine": {
+            "type": "string",
+            "const": "EPA SWMM",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Engine Version"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "status_definitions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Status Definitions",
+            "description": "Physical basis and thresholds used for each pipe/node status. Unestablished status is unknown."
+          },
+          "total_flooding_volume_m3": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Total Flooding Volume M3"
+          },
+          "flooded_node_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Flooded Node Count"
+          },
+          "surcharge_duration_s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Surcharge Duration S",
+            "description": "Elapsed time during which at least one node is surcharged; overlapping nodes count once."
+          },
+          "metric_definitions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Metric Definitions"
+          },
+          "inlet_volumes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/InletVolumes"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inlet Volumes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "model_version_id",
+          "result_type",
+          "engine",
+          "engine_version",
+          "assumptions",
+          "warnings",
+          "status_definitions",
+          "total_flooding_volume_m3",
+          "flooded_node_count",
+          "surcharge_duration_s",
+          "metric_definitions"
+        ],
+        "title": "MetricsResponse"
+      },
+      "ModelVersion": {
+        "properties": {
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "const": "synthetic",
+            "title": "Source Type"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "readiness": {
+            "type": "string",
+            "enum": [
+              "asset_fixture_only",
+              "execution_verified"
+            ],
+            "title": "Readiness"
+          },
+          "parameters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Parameters"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model_version_id",
+          "name",
+          "source_type",
+          "readiness",
+          "parameters"
+        ],
+        "title": "ModelVersion"
+      },
+      "Node": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Node Id"
+          },
+          "node_type": {
+            "type": "string",
+            "enum": [
+              "junction",
+              "outfall",
+              "storage"
+            ],
+            "title": "Node Type"
+          },
+          "position_m": {
+            "$ref": "#/components/schemas/Position",
+            "description": "Node invert position; Three.js mapping is [x,z,-y]."
+          },
+          "invert_elevation_m": {
+            "type": "number",
+            "title": "Invert Elevation M"
+          },
+          "ground_elevation_m": {
+            "type": "number",
+            "title": "Ground Elevation M"
+          },
+          "max_depth_m": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Max Depth M"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "node_id",
+          "node_type",
+          "position_m",
+          "invert_elevation_m",
+          "ground_elevation_m",
+          "max_depth_m",
+          "source_type"
+        ],
+        "title": "Node"
+      },
+      "NodeState": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Node Id"
+          },
+          "depth_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Depth M"
+          },
+          "flooding_rate_m3s": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Flooding Rate M3S"
+          },
+          "surcharge_flag": {
+            "type": "boolean",
+            "title": "Surcharge Flag"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "surcharged",
+              "flooding",
+              "unknown"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "node_id",
+          "depth_m",
+          "flooding_rate_m3s",
+          "surcharge_flag",
+          "status"
+        ],
+        "title": "NodeState"
+      },
+      "PipeState": {
+        "properties": {
+          "conduit_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Conduit Id"
+          },
+          "flow_m3s": {
+            "type": "number",
+            "title": "Flow M3S",
+            "description": "Signed flow in the conduit's from-to direction."
+          },
+          "depth_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Depth M"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "near_capacity",
+              "surcharged",
+              "unknown"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conduit_id",
+          "flow_m3s",
+          "depth_m",
+          "status"
+        ],
+        "title": "PipeState"
+      },
+      "Position": {
+        "properties": {
+          "x": {
+            "type": "number",
+            "title": "X",
+            "description": "Local east coordinate in metres."
+          },
+          "y": {
+            "type": "number",
+            "title": "Y",
+            "description": "Local north coordinate in metres."
+          },
+          "z": {
+            "type": "number",
+            "title": "Z",
+            "description": "Elevation in metres relative to an assumed local datum."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "title": "Position"
+      },
+      "RunListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RunResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "RunListResponse"
+      },
+      "RunResponse": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "input_snapshot": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Input Snapshot",
+            "description": "Full resolved model, storm, boundary and scenario parameters, not IDs alone."
+          },
+          "input_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Input Hash",
+            "description": "SHA-256 of canonical resolved input JSON."
+          },
+          "engine": {
+            "type": "string",
+            "const": "EPA SWMM",
+            "title": "Engine"
+          },
+          "engine_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine Version"
+          },
+          "is_verified_site_model": {
+            "type": "boolean",
+            "const": false,
+            "title": "Is Verified Site Model",
+            "default": false
+          },
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Assumptions"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorDetail"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_references": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence References"
+          },
+          "storm_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storm Id"
+          },
+          "debris_scenario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debris Scenario Id"
+          },
+          "tailwater_case": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tailwater Case"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "status",
+          "model_version_id",
+          "input_snapshot",
+          "input_hash",
+          "engine",
+          "engine_version",
+          "assumptions",
+          "warnings",
+          "error",
+          "evidence_references"
+        ],
+        "title": "RunResponse"
+      },
+      "SimulationAccepted": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Run Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "status"
+        ],
+        "title": "SimulationAccepted"
+      },
+      "SimulationRequest": {
+        "properties": {
+          "model_version_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model Version Id"
+          },
+          "storm_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Storm Id"
+          },
+          "debris_scenario_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Debris Scenario Id"
+          },
+          "tailwater_case": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Tailwater Case"
+          },
+          "intervention": {
+            "type": "null",
+            "title": "Intervention",
+            "description": "Reserved for T4; only null is currently supported."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "model_version_id",
+          "storm_id",
+          "debris_scenario_id",
+          "tailwater_case"
+        ],
+        "title": "SimulationRequest"
+      },
+      "StormCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "intensity_mmh": {
+            "type": "number",
+            "maximum": 300.0,
+            "minimum": 0.0,
+            "title": "Intensity Mmh"
+          },
+          "duration_s": {
+            "type": "integer",
+            "multipleOf": 300.0,
+            "maximum": 21600.0,
+            "minimum": 300.0,
+            "title": "Duration S"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type",
+            "default": "assumed"
+          },
+          "pattern": {
+            "type": "string",
+            "const": "constant",
+            "title": "Pattern",
+            "default": "constant"
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "intensity_mmh",
+          "duration_s"
+        ],
+        "title": "StormCreate"
+      },
+      "StormParameters": {
+        "properties": {
+          "intensity_mmh": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Intensity Mmh"
+          },
+          "duration_s": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Duration S"
+          },
+          "pattern": {
+            "type": "string",
+            "const": "constant",
+            "title": "Pattern"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "intensity_mmh",
+          "duration_s",
+          "pattern"
+        ],
+        "title": "StormParameters"
+      },
+      "StormRecord": {
+        "properties": {
+          "storm_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Storm Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/StormParameters"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "notes": {
+            "type": "string",
+            "title": "Notes",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "storm_id",
+          "name",
+          "source_type",
+          "parameters"
+        ],
+        "title": "StormRecord"
+      },
+      "TailwaterParameters": {
+        "properties": {
+          "depth_above_outfall_invert_m": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Depth Above Outfall Invert M"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "depth_above_outfall_invert_m"
+        ],
+        "title": "TailwaterParameters"
+      },
+      "TailwaterPreset": {
+        "properties": {
+          "tailwater_case": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Tailwater Case"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "observed",
+              "literature_derived",
+              "assumed",
+              "synthetic"
+            ],
+            "title": "Source Type"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/TailwaterParameters"
+          },
+          "swmm_supported": {
+            "type": "boolean",
+            "title": "Swmm Supported",
+            "description": "Only normal is enabled in T2; the high boundary remains an unvalidated input preset.",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tailwater_case",
+          "name",
+          "source_type",
+          "parameters"
+        ],
+        "title": "TailwaterPreset"
+      }
+    }
+  }
+}

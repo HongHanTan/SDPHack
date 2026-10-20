@@ -1,0 +1,9 @@
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Unknown simulation run.",
+    "details": {
+      "run_id": "missing"
+    }
+  }
+}

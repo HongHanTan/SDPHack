@@ -1,0 +1,71 @@
+{
+  "engine_version": "5.2.4",
+  "continuity_error_percent": {
+    "runoff": -0.0016002755146473646,
+    "routing": -0.03068840317428112
+  },
+  "quality_routing": "not_modelled",
+  "node_statistics": {
+    "NODE-J01": {
+      "flooding_volume_m3": 188.54263503010662,
+      "flooding_duration_s": 3077.0,
+      "surcharge_duration_s": 3257.765,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J02": {
+      "flooding_volume_m3": 280.23465727870695,
+      "flooding_duration_s": 3134.0,
+      "surcharge_duration_s": 3300.747,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J03": {
+      "flooding_volume_m3": 0.1414210684638371,
+      "flooding_duration_s": 2.0,
+      "surcharge_duration_s": 3282.747,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J04": {
+      "flooding_volume_m3": 76.1240138228573,
+      "flooding_duration_s": 2720.0,
+      "surcharge_duration_s": 3274.765,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J05": {
+      "flooding_volume_m3": 183.70310021950857,
+      "flooding_duration_s": 3028.0,
+      "surcharge_duration_s": 3428.747,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J06": {
+      "flooding_volume_m3": 0.019057086999959415,
+      "flooding_duration_s": 1.0,
+      "surcharge_duration_s": 3229.765,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J07": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 3478.747,
+      "peak_depth_m": 1.7208543546369481
+    },
+    "NODE-J08": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.6363082491085905
+    },
+    "NODE-OUT01": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.6247948478597284
+    }
+  },
+  "surcharge_duration_s": 3478.747,
+  "routing_step_count": 7202,
+  "simulation_duration_s": 7200,
+  "water_balance": {
+    "rainfall_mm": 119.99999999999828,
+    "runoff_mm": 113.151303275939
+  }
+}

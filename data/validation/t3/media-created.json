@@ -1,0 +1,11 @@
+{
+  "media_id": "media_534c53655fcb4365a90426d1c81e47f0",
+  "inspection_id": "inspection_4b33550573794f59ab007fee79a7cd35",
+  "filename": "synthetic-pixel.png",
+  "content_type": "image/png",
+  "size_bytes": 68,
+  "sha256": "64f369e614608dbfb3b0ebbc8abb499f544d725a3b9f0fab59933629ec808208",
+  "created_at": "2026-10-19T06:35:09.508461Z",
+  "source_type": "synthetic",
+  "url": "/api/inspections/inspection_4b33550573794f59ab007fee79a7cd35/media/media_534c53655fcb4365a90426d1c81e47f0"
+}

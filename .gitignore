@@ -1,3 +1,18 @@
-node_modules
-dist
+# Python / local backend environment
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.env
+.env.*
+!.env.example
+
+# Generated simulation runtime artifacts (curated evidence belongs elsewhere)
+data/runtime/
+
+# Frontend dependency and build output
+node_modules/
+dist/
+
+# Brainstorming companion scratch
 .superpowers/

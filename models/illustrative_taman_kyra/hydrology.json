@@ -1,0 +1,22 @@
+{
+  "model_version_id": "taman_kyra_synthetic_v1",
+  "source_type": "synthetic",
+  "assumptions_version": "hydrology-v1",
+  "subcatchments": [
+    {"subcatchment_id":"CATCH-D01","outlet_node_id":"NODE-J01","area_ha":1.0,"impervious_percent":80,"width_m":100,"slope_percent":1},
+    {"subcatchment_id":"CATCH-D02","outlet_node_id":"NODE-J02","area_ha":1.0,"impervious_percent":80,"width_m":100,"slope_percent":1},
+    {"subcatchment_id":"CATCH-D04","outlet_node_id":"NODE-J04","area_ha":1.0,"impervious_percent":80,"width_m":100,"slope_percent":1},
+    {"subcatchment_id":"CATCH-D07","outlet_node_id":"NODE-J07","area_ha":1.0,"impervious_percent":80,"width_m":100,"slope_percent":1}
+  ],
+  "surface_parameters": {"n_impervious":0.015,"n_pervious":0.15,"storage_impervious_mm":1,"storage_pervious_mm":4,"zero_storage_impervious_percent":25},
+  "horton_parameters": {"max_infiltration_mmh":75,"min_infiltration_mmh":5,"decay_per_hour":4,"drying_time_days":7,"max_infiltration_mm":0},
+  "simulation_parameters": {"start_date":"01/01/2026","report_step_s":60,"wet_step_s":10,"routing_step_s":1,"variable_step_factor":0.75,"minimum_step_s":0.1,"max_trials":40,"head_tolerance_m":0.0005,"drain_down_s":3600},
+  "assumptions": [
+    "Four synthetic 1 ha catchments, each 80% impervious; areas do not imply surveyed catchment boundaries.",
+    "Surface routing uses the SWMM nonlinear reservoir with synthetic width, slope, roughness and depression storage; infiltration uses assumed Horton parameters.",
+    "T1 clean scenario routes all catchment runoff directly to its associated sewer node, with no independent inlet capture limit. Finite inlet restriction is not yet implemented (T3).",
+    "Flooding is lost from the 1D network (ALLOW_PONDING=NO); no surface flood depth, extent, return flow or 2D coupling is computed.",
+    "Outfall stage is fixed at invert plus the selected assumed tailwater depth; no observed river hydrograph is available.",
+    "One-hour rain is followed by one-hour dry drainage; the full simulation window is included in metrics."
+  ]
+}

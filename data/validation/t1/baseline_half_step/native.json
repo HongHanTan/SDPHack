@@ -1,0 +1,71 @@
+{
+  "engine_version": "5.2.4",
+  "continuity_error_percent": {
+    "runoff": -0.0015919245779514313,
+    "routing": -0.03600944206118584
+  },
+  "quality_routing": "not_modelled",
+  "node_statistics": {
+    "NODE-J01": {
+      "flooding_volume_m3": 0.01008097391462209,
+      "flooding_duration_s": 1.0,
+      "surcharge_duration_s": 2467.5,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J02": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2561.0,
+      "peak_depth_m": 1.9812708534319627
+    },
+    "NODE-J03": {
+      "flooding_volume_m3": 0.005669346807908371,
+      "flooding_duration_s": 0.5,
+      "surcharge_duration_s": 2507.0,
+      "peak_depth_m": 1.9999999999999998
+    },
+    "NODE-J04": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2482.5,
+      "peak_depth_m": 1.6736070604065336
+    },
+    "NODE-J05": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2860.0,
+      "peak_depth_m": 1.6880654178437955
+    },
+    "NODE-J06": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2280.5,
+      "peak_depth_m": 0.6614576561417488
+    },
+    "NODE-J07": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 2974.5,
+      "peak_depth_m": 1.1608778079397313
+    },
+    "NODE-J08": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.5446697099416438
+    },
+    "NODE-OUT01": {
+      "flooding_volume_m3": 0.0,
+      "flooding_duration_s": 0.0,
+      "surcharge_duration_s": 0.0,
+      "peak_depth_m": 0.5446578242100814
+    }
+  },
+  "surcharge_duration_s": 2974.5000000000005,
+  "routing_step_count": 14401,
+  "simulation_duration_s": 7200,
+  "water_balance": {
+    "rainfall_mm": 80.00000000000166,
+    "runoff_mm": 73.19665702738651
+  }
+}

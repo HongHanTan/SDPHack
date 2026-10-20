@@ -1,0 +1,24 @@
+{
+  "assumptions_version": "inlet-capture-v1",
+  "capture_model": "swmm_native_custom_diversion_v1",
+  "channel_length_m": 20,
+  "channel_width_m": 2,
+  "channel_max_depth_m": 1,
+  "channel_manning_n": 0.016,
+  "upstream_offset_m": 0.05,
+  "bypass_offset_m": -0.05,
+  "outfall_offset_m": -0.15,
+  "capture_curve_m3s": [[0,0],[0.25,0.20],[2,0.20]],
+  "assumptions": [
+    "T3 uses native SWMM CUSTOM DIVERSION inlet capture in four independent illustrative open rectangular approach channels. The assumed curve captures 80% of approach flow up to 0.20 m3/s, before applying clogging.",
+    "Each catchment drains to its mapped auxiliary surface approach node. Captured flow enters the original sewer node; non-captured flow passes a separate bypass junction and exit conduit to a free surface outfall. Sewer overflow can return through the native inlet backflow mechanism.",
+    "Auxiliary channels are numerical sensitivity elements, not surveyed roads, pipes, mapped assets, or a 2D street-flood model. Their geometry and rating curve are uncalibrated assumptions.",
+    "Only the selected inlet receives the independent constant hydraulic capacity-loss fraction; other inlets use zero loss with the same finite capture curve. Original sewer conduit diameters and Manning n are unchanged.",
+    "Compare finite-capture scenarios against finite 0% capture loss with identical storm and boundary. The retained T1/T2 unlimited direct-node clean baseline is a different capture assumption.",
+    "Surface bypass volume is discharged outside this illustrative domain; it is not a computed street inundation depth or automatically added to sewer flooding volume. Greater restriction can reduce sewer flooding while increasing bypass."
+  ],
+  "sources": [
+    "https://github.com/USEPA/Stormwater-Management-Model/blob/v5.2.4/src/solver/inlet.c",
+    "https://www.epa.gov/system/files/documents/2022-04/swmm-users-manual-version-5.2.pdf"
+  ]
+}

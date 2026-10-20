@@ -1,39 +1,77 @@
-# Township Flood Simulator
+# Township FloodOps
 
-Sime Darby Property University Hackathon 2026 — Theme: PLANET (Climate Resilience).
+> **3D Hydraulic Digital Twin for Urban Township Stormwater & Debris Management**  
+> An engineering platform that bridges field inspection evidence, EPA SWMM 5.2 hydraulic simulation, and interactive 3D twin visualization to diagnose surcharge bottlenecks, anticipate severe monsoon choke points, and evaluate proposed maintenance/capital interventions.
 
-A browser-based 3D what-if tool: apply candidate drainage interventions to a township, run an MSMA-style
-design storm, and compare flood depth, homes flooded, time-to-passable and indicative cost against the baseline.
+---
 
-## Modes
+## 团队分工与架构 (Team Architecture)
 
-- **Live:** the storm plays continuously at ½–4×; switching interventions or drawing pipes changes the flood in place.
-- **Compare:** fair baseline vs scenario runs with cost.
+本项目由 Tay 与 Jiajie 协作并行开发：
 
-**View:** the toolbar controls how the scene is drawn:
-- 🩻 X-ray (an underground digital-twin view with flow arrows);
-- 3D | Plan (a top-down map with a scale bar);
-- Quality High/Low (drops to Low automatically if the frame rate stays below 30 fps).
+| 模块 / 领域 | 负责人 | 职责与归属路径 |
+|---|---|---|
+| **后端 / 数据 / SWMM** | **Tay** | `services/api/**`, `simulation/**`, `contracts/**`, `md/BACKEND_SETUP.md`, `md/progress/tay.md` |
+| **前端 / 3D / 交互** | **Jiajie** | `apps/web/**`, `md/FRONTEND_SETUP.md`, `md/progress/jiajie.md`, `README.md` |
 
-## Run
+协作规则与接口标准详见 [团队分工与执行规则 (TEAM_WORKFLOW.md)](md/TEAM_WORKFLOW.md)。
+
+---
+
+## 快速开始 (Quickstart)
+
+### 1. 前端 3D 数字孪生 (Web 3D Twin)
+
+进入前端工作目录并启动开发服务器：
+
+```bash
+cd apps/web
+npm install
+npm run dev
+```
+
+浏览器访问：`http://localhost:5173`。
+
+- 默认以 **开发 Mock 模式** 启动，无需安装配置 Python 或 SWMM 编译环境，即可完整体验 3D 住宅区街景视口、120 帧高解析度水力回放、巡检员现场打卡、杂物实验室与方案对比决策。
+- 顶部支持一键切换至 **Real API 模式** 对接本地 FastAPI 后端 (`http://localhost:8000`)。
+- 详细说明请参见 [前端开发与运行指南 (md/FRONTEND_SETUP.md)](md/FRONTEND_SETUP.md)。
+
+### 2. 评委与路演演示演练 (3-Minute Pitch Runbook)
+
+完整 3 分钟路演故事线、台词配搭与界面点击动作请参见：  
+👉 [**三分钟演示剧本 (md/DEMO_RUNBOOK.md)**](md/DEMO_RUNBOOK.md)
+
+---
+
+## 核心设计原则
+
+1. **真实物理引擎为准：** 采用 EPA SWMM 5.2 求解非定常水动力学；前端 3D 负责沉浸式场景表现与交互映射，不凭空伪造负荷计算。
+2. **证据与假设显式区分：** 现场照片记录的“格栅表面覆盖率（65%）”与水动力学模型的“水力收水折减假设（40%）”分别存储并明确标识来源。
+3. **真实模式错误透明暴露：** 真实 API 连接失败或引擎报错时明确在界面呈现错误体，绝不隐蔽回退至 mock 数据。
+4. **数字孪生环境对齐：** 3D 场景忠实还原 Taman Kyra 联排住宅街区、沥青道路、绿化带、调蓄水景湖与出水明渠。
+
+---
+
+## TypeScript flood engine (Hong Han)
+
+This repository also contains a browser-based flood simulation engine written in TypeScript, merged in from `github.com/HongHanTan/SDPHack` with its full history.
+
+- **Engine** (`packages/engine`):
+  - surface flow on a 2D grid (virtual-pipes shallow-water scheme with a stability guard), coupled to a capacity-routed pipe network with inlets, surcharge, outfall backflow, flap gates and pumps;
+  - MSMA-form design storms;
+  - mid-run network patching for live what-if;
+  - a water balance checked on every run.
+- **Legacy UI** (`apps/legacy`): the engine's original three.js interface (Live/Compare modes, x-ray, plan view, intervention panel). The team UI in `apps/web` will replace it.
+
+### Integration roadmap
+1. Merge histories and restructure into this monorepo.
+2. Rebuild the engine's township on the Taman Kyra network (`data/synthetic/taman_kyra_assets.json`) and retune the demo story: the team's inlet-desilting / Ø750 upsizing options, plus flap gate, storage tank, overflow to the lake and pump.
+3. Drive the `apps/web` 3D twin and dashboard from the engine through an adapter.
+
+### Run (from the repo root)
 
     npm install
-    npm run dev        # http://localhost:5173
-    npm test           # unit tests
-    npm run story      # demo-story + effects drift checks (~15 min)
-    npm run effects    # regenerate intervention effect badges (~9 min)
-    npm run tune       # metrics table for all presets
-    npm run build      # static site in dist/
-
-## Model (honest summary)
-
-- Surface: virtual-pipes shallow-water scheme on a 128×128 grid at 4 m (Mei et al. 2007).
-- Timestep: 0.5 s coupling step; the surface is sub-stepped by a stability guard (n = ceil(dt / maxStableDt),
-  maxStableDt = 0.8·√(dx/4g) ≈ 0.255 s at 4 m), with the river stage re-imposed every sub-step. See docs/tuning.md.
-- Pipes: Manning full-bore capacity with capacity-based routing, surcharge spill, orifice outfall with river backflow.
-- Rain: MSMA 2nd Ed. IDF form, alternating-block hyetograph. **Coefficients are provisional until replaced from Table 2.B1.**
-- Water balance is checked every run (< 1% error).
-- Simplified relative to SWMM dynamic-wave; validation against SWMM is the next step.
-- Site is synthetic; costs are indicative placeholders.
-
-See `docs/superpowers/specs/` for the design and `docs/tuning.md` for calibration notes.
+    npm test              # engine + legacy UI unit tests
+    npm run dev:legacy    # engine UI at http://localhost:5173
+    npm run dev:web       # team UI (its own mock mode)
+    npm run story         # slow demo-story and effect-drift checks (~15 min)

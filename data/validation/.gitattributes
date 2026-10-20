@@ -1,0 +1,5 @@
+# These files are execution evidence. Preserve the exact bytes covered by SHA-256,
+# including reports/logs written with native Windows line endings.
+t1/** -text -whitespace
+t2/** -text -whitespace
+t3/** -text -whitespace

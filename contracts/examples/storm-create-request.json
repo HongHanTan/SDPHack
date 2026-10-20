@@ -1,0 +1,8 @@
+{
+  "name": "Assumed custom 120 mm/h",
+  "intensity_mmh": 120.0,
+  "duration_s": 3600,
+  "source_type": "assumed",
+  "pattern": "constant",
+  "notes": ""
+}

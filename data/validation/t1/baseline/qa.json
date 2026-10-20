@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "continuity_error_percent": {
+    "runoff": -0.0015919245779514313,
+    "routing": -0.031312040984630585
+  },
+  "nonconverging_steps_percent": 0.24,
+  "thresholds": {
+    "continuity_warning_percent": 1,
+    "continuity_rejection_percent": 5,
+    "nonconvergence_warning_percent": 1,
+    "nonconvergence_rejection_percent": 5
+  },
+  "water_balance": {
+    "rainfall_mm": 80.00000000000166,
+    "runoff_mm": 73.19665702738651
+  },
+  "flood_volume_report_difference_m3": 0.014893217451141265,
+  "warnings": [
+    "Trace native flooding <0.1 m3 at NODE-J01; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering."
+  ]
+}

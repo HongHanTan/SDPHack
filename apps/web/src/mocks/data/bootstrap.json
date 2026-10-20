@@ -1,0 +1,97 @@
+{
+  "api_version": "1.0.0",
+  "township_id": "taman_kyra_demo",
+  "model_versions": [
+    {
+      "model_version_id": "taman_kyra_synthetic_v1",
+      "name": "Illustrative Taman Kyra drainage zone",
+      "source_type": "synthetic",
+      "is_verified_site_model": false,
+      "readiness": "execution_verified",
+      "parameters": {
+        "node_count": 9,
+        "conduit_count": 8,
+        "inlet_count": 4,
+        "outfall_node_id": "NODE-OUT01"
+      }
+    }
+  ],
+  "storms": [
+    {
+      "storm_id": "synthetic_80mmh_60min",
+      "name": "Synthetic constant 80 mm/h for 60 minutes",
+      "source_type": "synthetic",
+      "parameters": {
+        "intensity_mmh": 80.0,
+        "duration_s": 3600,
+        "pattern": "constant"
+      }
+    },
+    {
+      "storm_id": "synthetic_120mmh_60min",
+      "name": "Synthetic constant 120 mm/h for 60 minutes",
+      "source_type": "synthetic",
+      "parameters": {
+        "intensity_mmh": 120.0,
+        "duration_s": 3600,
+        "pattern": "constant"
+      }
+    }
+  ],
+  "debris_scenarios": [
+    {
+      "debris_scenario_id": "demo_inlet_clean",
+      "name": "Assumed clean D07",
+      "source_type": "assumed",
+      "parameters": {
+        "inlet_id": "INLET-D07",
+        "hydraulic_inlet_clogging_fraction": 0.0,
+        "parameter_status": "assumed_not_calibrated"
+      },
+      "swmm_supported": false
+    },
+    {
+      "debris_scenario_id": "demo_inlet_40pct",
+      "name": "Assumed 40% D07 capture-capacity loss",
+      "source_type": "assumed",
+      "parameters": {
+        "inlet_id": "INLET-D07",
+        "hydraulic_inlet_clogging_fraction": 0.4,
+        "parameter_status": "assumed_not_calibrated"
+      },
+      "swmm_supported": false
+    }
+  ],
+  "tailwater_cases": [
+    {
+      "tailwater_case": "normal",
+      "name": "Assumed normal outfall level",
+      "source_type": "assumed",
+      "parameters": {
+        "depth_above_outfall_invert_m": 0.0
+      }
+    },
+    {
+      "tailwater_case": "high",
+      "name": "Assumed high outfall level",
+      "source_type": "assumed",
+      "parameters": {
+        "depth_above_outfall_invert_m": 1.2
+      }
+    }
+  ],
+  "capabilities": {
+    "assets": true,
+    "storm_creation": false,
+    "simulations": false,
+    "inspections": false,
+    "debris": false,
+    "comparisons": false
+  },
+  "assumptions": [
+    "All geography, storm presets and boundary conditions are illustrative; no site forecast or historical cause is established.",
+    "T1 baseline and stronger-rain executions are verified offline; see data/validation/t1 and contracts/examples. HTTP simulation endpoints still return 501 NOT_IMPLEMENTED until T2.",
+    "Hydraulic capture loss is an independent assumption, not a conversion from photo coverage.",
+    "Debris presets are not yet supported in SWMM; respect swmm_supported and capabilities before enabling a workflow."
+  ]
+}

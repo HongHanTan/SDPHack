@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "continuity_error_percent": {
+    "runoff": -0.0016002755146473646,
+    "routing": -0.018640117719769478
+  },
+  "nonconverging_steps_percent": 0.25,
+  "thresholds": {
+    "continuity_warning_percent": 1,
+    "continuity_rejection_percent": 5,
+    "nonconvergence_warning_percent": 1,
+    "nonconvergence_rejection_percent": 5
+  },
+  "water_balance": {
+    "rainfall_mm": 119.99999999999828,
+    "runoff_mm": 113.151303275939
+  },
+  "flood_volume_report_difference_m3": 0.014077191394041136,
+  "warnings": [
+    "Trace native flooding <0.1 m3 at NODE-J01; tiny transient events and flooded-node counts can be sensitive to routing settings. Volumes/counts are retained without filtering.",
+    "Finite uncalibrated inlet capture: compare with finite 0% using identical storm/boundary. Reduced sewer flooding can accompany increased surface bypass; display inlet_volumes separately."
+  ]
+}
