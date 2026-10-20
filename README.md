@@ -10,6 +10,11 @@ design storm, and compare flood depth, homes flooded, time-to-passable and indic
 - **Live:** the storm plays continuously at ½–4×; switching interventions or drawing pipes changes the flood in place.
 - **Compare:** fair baseline vs scenario runs with cost.
 
+**View:** the toolbar controls how the scene is drawn:
+- 🩻 X-ray (an underground digital-twin view with flow arrows);
+- 3D | Plan (a top-down map with a scale bar);
+- Quality High/Low (drops to Low automatically if the frame rate stays below 30 fps).
+
 ## Run
 
     npm install
