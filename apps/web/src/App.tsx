@@ -208,7 +208,10 @@ export function App() {
     runTokenRef.current++;
     setIsRunning(false);
     setRunProgressMessage('');
-    if (newMode !== 'engine') stopLive();
+    if (newMode !== 'engine') {
+      stopLive();
+      imp.setWatching(false);
+    }
     apiClient.setDataMode(newMode);
     setMode(newMode);
     setStage((cur) => stageOnModeSwitch(newMode, siteChosen, cur));
@@ -665,13 +668,19 @@ export function App() {
     }
   };
 
-  const imp = useSiteImport({ activeSiteKey: site.key, onApply: applySite });
+  const imp = useSiteImport({
+    activeSiteKey: site.key,
+    onApply: (s) => {
+      if (apiClient.getDataMode() === 'engine') applySite(s);
+    },
+  });
   const generateCity = (s: SiteSpec) => {
     applySite(s);
     setSiteChosen(true);
     setStage('dashboard');
   };
   const useBuiltIn = () => {
+    imp.setWatching(false);
     applySite(null);
     setSiteChosen(true);
     setStage('dashboard');
@@ -684,6 +693,7 @@ export function App() {
         activeSite={site}
         onGenerate={generateCity}
         onUseBuiltIn={useBuiltIn}
+        onSwitchMode={handleToggleMode}
         onBack={siteChosen ? () => setStage('dashboard') : undefined}
       />
     );
@@ -707,7 +717,7 @@ export function App() {
         apiError={shownError}
         siteWatch={
           engineMode && imp.watching
-            ? { count: imp.files.length, updatedAt: imp.lastChange?.at ?? null, onStop: () => imp.setWatching(false) }
+            ? { count: imp.watchedCount, updatedAt: imp.lastChange?.at ?? null, onStop: () => imp.setWatching(false) }
             : undefined
         }
       />

@@ -7,9 +7,10 @@ interface Props {
   onGenerate: (site: SiteSpec) => void;
   onUseBuiltIn: () => void;
   onBack?: () => void;
+  onSwitchMode?: (m: 'mock' | 'api') => void;
 }
 
-export function SiteImportPage({ imp, activeSite, onGenerate, onUseBuiltIn, onBack }: Props) {
+export function SiteImportPage({ imp, activeSite, onGenerate, onUseBuiltIn, onBack, onSwitchMode }: Props) {
   const report = imp.report;
   const site = imp.checked?.site;
   return (
@@ -125,6 +126,19 @@ export function SiteImportPage({ imp, activeSite, onGenerate, onUseBuiltIn, onBa
         <button onClick={onUseBuiltIn} className="text-[12px] text-slate-600 underline hover:text-slate-900 cursor-pointer">
           Use built-in demo township (Taman Kyra)
         </button>
+        {onSwitchMode && (
+          <div className="mt-2 text-[11px] text-slate-500">
+            Or open the dashboard in{' '}
+            <button onClick={() => onSwitchMode('mock')} className="underline hover:text-slate-800 cursor-pointer">
+              Mock
+            </button>{' '}
+            or{' '}
+            <button onClick={() => onSwitchMode('api')} className="underline hover:text-slate-800 cursor-pointer">
+              SWMM API
+            </button>{' '}
+            mode
+          </div>
+        )}
       </div>
     </div>
   );

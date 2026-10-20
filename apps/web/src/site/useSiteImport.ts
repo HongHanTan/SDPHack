@@ -72,7 +72,10 @@ export function useSiteImport({ activeSiteKey, onApply }: { activeSiteKey: strin
 
   const siteFiles = useSiteFiles({
     onChange: (names) => void handleChange(names),
-    onWatchError: (m) => setReadErrors([m]),
+    onWatchError: (m) => {
+      setReadErrors([m]);
+      setStatus({ kind: 'bad', text: m });
+    },
   });
   readRef.current = siteFiles.read;
   retryRef.current = siteFiles.retry;
@@ -133,6 +136,7 @@ export function useSiteImport({ activeSiteKey, onApply }: { activeSiteKey: strin
     status,
     busy,
     canWatch: siteFiles.canWatch,
+    watchedCount: [cls.inp, cls.geojson, cls.asc].filter(Boolean).length,
     watching: siteFiles.watching,
     setWatching: siteFiles.setWatching,
     lastChange: siteFiles.lastChange,

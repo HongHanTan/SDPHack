@@ -61,10 +61,10 @@ Run `npm run dev`, open http://localhost:5173.
 42. Open the app (engine mode): the Import site page appears first → choose `data/samples/taman_kyra_site/taman_kyra.inp`, `taman_kyra_layout.geojson`, `taman_kyra_ground.asc` → Check files: no errors; summary shows 9 nodes, 8 pipes, 4 inlets, 35 buildings, grid 125 × 145 at 2 m, moved by (−412000, −336000) m → Generate city: the township looks like the built-in one (roads, houses, pond, canal) and the HUD hotspot reads NODE-J07.
 43. Run 80 mm/h: water gathers at J07, P07 turns red — same as the built-in run.
 44. Re-import with `taman_kyra_p07_750.inp`: P07 no longer runs full; less water at J07.
-45. Watch for changes (Chrome/Edge): edit `taman_kyra.inp` (e.g. move NODE-J05 by 20 m in [COORDINATES], or change PIPE-P05's diameter) and save → within ~2 s the city regenerates and the "Updated from" line appears.
+45. Watch for changes (Chrome/Edge): edit `taman_kyra.inp` (e.g. move NODE-J05 by 20 m in [COORDINATES], or change PIPE-P05's diameter) and save → within ~2 s the city regenerates and the header chip's time updates.
 46. Break the file (delete the [OUTFALLS] section) and save → errors shown, the current city kept.
 47. Upload only the `.inp`: a city with ground from manhole levels, an outfall sink and default grates; assumptions list says so.
-48. Intervention dashboard on an imported site shows the notice and no Apply; Reset to built-in Taman Kyra restores Jiajie's scene and the 7 cards.
+48. Intervention dashboard on an imported site shows the notice and no Apply; the **Use built-in demo township (Taman Kyra)** link on the Import site page (reached via the header's 📂 Import site) restores Jiajie's scene and the 7 cards.
 49. X-ray and 2D work on an imported site; 2D frames the site and the scale bar is correct.
 50. Mock and SWMM API modes: no Import site button; unchanged.
 51. Fresh load in engine mode shows the Import site page, not the dashboard; "Use built-in demo township (Taman Kyra)" opens the dashboard with the original scene.
