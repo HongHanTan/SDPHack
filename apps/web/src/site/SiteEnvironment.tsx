@@ -8,6 +8,7 @@ import { CulDeSac, DetailedRoadSegment, LushTree, RealisticSuburbanHouse } from 
 import { groundSampler } from '../engine/visualGround';
 import { useViewLook } from '../view/ViewLookContext';
 import { applySurfaceLook } from '../view/surfaceLook';
+import { groundPlane, vertexTeam } from './groundPlane';
 import { siteFrame } from './siteFrame';
 
 const WATER = '#0e7490';
@@ -25,15 +26,13 @@ function buildGround(site: SiteSpec, ground: (tx: number, ty: number) => number)
   const { nx, ny, dx } = site.gridSpec;
   const grid = baseTownship({}, site).grid;
   const f = siteFrame(site);
-  const geom = new THREE.PlaneGeometry(f.w, f.h, Math.max(1, nx - 1), Math.max(1, ny - 1));
-  geom.rotateX(-Math.PI / 2); // local (x, y=north) → scene (x, z=−north)
+  const geom = groundPlane(f, nx, ny);
   const pos = geom.attributes.position as THREE.BufferAttribute;
   const colours = new Float32Array(pos.count * 3);
   const palette = new Map<number, THREE.Color>();
   const fallback = new THREE.Color(LAND_COLOUR[LandUse.LAWN]);
   for (let k = 0; k < pos.count; k++) {
-    const tx = f.cx + pos.getX(k);
-    const ty = -(f.cz + pos.getZ(k));
+    const { tx, ty } = vertexTeam(pos, k);
     pos.setY(k, ground(tx, ty));
     const p = siteToLocal(site, tx, ty);
     const i = Math.min(nx - 1, Math.max(0, Math.floor(p.x / dx)));

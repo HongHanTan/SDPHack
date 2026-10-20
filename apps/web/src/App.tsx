@@ -28,6 +28,7 @@ import { engineSource } from './engine/engineSource';
 import { useLiveEngine } from './engine/useLiveEngine';
 import { buildDashboardOptions, idsForOption } from './engine/dashboardOptions';
 import { TAMAN_KYRA, type SiteSpec } from '@floodops/engine/scenario/site';
+import { baseTownship } from '@floodops/engine/scenario/index';
 import { rainIntensityAt, STORMS, type StormId } from '@floodops/engine/scenario/storms';
 
 export function App() {
@@ -172,6 +173,15 @@ export function App() {
 
   /** Switches the engine's active site (null = built-in) and resets everything derived from the previous one. */
   const applySite = (s: SiteSpec | null) => {
+    if (s) {
+      // Belt and braces: an imported site that cannot be built keeps the current site instead of blanking the app.
+      try {
+        baseTownship({}, s);
+      } catch (err) {
+        setApiError(`The site could not be built: ${err instanceof Error ? err.message : String(err)}`);
+        return;
+      }
+    }
     runTokenRef.current++;
     setIsRunning(false);
     setRunProgressMessage('');
@@ -780,7 +790,7 @@ export function App() {
           onToggleRain={() => setRainEnabled(!rainEnabled)}
           onOpenDebrisLab={() => setIsDebrisLabOpen(true)}
           engineMode={engineMode}
-          hotspotLabel={engineMode && !site.builtIn ? site.hotspotNodeId : undefined}
+          hotspotLabel={engineMode && !site.builtIn ? `Hotspot (${site.hotspotNodeId})` : undefined}
           appliedOptionTitle={
             engineMode
               ? appliedOptionId === 'baseline'

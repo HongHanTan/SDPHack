@@ -11,21 +11,32 @@ export interface LayoutFeatures {
   hotspots: Array<{ nodeId: string }>;
 }
 
+/** How many features took a default value (each kind becomes one import assumption). */
+export interface LayoutDefaults {
+  roundaboutRadius: number;
+  treeScale: number;
+  pondRadius: number;
+  pondFromPolygon: number;
+  riverWidth: number;
+}
+
 const numOr = (v: unknown, d: number | null): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 const strOr = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
 
 /** Parses the FloodOps layout GeoJSON (features typed by properties.kind). Coordinates stay in the file's metres. */
-export function parseLayoutGeoJson(text: string): { features: LayoutFeatures; errors: string[]; warnings: string[] } {
+export function parseLayoutGeoJson(text: string): { features: LayoutFeatures; errors: string[]; warnings: string[]; defaults: LayoutDefaults } {
   const features: LayoutFeatures = { buildings: [], roads: [], roundabouts: [], trees: [], ponds: [], rivers: [], inlets: [], hotspots: [] };
+  const defaults: LayoutDefaults = { roundaboutRadius: 0, treeScale: 0, pondRadius: 0, pondFromPolygon: 0, riverWidth: 0 };
+  const isNum = (v: unknown) => numOr(v, null) !== null;
   const errors: string[] = [];
   const warnings: string[] = [];
   let doc: { type?: string; features?: Array<{ geometry?: { type: string; coordinates: unknown }; properties?: Record<string, unknown> }> };
   try {
     doc = JSON.parse(text);
   } catch {
-    return { features, errors: ['Layout file is not valid JSON.'], warnings };
+    return { features, errors: ['Layout file is not valid JSON.'], warnings, defaults };
   }
-  if (doc.type !== 'FeatureCollection' || !Array.isArray(doc.features)) return { features, errors: ['Layout file must be a GeoJSON FeatureCollection.'], warnings };
+  if (doc.type !== 'FeatureCollection' || !Array.isArray(doc.features)) return { features, errors: ['Layout file must be a GeoJSON FeatureCollection.'], warnings, defaults };
   const unknown = new Set<string>();
   let unknownCount = 0;
   doc.features.forEach((ft, idx) => {
@@ -55,21 +66,32 @@ export function parseLayoutGeoJson(text: string): { features: LayoutFeatures; er
         if (want('LineString')) features.roads.push({ id, line: line(), width: numOr(p.width_m, 8)!, widthDefaulted: numOr(p.width_m, null) === null, surfaceZ: numOr(p.surface_z, null) });
         break;
       case 'roundabout':
-        if (want('Point')) features.roundabouts.push({ id, x: point()[0], y: point()[1], radius: numOr(p.radius_m, 10)!, surfaceZ: numOr(p.surface_z, null) });
+        if (want('Point')) {
+          if (!isNum(p.radius_m)) defaults.roundaboutRadius++;
+          features.roundabouts.push({ id, x: point()[0], y: point()[1], radius: numOr(p.radius_m, 10)!, surfaceZ: numOr(p.surface_z, null) });
+        }
         break;
       case 'tree':
-        if (want('Point')) features.trees.push({ x: point()[0], y: point()[1], scale: numOr(p.scale, 1)! });
+        if (want('Point')) {
+          if (!isNum(p.scale)) defaults.treeScale++;
+          features.trees.push({ x: point()[0], y: point()[1], scale: numOr(p.scale, 1)! });
+        }
         break;
       case 'pond':
         if (g?.type === 'Point') {
+          if (!isNum(p.radius_m)) defaults.pondRadius++;
           features.ponds.push({ id, x: point()[0], y: point()[1], radius: numOr(p.radius_m, 10)!, waterLevel: numOr(p.water_level_m, null), bedZ: numOr(p.bed_m, null) });
         } else if (want('Polygon')) {
+          defaults.pondFromPolygon++;
           const { cx, cy, area } = polygonCentroidArea(ring());
           features.ponds.push({ id, x: cx, y: cy, radius: Math.sqrt(area / Math.PI), waterLevel: numOr(p.water_level_m, null), bedZ: numOr(p.bed_m, null) });
         }
         break;
       case 'river':
-        if (want('LineString')) features.rivers.push({ id, line: line(), width: numOr(p.width_m, 10)!, bedZ: numOr(p.bed_m, null) });
+        if (want('LineString')) {
+          if (!isNum(p.width_m)) defaults.riverWidth++;
+          features.rivers.push({ id, line: line(), width: numOr(p.width_m, 10)!, bedZ: numOr(p.bed_m, null) });
+        }
         break;
       case 'inlet':
         if (want('Point')) {
@@ -91,5 +113,5 @@ export function parseLayoutGeoJson(text: string): { features: LayoutFeatures; er
     }
   });
   if (unknownCount) warnings.push(`${unknownCount} feature(s) with an unknown kind were ignored (${[...unknown].join(', ')}).`);
-  return { features, errors, warnings };
+  return { features, errors, warnings, defaults };
 }

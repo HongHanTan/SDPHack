@@ -1,9 +1,13 @@
 import { HOUSE, TAILWATER } from '../scenario/config';
 import type { AssetConduit, AssetInlet, AssetNode, Assets, RoadCircle, RoadStraight } from '../scenario/layout';
-import { medianJunctionGround, TAMAN_KYRA, type SiteHouse, type SitePond, type SiteRiver, type SiteSpec } from '../scenario/site';
+import { buildCatchments } from '../scenario/catchments';
+import { buildNetwork } from '../scenario/network';
+import { buildTerrain } from '../scenario/terrain';
+import { LandUse, type Grid } from '../sim/types';
+import { cellIn, medianJunctionGround, siteToLocal, TAMAN_KYRA, type SiteHouse, type SitePond, type SiteRiver, type SiteSpec } from '../scenario/site';
 import { parseAsciiGrid, type AsciiGrid } from './asciiGrid';
 import { fitRect, type Ring } from './geometry';
-import { parseLayoutGeoJson, type LayoutFeatures } from './geojson';
+import { parseLayoutGeoJson, type LayoutDefaults, type LayoutFeatures } from './geojson';
 import { parseInp } from './inp';
 
 export const MAX_CELLS = 40_000;
@@ -49,6 +53,22 @@ const TK_CENTRE = {
 };
 const TK_MEDIAN_GROUND = medianJunctionGround(TAMAN_KYRA.assets);
 
+/** True when a RIVER cell centre lies within r metres of team point (x, y). */
+function riverCellWithin(grid: Grid, site: SiteSpec, x: number, y: number, r: number): boolean {
+  const { nx, ny, dx } = site.gridSpec;
+  const p = siteToLocal(site, x, y);
+  const c = cellIn(site.gridSpec, p.x, p.y);
+  if (grid.land[c] === LandUse.RIVER) return true;
+  for (let j = 0; j < ny; j++) {
+    const dy = (j + 0.5) * dx - p.y;
+    if (Math.abs(dy) > r) continue;
+    for (let i = 0; i < nx; i++) {
+      if (grid.land[j * nx + i] === LandUse.RIVER && Math.hypot((i + 0.5) * dx - p.x, dy) <= r) return true;
+    }
+  }
+  return false;
+}
+
 export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; report: ImportReport } {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -89,6 +109,7 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
     else if (m.xsections.get(c.id)!.shape !== 'CIRCULAR') warnings.push(`SWMM file: conduit ${c.id} is ${m.xsections.get(c.id)!.shape}; modelled as circular with diameter = Geom1.`);
     if (c.inOffset || c.outOffset) warnings.push(`SWMM file: conduit ${c.id} offsets are ignored.`);
   }
+  for (const o of m.outfalls) if (!m.conduits.some((c) => c.to === o.id)) errors.push(`SWMM file: outfall ${o.id} has no incoming conduit.`);
   for (const s of m.subcatchments) {
     if (!nodeIds.has(s.outlet)) errors.push(`SWMM file: subcatchment ${s.id} drains to unknown node ${s.outlet}.`);
     if (!(Number.isFinite(s.areaHa) && s.areaHa > 0)) errors.push(`SWMM file: subcatchment ${s.id} has an invalid area.`);
@@ -120,11 +141,13 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
 
   // 2. Layout and height files.
   let layout: LayoutFeatures | null = null;
+  let layoutDefaults: LayoutDefaults | null = null;
   if (files.geojson) {
     const r = parseLayoutGeoJson(files.geojson.text);
     errors.push(...r.errors);
     warnings.push(...r.warnings);
     layout = r.features;
+    layoutDefaults = r.defaults;
   } else {
     assumptions.push('No layout file: no buildings, roads, trees, ponds or rivers.');
   }
@@ -203,6 +226,7 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
     dx = DEFAULT_DX * k;
     nx = Math.ceil(w / dx);
     ny = Math.ceil(h / dx);
+    assumptions.push(`Grid: feature extent + ${MARGIN_M} m margin at ${DEFAULT_DX} m cells.`);
   }
   if (k > 1) warnings.push(`Grid coarsened to ${dx} m cells to stay within ${MAX_CELLS.toLocaleString('en')} cells.`);
 
@@ -276,6 +300,8 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
         const p = T(i.x, i.y);
         return { inlet_id: i.inletId, node_id: i.nodeId, position_m: { x: p.x, y: p.y, z: nodeById.get(i.nodeId)!.ground_elevation_m }, grate_area_m2: i.grateArea ?? DEFAULT_GRATE_M2 };
       });
+    const noGrate = layout.inlets.filter((i) => i.grateArea === null && nodeById.has(i.nodeId)).length;
+    if (noGrate) assumptions.push(`Inlets without grate_area_m2 have a ${DEFAULT_GRATE_M2} m² grate (${noGrate}).`);
   } else {
     const outlets = [...new Set(m.subcatchments.map((s) => s.outlet))];
     inlets = outlets.map((id) => {
@@ -328,12 +354,16 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
       const extras = Object.fromEntries(Object.entries(b.props).filter(([key]) => !['kind', 'id', 'rotation_deg'].includes(key)));
       houses.push({ ...extras, id: b.id ?? `B${i + 1}`, x: r.cx, y: r.cy, rotationDeg: r.rotationDeg, scale: Math.sqrt((r.width * r.depth) / (HOUSE.width * HOUSE.depth)), width: r.width, depth: r.depth });
     });
+    if (layoutDefaults?.roundaboutRadius) assumptions.push(`Roundabouts without radius_m have a 10 m radius (${layoutDefaults.roundaboutRadius}).`);
     layout.trees.forEach((t) => trees.push({ ...T(t.x, t.y), scale: t.scale }));
+    if (layoutDefaults?.treeScale) assumptions.push(`Trees without scale use scale 1 (${layoutDefaults.treeScale}).`);
     layout.ponds.forEach((p, i) => {
       const c = T(p.x, p.y);
       const bedZ = p.bedZ !== null ? Z(p.bedZ) : pondBed;
       ponds.push({ id: p.id ?? `pond-${i + 1}`, x: c.x, y: c.y, radius: p.radius, bedZ, waterLevel: p.waterLevel !== null ? Z(p.waterLevel) : bedZ + POND_WATER_ABOVE_BED_M });
     });
+    if (layoutDefaults?.pondRadius) assumptions.push(`Point ponds without radius_m have a 10 m radius (${layoutDefaults.pondRadius}).`);
+    if (layoutDefaults?.pondFromPolygon) assumptions.push(`Pond polygons are modelled as circles of equal area (${layoutDefaults.pondFromPolygon}).`);
     if (layout.ponds.some((p) => p.bedZ === null || p.waterLevel === null)) {
       assumptions.push(`Ponds without levels: bed ${round(pondBed, 2)} m, water ${round(pondBed + POND_WATER_ABOVE_BED_M, 2)} m.`);
     }
@@ -352,20 +382,8 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
         });
       }),
     );
-  }
-  // Outfall sinks where no river is near an outfall.
-  const nearRiver = (x: number, y: number) =>
-    rivers.some((r) => {
-      const a = (r.angleDeg * Math.PI) / 180;
-      const ux = x - r.cx;
-      const uy = y - r.cy;
-      return Math.abs(ux * Math.cos(a) + uy * Math.sin(a)) <= r.length / 2 + SINK_SIZE_M && Math.abs(-ux * Math.sin(a) + uy * Math.cos(a)) <= r.width / 2 + SINK_SIZE_M;
-    });
-  for (const o of nodes.filter((n) => n.node_type === 'outfall')) {
-    if (!nearRiver(o.position_m.x, o.position_m.y)) {
-      rivers.push({ id: `sink-${o.node_id}`, cx: o.position_m.x, cy: o.position_m.y, length: SINK_SIZE_M, width: SINK_SIZE_M, angleDeg: 0, bedZ: o.invert_elevation_m - RIVER_BED_BELOW_OUTFALL_M });
-      assumptions.push(`No river near outfall ${o.node_id}: a ${SINK_SIZE_M} × ${SINK_SIZE_M} m outfall sink was added.`);
-    }
+    if (layoutDefaults?.riverWidth) assumptions.push(`Rivers without width_m are 10 m wide (${layoutDefaults.riverWidth}).`);
+    if (layout.rivers.some((r) => r.bedZ === null)) assumptions.push(`Rivers without bed_m: bed ${round(riverBed, 2)} m (lowest outfall invert − ${RIVER_BED_BELOW_OUTFALL_M} m).`);
   }
 
   // 8. Hotspot, focus inlet, tailwater, catchments.
@@ -375,7 +393,9 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
   const hotspotFromLayout = layout?.hotspots.find((h) => isJunction(h.nodeId))?.nodeId;
   const hotspotNodeId = hotspotFromLayout ?? lowest.node_id;
   if (!hotspotFromLayout) assumptions.push(`Hotspot: ${hotspotNodeId}, the junction with the lowest ground.`);
-  const focusInletId = inlets.find((i) => i.node_id === hotspotNodeId)?.inlet_id ?? inlets[0]?.inlet_id ?? null;
+  const hotspotInlet = inlets.find((i) => i.node_id === hotspotNodeId)?.inlet_id;
+  const focusInletId = hotspotInlet ?? inlets[0]?.inlet_id ?? null;
+  if (focusInletId) assumptions.push(`Debris selector blocks ${focusInletId}${hotspotInlet ? `, the hotspot's inlet` : ` (fallback: the hotspot ${hotspotNodeId} has no inlet)`}.`);
   const o0 = m.outfalls[0];
   const normal = Z(o0.stage ?? o0.invert);
   if (o0.stage === null) assumptions.push(`Outfall ${o0.id} has no FIXED stage: normal tailwater at its invert.`);
@@ -416,6 +436,25 @@ export function buildSiteFromFiles(files: ImportFiles): { site?: SiteSpec; repor
     tailwater: { normal, high: normal + HIGH_RISE_M },
     shift,
   };
+  // 9. Outfall sinks where no river cell lies within SINK_SIZE_M of an outfall (no river, or one too narrow to cover a cell);
+  // then build the township once so a site that would crash the engine is reported instead.
+  try {
+    let grid = buildTerrain(site);
+    let added = false;
+    for (const o of nodes.filter((n) => n.node_type === 'outfall')) {
+      if (riverCellWithin(grid, site, o.position_m.x, o.position_m.y, SINK_SIZE_M)) continue;
+      rivers.push({ id: `sink-${o.node_id}`, cx: o.position_m.x, cy: o.position_m.y, length: SINK_SIZE_M, width: SINK_SIZE_M, angleDeg: 0, bedZ: o.invert_elevation_m - RIVER_BED_BELOW_OUTFALL_M });
+      assumptions.push(`No river within ${SINK_SIZE_M} m of outfall ${o.node_id}: a ${SINK_SIZE_M} × ${SINK_SIZE_M} m outfall sink was added.`);
+      added = true;
+    }
+    if (added) grid = buildTerrain(site);
+    buildNetwork(grid, {}, site);
+    buildCatchments(grid, {}, site);
+  } catch (e) {
+    errors.push(`The site could not be built: ${e instanceof Error ? e.message : String(e)}`);
+    return { report: report() };
+  }
+
   summary.push(
     ['Network', `${m.junctions.length} junctions, ${m.outfalls.length} outfall(s), ${conduits.length} pipes, ${inlets.length} inlets`],
     ['Catchments', `${subcatchments.length}`],

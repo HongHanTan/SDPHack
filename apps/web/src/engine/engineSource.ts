@@ -31,6 +31,7 @@ interface RunRecord {
   metrics?: SimulationMetricsResponse & EngineMetricsExtras;
   surfaces?: Map<number, Float32Array>;
   error?: string;
+  modelVersionId: string;
 }
 
 class EngineSource {
@@ -75,7 +76,7 @@ class EngineSource {
     return {
       status: 'ok',
       api_version: 'engine',
-      swmm: { available: true, engine: 'FloodOps TS engine', engine_version: '1.0', execution_verified: true, message: 'Local TypeScript engine (Taman Kyra)' },
+      swmm: { available: true, engine: 'FloodOps TS engine', engine_version: '1.0', execution_verified: true, message: `Local TypeScript engine (${this.site.builtIn ? 'Taman Kyra' : this.site.label})` },
       capabilities: CAPS,
     };
   }
@@ -114,7 +115,11 @@ class EngineSource {
         parameters: { depth_above_outfall_invert_m: site.tailwater[t] },
       })),
       capabilities: CAPS,
-      assumptions: ['Local TypeScript engine on the Taman Kyra synthetic network; not a surveyed site model.'],
+      assumptions: [
+        site.builtIn
+          ? 'Local TypeScript engine on the Taman Kyra synthetic network; not a surveyed site model.'
+          : `Local TypeScript engine on the imported site ${site.label}; not a verified site model.`,
+      ],
     };
   }
 
@@ -167,7 +172,8 @@ class EngineSource {
     const opts: ScenarioOptions = { tailwater: (req.tailwater_case === 'high' ? 'high' : 'normal') as TailwaterCase, blockage: this.blockageForDebris(req.debris_scenario_id), site: this.site };
     const ids = this.getInterventions();
     const runId = `engine-${++this.counter}`;
-    const rec: RunRecord = { status: 'running' };
+    const rec: RunRecord = { status: 'running', modelVersionId: this.site.builtIn ? MODEL_VERSION : 'imported_site' };
+    const site = this.site;
     this.runs.set(runId, rec);
     // Keep only the newest runs: each holds every frame's depth grid.
     while (this.runs.size > MAX_RUNS) this.runs.delete(this.runs.keys().next().value as string);
@@ -178,7 +184,7 @@ class EngineSource {
       .then((r) => {
         const frames = r.frames.map((f) => toTeamFrame(f, ctx));
         rec.frames = frames;
-        rec.metrics = toTeamMetrics(runId, r.metrics, frames, ctx, sc.frameEveryS);
+        rec.metrics = toTeamMetrics(runId, r.metrics, frames, ctx, sc.frameEveryS, site);
         rec.surfaces = new Map(r.frames.map((f) => [f.t, f.depth]));
         rec.status = 'succeeded';
       })
@@ -195,7 +201,7 @@ class EngineSource {
     return {
       run_id: runId,
       status: rec.status,
-      model_version_id: MODEL_VERSION,
+      model_version_id: rec.modelVersionId,
       engine: 'FloodOps TS engine',
       engine_version: '1.0',
       is_verified_site_model: false,
@@ -208,7 +214,7 @@ class EngineSource {
     if (!rec?.frames) throw new Error(`[ENGINE] RESULTS_NOT_READY ${runId}`);
     return {
       run_id: runId,
-      model_version_id: MODEL_VERSION,
+      model_version_id: rec.modelVersionId,
       result_type: 'simulated',
       engine: 'FloodOps TS engine',
       engine_version: '1.0',

@@ -30,6 +30,9 @@ function pickWithInput(): Promise<SiteFileEntry[]> {
   });
 }
 
+/** Consecutive failed reads before watching stops. */
+export const MAX_WATCH_FAILURES = 3;
+
 async function entryFile(e: SiteFileEntry): Promise<File> {
   if (e.handle) return e.handle.getFile();
   if (e.file) return e.file;
@@ -97,6 +100,7 @@ export function useSiteFiles({ onChange, onWatchError }: { onChange?: (names: st
     let cancelled = false;
     let prev: Record<string, number> | null = baselineRef.current;
     let busy = false;
+    let failures = 0;
     const tick = async () => {
       if (busy) return;
       busy = true;
@@ -104,8 +108,11 @@ export function useSiteFiles({ onChange, onWatchError }: { onChange?: (names: st
         const next: Record<string, number> = {};
         for (const e of entries) next[e.name] = (await entryFile(e)).lastModified;
         if (cancelled) return;
-        if (prev) {
-          const names = changedFiles(prev, next);
+        failures = 0;
+        // A Check/apply since the last tick re-read the files: compare against what it read, not the older tick.
+        const base = baselineRef.current ?? prev;
+        if (base) {
+          const names = changedFiles(base, next);
           if (names.length > 0) {
             setLastChange({ names, at: new Date() });
             onChangeRef.current?.(names);
@@ -115,6 +122,9 @@ export function useSiteFiles({ onChange, onWatchError }: { onChange?: (names: st
         baselineRef.current = next;
       } catch (err) {
         if (cancelled) return;
+        // Editors can make a file briefly unreadable mid-save (Chrome NotReadableError): retry, stop after a run of failures.
+        failures++;
+        if (failures < MAX_WATCH_FAILURES) return;
         setWatching(false);
         onErrorRef.current?.(`Watching stopped: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
@@ -129,5 +139,12 @@ export function useSiteFiles({ onChange, onWatchError }: { onChange?: (names: st
     };
   }, [watching, canWatch, entries]);
 
-  return { pick, files: entries, read, canWatch, watching, setWatching, lastChange };
+  /** Marks files as unread so the next watch tick reports them again (a re-read after a change failed). */
+  const retry = useCallback((names: string[]) => {
+    const base = { ...(baselineRef.current ?? {}) };
+    for (const n of names) base[n] = Number.NaN;
+    baselineRef.current = base;
+  }, []);
+
+  return { pick, files: entries, read, retry, canWatch, watching, setWatching, lastChange };
 }

@@ -150,7 +150,7 @@ ESRI ASCII grid: `ncols`, `nrows`, `xllcorner`, `yllcorner`, `cellsize`, `NODATA
 **Placement:**
 - **Translate** x/y so the grid's centre lands on the built-in grid's centre (team x 45, y 5).
 - **Shift** z so the median node ground equals the built-in median (11.5 m).
-- Both are reported, and asset panels can show the original file coordinates. Only translation is applied, so scale is preserved.
+- Both are reported: the shift is shown in the import report summary (Placement). Only translation is applied, so scale is preserved.
 
 **Defaults, each listed as an assumption in the report:**
 - **Inlets:** without inlet points, one grate (0.6 m²) at each subcatchment outlet.

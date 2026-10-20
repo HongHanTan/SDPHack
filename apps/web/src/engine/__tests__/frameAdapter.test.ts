@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildScenario } from '@floodops/engine/scenario/index';
 import type { Frame } from '@floodops/engine/sim/types';
+import { TAMAN_KYRA, type SiteSpec } from '@floodops/engine/scenario/site';
 import { makeContext, pipeStatus, toTeamFrame, toTeamMetrics } from '../frameAdapter';
 
 const sc = buildScenario([], 'synthetic_80mmh_60min');
@@ -41,5 +42,19 @@ describe('frameAdapter', () => {
     expect(m.surcharge_duration_s).toBe(30);
     expect(m.peak_flow_m3s).toBeCloseTo(ctx.qFull[sc.network.pipes.findIndex((p) => p.id === 'PIPE-P07')], 9);
     expect(m.engine).toBe('FloodOps TS engine');
+  });
+  it('labels imported-site metrics and follows the pipe leaving the hotspot', () => {
+    const site: SiteSpec = { ...TAMAN_KYRA, key: 'import-test', label: 'my.inp', builtIn: false };
+    const tf = [toTeamFrame(frame(1, 0.5), ctx), toTeamFrame(frame(0.2, 0.2), ctx)];
+    const metrics = { peakDepth: new Float32Array(sc.grid.nx * sc.grid.ny), peakSagDepth: 0.66, floodedRoadArea: 10, homesFlooded: 2, minutesToPassable: null, peakOutfallFlow: 0.5, sagSeries: { t: [], depth: [] }, balance: { rain: 1, error: 0 } };
+    const m = toTeamMetrics('engine-1', metrics, tf, ctx, 30, site);
+    expect(m.model_version_id).toBe('imported_site');
+    expect(m.assumptions.join(' ')).toMatch(/my\.inp/);
+    expect(m.assumptions.join(' ')).not.toMatch(/Taman Kyra/);
+    const out = sc.network.pipes.map((p, k) => (p.from === site.hotspotNodeId ? ctx.qFull[k] : 0)).reduce((a, b) => a + b, 0);
+    expect(out).toBeGreaterThan(0);
+    expect(m.peak_flow_m3s).toBeCloseTo(out, 9);
+    expect(m.surcharge_duration_s).toBe(30);
+    expect(toTeamMetrics('engine-1', metrics, tf, ctx, 30, TAMAN_KYRA)).toEqual(toTeamMetrics('engine-1', metrics, tf, ctx, 30));
   });
 });

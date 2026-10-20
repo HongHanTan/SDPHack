@@ -99,4 +99,48 @@ O1 500000 300100
     const r = buildSiteFromFiles({ ...files(inp()), geojson: { name: 'l.geojson', text: geo } });
     expect(r.report.errors.join(' ')).toMatch(/Layout coordinates look like longitude/);
   });
+  it('errors on an outfall with no incoming conduit', () => {
+    const orphan = inp('O2 500200 300100').replace('O1 9.0 FIXED 9.2 NO', 'O1 9.0 FIXED 9.2 NO\nO2 8.0 FREE NO');
+    const r = buildSiteFromFiles(files(orphan));
+    expect(r.site).toBeUndefined();
+    expect(r.report.errors.join(' ')).toMatch(/outfall O2 has no incoming conduit/);
+  });
+  it('adds an outfall sink when a nearby river is too narrow to cover a cell', () => {
+    const geo = JSON.stringify({
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: [[500094, 300050], [500094, 300150]] }, properties: { kind: 'river', width_m: 1 } }],
+    });
+    const { site, report } = buildSiteFromFiles({ ...files(inp()), geojson: { name: 'l.geojson', text: geo } });
+    expect(report.errors).toEqual([]);
+    expect(site!.rivers.some((r) => r.id === 'sink-O1')).toBe(true);
+    expect(report.assumptions.join(' ')).toMatch(/outfall sink/);
+    expect(report.assumptions.join(' ')).toMatch(/Rivers without bed_m/);
+    const sc = buildScenario([], 'synthetic_80mmh_60min', [], { site });
+    expect(sc.network.outfalls).toHaveLength(1);
+  });
+  it('lists every default it used as an assumption', () => {
+    const pt = (kind: string, coordinates: [number, number], props: Record<string, unknown> = {}) => ({ type: 'Feature', geometry: { type: 'Point', coordinates }, properties: { kind, ...props } });
+    const geo = JSON.stringify({
+      type: 'FeatureCollection',
+      features: [
+        pt('tree', [500010, 300120]),
+        pt('roundabout', [500020, 300080]),
+        pt('pond', [500030, 300060]),
+        pt('inlet', [500050, 300100], { inlet_id: 'I-J2', node_id: 'J2' }),
+        { type: 'Feature', geometry: { type: 'LineString', coordinates: [[500090, 300050], [500090, 300150]] }, properties: { kind: 'river' } },
+      ],
+    });
+    const { report } = buildSiteFromFiles({ ...files(inp()), geojson: { name: 'l.geojson', text: geo } });
+    expect(report.errors).toEqual([]);
+    const a = report.assumptions.join(' ');
+    expect(a).toMatch(/Trees without scale/);
+    expect(a).toMatch(/Roundabouts without radius_m/);
+    expect(a).toMatch(/Point ponds without radius_m/);
+    expect(a).toMatch(/Inlets without grate_area_m2/);
+    expect(a).toMatch(/Rivers without width_m are 10 m wide/);
+    expect(a).toMatch(/Rivers without bed_m/);
+    expect(a).toMatch(/Grid: feature extent \+ 30 m margin at 2 m cells/);
+    expect(a).toMatch(/Debris selector blocks I-J2, the hotspot's inlet/);
+    expect(a).not.toMatch(/outfall sink/);
+  });
 });

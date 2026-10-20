@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { buildSiteFromFiles, type ImportFiles, type ImportReport } from '@floodops/engine/import/buildSite';
 import type { SiteSpec } from '@floodops/engine/scenario/site';
 import { classifySiteFiles } from './siteFiles';
-import { useSiteFiles } from './useSiteFiles';
+import { MAX_WATCH_FAILURES, useSiteFiles } from './useSiteFiles';
 
 interface Props {
   activeSite: SiteSpec;
@@ -34,15 +34,24 @@ export function SiteImportPanel({ activeSite, onApply, onReset, onClose }: Props
     };
   }, []);
 
+  const activeKeyRef = useRef(activeSite.key);
+  activeKeyRef.current = activeSite.key;
+  const readFailuresRef = useRef(0);
+  const retryRef = useRef<(names: string[]) => void>(() => undefined);
+
   const handleChange = async (names: string[]) => {
     const seq = ++seqRef.current;
     try {
       const files = await readRef.current();
       if (!files || !mountedRef.current || seq !== seqRef.current) return;
+      readFailuresRef.current = 0;
       const result = buildSiteFromFiles(files);
       setChecked(result);
       setReadErrors([]);
-      if (result.report.ok && result.site) {
+      if (result.report.ok && result.site && result.site.key === activeKeyRef.current) {
+        // Saved without a content change: keep the current run.
+        setStatus({ kind: 'ok', text: `${names.join(', ')} saved with no changes at ${clock(new Date())}` });
+      } else if (result.report.ok && result.site) {
         onApply(result.site);
         setStatus({ kind: 'ok', text: `Updated from ${names.join(', ')} at ${clock(new Date())}` });
       } else {
@@ -50,6 +59,12 @@ export function SiteImportPanel({ activeSite, onApply, onReset, onClose }: Props
       }
     } catch (err) {
       if (!mountedRef.current || seq !== seqRef.current) return;
+      // A file can be briefly unreadable mid-save: try again on the next tick, stop after a run of failures.
+      if (++readFailuresRef.current < MAX_WATCH_FAILURES) {
+        retryRef.current(names);
+        return;
+      }
+      readFailuresRef.current = 0;
       setReadErrors([err instanceof Error ? err.message : String(err)]);
       stopWatchRef.current();
     }
@@ -60,6 +75,7 @@ export function SiteImportPanel({ activeSite, onApply, onReset, onClose }: Props
     onWatchError: (m) => mountedRef.current && setReadErrors([m]),
   });
   readRef.current = siteFiles.read;
+  retryRef.current = siteFiles.retry;
   stopWatchRef.current = () => siteFiles.setWatching(false);
 
   const cls = classifySiteFiles(siteFiles.files.map((e) => e.name));

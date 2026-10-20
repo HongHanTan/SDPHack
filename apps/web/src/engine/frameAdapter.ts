@@ -1,5 +1,6 @@
 import { ASSETS } from '@floodops/engine/scenario/layout';
 import { createNetworkState } from '@floodops/engine/sim/pipes';
+import type { SiteSpec } from '@floodops/engine/scenario/site';
 import { LandUse, type Frame, type Grid, type Metrics, type Network } from '@floodops/engine/sim/types';
 import type { AssetInlet, ConduitStatus, InletState, NodeState, PipeState, SimulationFrame, SimulationMetricsResponse } from '../types';
 
@@ -77,7 +78,12 @@ export function toTeamMetrics(
   teamFrames: SimulationFrame[],
   ctx: AdapterContext,
   frameEveryS: number,
+  site?: SiteSpec,
 ): SimulationMetricsResponse & EngineMetricsExtras {
+  const imported = !!site && !site.builtIn;
+  // Built-in: the trunk and PIPE-P07; imported: the pipe(s) flowing out of the hotspot node.
+  const surchargeIds = imported ? ctx.network.pipes.filter((p) => p.from === site!.hotspotNodeId).map((p) => p.id) : TRUNK;
+  const peakIds = imported ? surchargeIds : ['PIPE-P07'];
   const area = ctx.grid.dx * ctx.grid.dx;
   let floodVol = 0;
   for (let c = 0; c < m.peakDepth.length; c++) {
@@ -90,21 +96,27 @@ export function toTeamMetrics(
   let p07Peak = 0;
   for (const f of teamFrames) {
     for (const n of f.node_states) if (n.status === 'flooding') flooded.add(n.node_id);
-    if (f.pipe_states.some((p) => TRUNK.includes(p.conduit_id) && p.status === 'surcharged')) surchargedFrames++;
-    const p07 = f.pipe_states.find((p) => p.conduit_id === 'PIPE-P07');
-    if (p07 && p07.flow_m3s > p07Peak) p07Peak = p07.flow_m3s;
+    if (f.pipe_states.some((p) => surchargeIds.includes(p.conduit_id) && p.status === 'surcharged')) surchargedFrames++;
+    let flow = 0;
+    for (const p of f.pipe_states) if (peakIds.includes(p.conduit_id)) flow += p.flow_m3s;
+    if (flow > p07Peak) p07Peak = flow;
   }
   return {
     run_id: runId,
-    model_version_id: 'taman_kyra_synthetic_v1',
+    model_version_id: imported ? 'imported_site' : 'taman_kyra_synthetic_v1',
     result_type: 'simulated',
     engine: 'FloodOps TS engine',
     engine_version: '1.0',
     is_verified_site_model: false,
-    assumptions: [
-      '2D surface flow on a 2 m grid coupled to capacity-routed pipes; SWMM-style catchments through grate capture.',
-      'Synthetic Taman Kyra network (Tay Zheheng) and layout (TEH JIA JIE); not a surveyed site.',
-    ],
+    assumptions: imported
+      ? [
+          `2D surface flow on a ${ctx.grid.dx} m grid coupled to capacity-routed pipes; SWMM-style catchments through grate capture.`,
+          `Imported site ${site!.label}: generated from uploaded files; not a verified site model. Surcharge duration and peak flow follow the pipe(s) leaving hotspot ${site!.hotspotNodeId}.`,
+        ]
+      : [
+          '2D surface flow on a 2 m grid coupled to capacity-routed pipes; SWMM-style catchments through grate capture.',
+          'Synthetic Taman Kyra network (Tay Zheheng) and layout (TEH JIA JIE); not a surveyed site.',
+        ],
     warnings: m.balance.error >= 0.01 ? [`Water balance error ${(m.balance.error * 100).toFixed(2)}%`] : [],
     status_definitions: { surcharged: 'pipe load ≥ 99.9% of full-bore capacity', near_capacity: 'pipe load ≥ 80%', flooding: 'manhole full and street wet at its cell' },
     total_flooding_volume_m3: Math.round(floodVol * 10) / 10,
