@@ -91,3 +91,37 @@ Plan: `docs/superpowers/plans/2026-10-23-team-merge.md`
 | T1 | History merge + monorepo layout (`apps/web`, `apps/legacy`, `packages/engine`) | ✅ done |
 | T2 | Rebuild engine township on Taman Kyra + retune (team's 3 options + flap gate, tank, lake overflow, pump) | pending |
 | T3 | Drive `apps/web` UI from the engine through an adapter | pending |
+
+---
+
+# Phase 5 — Team integration, part 2 (engine township on Taman Kyra)
+
+Plan: `docs/superpowers/plans/2026-10-23-taman-kyra-engine.md`
+
+| # | Task | Status |
+|---|---|---|
+| P5-1 | Extract Taman Kyra layout data (credit Jiajie) | ✅ done (30eca9a) |
+| P5-2 | Engine township: terrain, network, storms, interventions, tailwater | ✅ done (8cb1671) |
+| P5-3 | Keep legacy UI running on Taman Kyra | ✅ done (52af994) |
+| P5-4 | Tune the demo story | ⚠️ pass 1 (f7522cf): only water-balance claim held — terrain redesign chosen (option A) |
+| P5-4b | Terrain redesign (plane + grate funnels + outfall chamber) and retune | ✅ done (a708367) — claims 2,3,4,6,7 pass; 1 (homes) & 5 (high tailwater) removed, see docs/tuning.md |
+| P5-5 | SWMM cross-check vs Tay's run | ✅ done (c4b3009) — report-only: engine ~35–68% below SWMM (full-bore cap + grate-limited intake) |
+| P5-6 | Effect badges (with tailwater) | ✅ done (98daa52) — flap-gate & pump show 0 effect (see notes) |
+
+## Phase 5 notes
+- Team story works under the 80 mm/h storm. J07 junction peak depth for each option:
+
+  | Option | J07 peak depth |
+  |---|---|
+  | Baseline | 0.30 m |
+  | Desilt D07 | 0.27 m |
+  | Upsize P07 | 0.19 m |
+  | **Combined** | **0.12 m** |
+  | Tank | 0.19 m |
+  | Lake overflow | 0.19 m |
+
+- Open issues needing a decision:
+  - No houses flood. The deepest water on a house is 0.09 m, against the 0.30 m threshold.
+  - The high canal level never reaches the streets, so the flap gate and pump show no effect.
+  - The SWMM cross-check is report-only. The engine is 35–68% below Tay's SWMM peaks, because the engine caps each pipe at its full-bore capacity and limits intake at the grates, while SWMM loads catchments directly into the nodes.
+- Details are in `docs/tuning.md` and `docs/swmm-crosscheck.md`.
