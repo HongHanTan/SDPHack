@@ -180,3 +180,21 @@ All results come from the physics; nothing is hard-coded. Storm `synthetic_80mmh
   - `docs/swmm-crosscheck.md` generated;
   - the assumptions panel gets rows for the datum, the layout source (Jiajie) and the SWMM cross-check (Tay).
 - **Commits:** authored by the user only, no co-author lines. Commit messages that add derived team content credit the source author in the message body, e.g. "Layout derived from TownshipEnvironment.tsx by TEH JIA JIE".
+
+## 13. Amendment (2026-10-23, after the first tuning pass)
+
+The first tuning pass showed that the §3 terrain design defeated the story:
+- The inverse-distance surface puts the grates at local high points, so only D07 receives water and P07 never runs full.
+- OUT01 sits in the canal with a 0.3 m chamber, so high tailwater spills into the canal and never reaches the street.
+
+Changes (scenario layer only; the physics core is untouched):
+
+- **Ground surface:** a least-squares **plane** fitted through the 9 node ground levels replaces the IDW surface. It is smooth and falls to the south.
+- **Grate funnels:** every asset inlet gets a shallow bowl centred on its node, `FUNNEL = { radius: 18 m, depth: 0.3 m }` (tunable: radius 8–30 m, depth 0.1–0.6 m). The bowls make the grates local low points, as real grates are placed. The J07 `DIP` stays as D07's (larger) funnel.
+- **Outfall chamber:** NODE-OUT01 uses the asset's `max_depth_m` (2.0 m) as its chamber depth (a headwall structure), so canal backflow can fill it and throttle P08.
+- **Hotspots:**
+  - **J07** remains the readout and chart hotspot.
+  - **J08** (riverside street) is the second probe for tailwater claims.
+- **Story claim 5, restated:** under high tailwater, the J08 street peak depth exceeds the normal-tailwater J08 peak, and `flap-gate` and `pump` each reduce the J08 peak against the high-tailwater baseline.
+
+All other claims are unchanged. The same honesty rule applies: if a claim still can't be met within the tunables, remove it and document why.

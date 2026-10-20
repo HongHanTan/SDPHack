@@ -1448,3 +1448,83 @@ Expected: PASS.
 git add packages/engine/scripts/computeEffects.ts packages/engine/tests/effects.drift.test.ts packages/engine/src/scenario/effects.json apps/legacy/tests/ui/effects.test.ts
 git commit -m "feat(engine): Taman Kyra effect badges with tailwater cases"
 ```
+
+---
+
+### Task 4b: Terrain redesign and retune (spec §13 amendment)
+
+**Files:**
+- Modify: `packages/engine/src/scenario/config.ts`, `packages/engine/src/scenario/terrain.ts`, `packages/engine/src/scenario/network.ts`, `packages/engine/tests/story.test.ts`, `packages/engine/tests/scenario/township.test.ts`, `packages/engine/scripts/tune.ts`, `docs/tuning.md`
+
+- [ ] **Step 1: Config.** Add to `config.ts`:
+
+```ts
+/** Shallow bowl around every grate so street water drains to it (D07 additionally sits in DIP). Tunable. */
+export const FUNNEL = { radius: 18, depth: 0.3 };
+```
+
+- [ ] **Step 2: Plane surface plus funnels.** In `terrain.ts`, replace the IDW helper with a least-squares plane fitted through the 9 node ground levels, and subtract a bowl around every asset inlet:
+
+```ts
+  // Least-squares plane z = a + b·x + c·y through the node ground levels (grid-local coordinates).
+  const pts = ASSETS.nodes.map((nd) => ({ ...toLocal(nd.position_m.x, nd.position_m.y), g: nd.ground_elevation_m }));
+  const S = { n: pts.length, x: 0, y: 0, xx: 0, xy: 0, yy: 0, g: 0, xg: 0, yg: 0 };
+  for (const p of pts) {
+    S.x += p.x; S.y += p.y; S.xx += p.x * p.x; S.xy += p.x * p.y; S.yy += p.y * p.y;
+    S.g += p.g; S.xg += p.x * p.g; S.yg += p.y * p.g;
+  }
+  const M = [[S.n, S.x, S.y], [S.x, S.xx, S.xy], [S.y, S.xy, S.yy]];
+  const v = [S.g, S.xg, S.yg];
+  const det3 = (m: number[][]) =>
+    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+  const D = det3(M);
+  const col = (k: number) => M.map((row, r) => row.map((val, c) => (c === k ? v[r] : val)));
+  const [pa, pb, pc] = [0, 1, 2].map((k) => det3(col(k)) / D);
+  const plane = (x: number, y: number) => pa + pb * x + pc * y;
+  const funnels = ASSETS.inlets.map((i) => toLocal(i.position_m.x, i.position_m.y));
+```
+
+In the cell loop:
+- use `let zc = plane(x, y);` instead of `idw(x, y)`;
+- after the DIP bowl, add:
+
+```ts
+      for (const f of funnels) {
+        const df = Math.hypot(x - f.x, y - f.y);
+        if (df < FUNNEL.radius) zc -= FUNNEL.depth * (1 - (df / FUNNEL.radius) ** 2);
+      }
+```
+
+Import `FUNNEL` from `./config`, and remove the now-unused `idw` and `ground` code.
+
+- [ ] **Step 3: Outfall chamber.** In `network.ts` `buildNetwork`, give the outfall node its asset chamber depth by adding `maxDepth` to the `makeNode` options when `nd.node_type === 'outfall'`:
+
+```ts
+      ...(nd.node_type === 'outfall' ? { maxDepth: nd.max_depth_m } : {}),
+```
+
+- [ ] **Step 4: Restore the story test with the restated claim 5.** Replace `packages/engine/tests/story.test.ts` with the version from Task 2 Step 9, with these changes:
+- `run` also returns `j08Peak: metrics.peakDepth[j08Cell]`, where `const j08 = nodeSite('NODE-J08'); const j08Cell = cellAt(j08.x, j08.y);`. Add imports `nodeSite` from `../src/scenario/network` and `cellAt` from `../src/scenario/terrain`.
+- Add `const normal = base;` and replace claim 5 with:
+
+```ts
+  it('5. high tailwater floods the J08 riverside street; flap gate and pump each reduce it', () => {
+    expect(highBase.j08Peak).toBeGreaterThan(base.j08Peak);
+    expect(highFlap.j08Peak).toBeLessThan(highBase.j08Peak);
+    expect(highPump.j08Peak).toBeLessThan(highBase.j08Peak);
+  });
+```
+
+- [ ] **Step 5: Retune.**
+- Add a `J08 peak (m)` column to `scripts/tune.ts`.
+- Re-run the tune table, then tune within the Task 4 bounds plus the `FUNNEL` bounds (radius 8–30 m, depth 0.1–0.6 m) until `tests/story.test.ts` passes.
+- The same honesty rule applies. Update the township test only where a deliberate terrain change makes a probe stale (for example, the "dips at J07" comparison should still hold).
+
+- [ ] **Step 6: Record and commit.**
+- Rewrite `docs/tuning.md`: keep the first-pass findings as a short "Pass 1" section, then add the Pass 2 table, the changes and the claims.
+- Run `npm test` (green), then `npm -w @floodops/engine exec vitest run tests/story.test.ts` (green).
+
+```bash
+git add packages/engine docs/tuning.md
+git commit -m "fix(engine): grate funnels, plane surface and outfall chamber; retune the Taman Kyra story"
+```
