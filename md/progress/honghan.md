@@ -168,3 +168,9 @@ Plan: `docs/superpowers/plans/2026-10-23-team-ui-engine.md`
 | P8-5 | Web: SiteEnvironment scene for imported sites | ✅ done (9270106) — minor: ground colours can be off by a cell at land-use edges; grid/fog not re-centred on large sites |
 | P8-6 | Web: import panel, watch for changes, checklist | ✅ done (cbad52b, fix 4736302) |
 | P8-7 | Final review + fixes (ground mesh placement, build-checked imports, every default listed as an assumption, imported-site metrics, watch robustness) | ✅ done (f0c1050) |
+
+## Phase 9: Import-first flow
+| Task | Description | Status |
+|---|---|---|
+| P9-1 | Full-page Import site first, then the dashboard; app-level file watching | ✅ done (8eaf74c) |
+| P9-2 | Header watch chip, change-error banner, docs | ✅ done (a1f0f82, review fixes ff908d4) |
