@@ -17,13 +17,16 @@ export interface EngineState {
   storage0: number;
   riverCells: Int32Array;
   landCells: Int32Array;
+  catchStore: Float64Array; // m3 per catchment
+  catchOf: Int16Array; // cell -> catchment index, -1 none
 }
 
-export function totalStorage(sc: Scenario, st: { surf: SurfaceState; net: NetworkState }): number {
+export function totalStorage(sc: Scenario, st: { surf: SurfaceState; net: NetworkState; catchStore?: Float64Array }): number {
   const area = sc.grid.dx * sc.grid.dx;
   let s = 0;
   for (const v of st.surf.h) s += v * area;
   for (const v of st.net.vol) s += v;
+  if (st.catchStore) for (const v of st.catchStore) s += v;
   return s;
 }
 
@@ -36,6 +39,10 @@ export function createEngine(sc: Scenario): EngineState {
   const riverCells = Int32Array.from(river);
   // Bring the river to its initial stage before measuring storage, so that isn't counted as inflow.
   resetRiver(sc.grid, surf, riverCells, stageAt(sc.river, 0));
+  const catchOf = new Int16Array(sc.grid.nx * sc.grid.ny).fill(-1);
+  sc.catchments?.forEach((ct, k) => {
+    for (const c of ct.cells) catchOf[c] = k;
+  });
   const st: EngineState = {
     t: 0,
     step: 0,
@@ -48,6 +55,8 @@ export function createEngine(sc: Scenario): EngineState {
     storage0: 0,
     riverCells,
     landCells: Int32Array.from(land),
+    catchStore: new Float64Array(sc.catchments?.length ?? 0),
+    catchOf,
   };
   st.storage0 = totalStorage(sc, st);
   return st;
@@ -66,13 +75,31 @@ export function stepEngine(sc: Scenario, st: EngineState): number {
   const level = stageAt(sc.river, st.t);
 
   const rain = rainRate(sc, st.t) * dt;
+  const cats = sc.catchments;
   for (const c of st.landCells) {
-    const wet = h[c] + rain;
+    let r = rain;
+    const k = st.catchOf[c];
+    if (k >= 0 && cats) {
+      const d = r * cats[k].directFraction;
+      st.catchStore[k] += d * area;
+      r -= d;
+    }
+    const wet = h[c] + r;
     const loss = Math.min(wet, grid.infil[c] * dt);
     h[c] = wet - loss;
     st.infilVol += loss * area;
   }
   st.rainVol += rain * area * st.landCells.length;
+  if (cats) {
+    for (let k = 0; k < cats.length; k++) {
+      const q = st.catchStore[k] * (1 - Math.exp(-dt / cats[k].lagS));
+      if (!(q > 0)) continue;
+      st.catchStore[k] -= q;
+      const j = st.net.index.get(cats[k].node);
+      if (j === undefined) st.surf.h[cats[k].cells[0]] += q / area;
+      else st.net.vol[j] += q;
+    }
+  }
 
   // Surface flow is sub-stepped so any coupling dt is stable (see maxStableDt). The river stage is a
   // boundary condition of the surface solver, so it is re-imposed every sub-step: forcing it only once
@@ -106,6 +133,10 @@ function validate(st: EngineState): void {
   const vol = st.net.vol;
   for (let k = 0; k < vol.length; k++) {
     if (!Number.isFinite(vol[k]) || vol[k] < -1e-9) throw new SimError(`Invalid node volume ${vol[k]} at node ${k}`, st.step);
+  }
+  for (let k = 0; k < st.catchStore.length; k++) {
+    const v = st.catchStore[k];
+    if (!Number.isFinite(v) || v < -1e-9) throw new SimError(`Invalid catchment store ${v} at ${k}`, st.step);
   }
 }
 
@@ -168,4 +199,15 @@ export function patchEngine(oldSc: Scenario, st: EngineState, newSc: Scenario): 
     if (v > keep) st.surf.h[newSc.network.nodes[j].cell] += (v - keep) / area;
   });
   st.net = next;
+  const nNew = newSc.catchments?.length ?? 0;
+  if (nNew !== st.catchStore.length) {
+    oldSc.catchments?.forEach((ct, k) => {
+      if (st.catchStore[k] > 0) st.surf.h[ct.cells[0]] += st.catchStore[k] / area;
+    });
+    st.catchStore = new Float64Array(nNew);
+  }
+  st.catchOf.fill(-1);
+  newSc.catchments?.forEach((ct, k) => {
+    for (const c of ct.cells) st.catchOf[c] = k;
+  });
 }

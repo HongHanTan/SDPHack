@@ -23,6 +23,7 @@ export function renderAssumptions(el: HTMLElement): void {
     ['Town', 'Taman Kyra synthetic zone: drainage network by Tay Zheheng (data/synthetic/taman_kyra_assets.json), street/house layout by TEH JIA JIE (TownshipEnvironment.tsx). Grid-local metres = team datum − (−80, −140).'],
     ['Grate D07', 'Baseline 40% blocked (team demo_inlet_40pct); grate edge = 4·√area·(1 − blockage).'],
     ['SWMM cross-check', 'Pipe peaks compared with EPA SWMM 5.2.4 runs by Tay Zheheng — see docs/swmm-crosscheck.md.'],
+    ['Catchments', 'SWMM-style: on four 1 ha catchments (Tay, hydrology.json; 80% impervious) the impervious share of rain drains into J01/J02/J04/J07 via a linear reservoir; the rest flows over the 2D surface.'],
     ['Costs','Indicative placeholders — replace with SDP quantity-surveyor rates.'],
   ];
   el.innerHTML = `<h2>Assumptions</h2><table>${rows.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('')}</table>`;

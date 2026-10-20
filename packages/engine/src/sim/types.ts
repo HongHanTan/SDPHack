@@ -72,6 +72,15 @@ export interface Thresholds {
   home: number;
 }
 
+/** Lumped SWMM-style catchment: on its cells, `directFraction` of the rain feeds a linear reservoir (lag `lagS`) that drains into `node`. */
+export interface Catchment {
+  id: string;
+  node: string;
+  cells: Int32Array;
+  directFraction: number;
+  lagS: number;
+}
+
 export interface Scenario {
   grid: Grid;
   network: Network;
@@ -82,6 +91,7 @@ export interface Scenario {
   frameEveryS: number;
   thresholds: Thresholds;
   sagCell: number;
+  catchments?: Catchment[];
 }
 
 export interface Frame {

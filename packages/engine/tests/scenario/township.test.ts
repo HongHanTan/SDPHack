@@ -83,3 +83,21 @@ describe('water balance (short storm)', () => {
     expect(runSimulation(short).metrics.balance.error).toBeLessThan(0.01);
   });
 });
+
+describe('SWMM-style catchments (Tay hydrology.json)', () => {
+  const sc = buildScenario([], 'synthetic_80mmh_60min');
+  it('builds four disjoint 1 ha catchments at J01/J02/J04/J07', () => {
+    expect(sc.catchments!.map((c) => c.node)).toEqual(['NODE-J01', 'NODE-J02', 'NODE-J04', 'NODE-J07']);
+    for (const c of sc.catchments!) {
+      // nearest-outlet assignment can leave a catchment short of 1 ha (J02's pool is 1469 cells)
+      expect(c.cells.length).toBeGreaterThan(1000);
+      expect(c.cells.length).toBeLessThanOrEqual(2500);
+      expect(c.directFraction).toBe(0.8);
+    }
+    const all = sc.catchments!.flatMap((c) => Array.from(c.cells));
+    expect(new Set(all).size).toBe(all.length);
+  });
+  it('can be disabled', () => {
+    expect(buildScenario([], 'synthetic_80mmh_60min', [], { catchments: false }).catchments).toBeUndefined();
+  });
+});

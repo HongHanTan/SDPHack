@@ -34,3 +34,6 @@ export const INFILTRATION_MMHR = { ROOF: 0, ROAD: 0, LAWN: 15, PARK: 25, POND: 0
 
 // dt is the coupling step; the surface is sub-stepped inside the engine.
 export const SIM = { dt: 0.5, recessionS: 3600, frameEveryS: 30 };
+
+/** SWMM-style catchment reservoir lag (s); tunable 60-1200. Catchment areas/imperviousness come from Tay's hydrology.json. */
+export const CATCHMENT = { lagS: 300 };

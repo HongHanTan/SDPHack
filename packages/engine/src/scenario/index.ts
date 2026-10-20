@@ -1,6 +1,7 @@
 import type { Scenario } from '../sim/types';
 import { BASELINE_BLOCKAGE, SIM, TAILWATER, THRESHOLDS, type TailwaterCase } from './config';
 import { applyInterventions, findNode, type InterventionId, type Township } from './interventions';
+import { buildCatchments } from './catchments';
 import { buildNetwork, makePipe, nodeSite } from './network';
 import { STORMS, type StormId } from './storms';
 import { buildTerrain, cellAt } from './terrain';
@@ -15,6 +16,7 @@ export interface ScenarioOptions {
   tailwater?: TailwaterCase;
   /** inlet_id → blocked fraction; defaults to BASELINE_BLOCKAGE (INLET-D07 40%). */
   blockage?: Record<string, number>;
+  catchments?: boolean; // default true: SWMM-style catchment loading (spec section 14)
 }
 
 /** Indicative placeholder rate for user-drawn pipes, RM per metre per metre of diameter. */
@@ -76,6 +78,7 @@ export function buildScenario(
     frameEveryS: SIM.frameEveryS,
     thresholds: THRESHOLDS,
     sagCell: hotspotCell(),
+    catchments: opts.catchments === false ? undefined : buildCatchments(grid),
   };
 }
 
@@ -86,5 +89,5 @@ export function scenarioKey(
   opts: ScenarioOptions = {},
 ): string {
   const pipes = custom.map((c) => `${c.from}>${c.to}@${c.diameter}`).join(',');
-  return `${stormId}|${opts.tailwater ?? 'normal'}|${blockageKey(opts.blockage ?? BASELINE_BLOCKAGE)}|${[...ids].sort().join(',')}|${pipes}`;
+  return `${stormId}|${opts.tailwater ?? 'normal'}|${blockageKey(opts.blockage ?? BASELINE_BLOCKAGE)}|${[...ids].sort().join(',')}|${pipes}` + '|' + (opts.catchments === false ? 'nocatch' : 'catch');
 }
