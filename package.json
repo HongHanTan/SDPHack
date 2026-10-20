@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run --exclude tests/story.test.ts",
-    "story": "vitest run tests/story.test.ts",
+    "test": "vitest run --exclude tests/story.test.ts --exclude tests/effects.drift.test.ts",
+    "story": "vitest run tests/story.test.ts tests/effects.drift.test.ts",
+    "effects": "tsx scripts/effects.ts",
     "tune": "tsx scripts/tune.ts"
   },
   "dependencies": {

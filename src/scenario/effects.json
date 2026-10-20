@@ -1,0 +1,62 @@
+{
+  "10yr": {
+    "upsize-trunk": {
+      "dSag": 0.111,
+      "dHomes": 1
+    },
+    "relief-pond": {
+      "dSag": -0.079,
+      "dHomes": -1
+    },
+    "detention-tank": {
+      "dSag": -0.048,
+      "dHomes": -1
+    },
+    "bioswales": {
+      "dSag": -0.056,
+      "dHomes": -1
+    },
+    "flap-gate": {
+      "dSag": -0.144,
+      "dHomes": -1
+    },
+    "sag-inlets": {
+      "dSag": -0.153,
+      "dHomes": -1
+    },
+    "pump": {
+      "dSag": -0.2,
+      "dHomes": -1
+    }
+  },
+  "100yr": {
+    "upsize-trunk": {
+      "dSag": 0.06,
+      "dHomes": 2
+    },
+    "relief-pond": {
+      "dSag": -0.063,
+      "dHomes": -1
+    },
+    "detention-tank": {
+      "dSag": -0.093,
+      "dHomes": -1
+    },
+    "bioswales": {
+      "dSag": -0.054,
+      "dHomes": 0
+    },
+    "flap-gate": {
+      "dSag": -0.109,
+      "dHomes": -1
+    },
+    "sag-inlets": {
+      "dSag": -0.146,
+      "dHomes": -2
+    },
+    "pump": {
+      "dSag": -0.155,
+      "dHomes": -2
+    }
+  }
+}
