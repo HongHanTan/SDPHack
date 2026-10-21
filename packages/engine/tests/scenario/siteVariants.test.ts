@@ -18,6 +18,12 @@ describe('withPipeDiameter', () => {
   });
 });
 
+describe('withPipeDiameter validation', () => {
+  it.each([0, -1, NaN, Infinity])('rejects diameter %s', (d) => {
+    expect(() => withPipeDiameter(TAMAN_KYRA, TAMAN_KYRA.assets.conduits[0].conduit_id, d)).toThrow();
+  });
+});
+
 describe('storm override', () => {
   const storm: Storm = { id: 'uploaded_rainfall', label: 'Uploaded rainfall', returnPeriod: 0, blockS: 300, intensity: [1e-5, 0], provisional: false, peakMinute: 0 };
   it('buildScenario uses it and scenarioKey differs', () => {
