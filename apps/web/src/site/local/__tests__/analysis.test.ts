@@ -7,7 +7,7 @@ import { buildScenario, type ScenarioOptions } from '@floodops/engine/scenario/i
 import type { Frame, Metrics } from '@floodops/engine/sim/types';
 import type { SimulationFramesResponse, SimulationRun } from '../../../types';
 import type { SiteProject, SiteProposal } from '../../types';
-import { createLocalSiteApi, MAX_RUNS_PER_PROJECT, type AnalysisEvent } from '../localSiteApi';
+import { createLocalSiteApi, MAX_RUNS_PER_PROJECT, RUN_NOT_RETAINED, type AnalysisEvent } from '../localSiteApi';
 import { ANALYSIS_POOL_MAX, analysisPoolSize, type EngineRunner } from '../runs';
 import { MemorySiteStore } from '../store';
 
@@ -207,7 +207,7 @@ describe('local site API — automated fix analysis', () => {
     expect(run.input_hash).toMatch(/^[0-9a-f]{64}$/);
     const fix = best.fix as { kind: 'upsize'; pipeId: string; diameterM: number };
     const original = site.assets.conduits.find((c) => c.conduit_id === 'PIPE-P07')!.diameter_m;
-    expect(run.input_snapshot!.intervention).toEqual({ kind: 'upsize', label: best.label, changes: [{ asset_id: 'PIPE-P07', before: original, after: fix.diameterM }] });
+    expect(run.input_snapshot!.intervention).toEqual({ kind: 'upsize', label: best.label, asset_id: 'PIPE-P07', changes: [{ asset_id: 'PIPE-P07', before: original, after: fix.diameterM }] });
     const stored = await runs();
     expect(stored.map((r) => r.run_id)).toEqual([run.run_id, result.baselineRunId]);
     const frames = await api.request<SimulationFramesResponse>(`/api/simulations/${run.run_id}/frames`);
@@ -221,12 +221,12 @@ describe('local site API — automated fix analysis', () => {
     // Storage and inlet fixes store an empty change list; relief records the new pipe.
     const storage = result.ranked.find((r) => r.fix.kind === 'storage')!;
     const s = await api.acceptFix(id, storage.resultKey);
-    expect(s.input_snapshot!.intervention).toEqual({ kind: 'storage', label: storage.label, changes: [] });
+    expect(s.input_snapshot!.intervention).toEqual({ kind: 'storage', label: storage.label, asset_id: 'NODE-J05', changes: [] });
     const relief = result.ranked.find((r) => r.fix.kind === 'relief');
     if (relief) {
       const r = await api.acceptFix(id, relief.resultKey);
       const f = relief.fix as { fromNode: string; toNode: string; diameterM: number };
-      expect(r.input_snapshot!.intervention).toEqual({ kind: 'relief', label: relief.label, changes: [{ asset_id: `RELIEF-${f.fromNode}-${f.toNode}`, before: null, after: f.diameterM }] });
+      expect(r.input_snapshot!.intervention).toEqual({ kind: 'relief', label: relief.label, asset_id: f.fromNode, changes: [{ asset_id: `RELIEF-${f.fromNode}-${f.toNode}`, before: null, after: f.diameterM }] });
     }
 
     // A proposal can still attach a manual pipe candidate (hashing unchanged).
@@ -234,6 +234,73 @@ describe('local site API — automated fix analysis', () => {
     const draft = { asset_id: 'PIPE-P07', scope: 'Upsize', owner: 'Eng', justification: 'Model', estimate_myr: null, estimate_source: '' };
     const proposal = await api.request<SiteProposal>(`/api/site-projects/${id}/proposals`, { ...draft, baseline_run_id: result.baselineRunId, candidate_run_id: cand.run.run_id });
     expect(proposal.comparison).toMatchObject({ candidate: { run_id: cand.run.run_id } });
+  });
+
+  describe('proposals with accepted fixes', () => {
+    const draft = { scope: 'Fix', owner: 'Eng', justification: 'Automated analysis', estimate_myr: null, estimate_source: '' };
+    const analysed = async () => {
+      const ctx = await setup();
+      const result = await ctx.api.analyse(ctx.id, () => {}, new AbortController().signal);
+      const propose = (extra: Record<string, unknown>) => ctx.api.request<SiteProposal>(`/api/site-projects/${ctx.id}/proposals`, { ...draft, baseline_run_id: result.baselineRunId, ...extra });
+      return { ...ctx, result, propose };
+    };
+
+    it('attaches a baseline and an accepted upsize fix', async () => {
+      const { api, id, result, propose } = await analysed();
+      const best = result.ranked.find((r) => r.fix.kind === 'upsize')!;
+      const run = await api.acceptFix(id, best.resultKey);
+      const proposal = await propose({ asset_id: 'PIPE-P07', candidate_run_id: run.run_id });
+      const fix = best.fix as { diameterM: number };
+      expect(proposal.comparison).toMatchObject({
+        baseline: { run_id: result.baselineRunId },
+        candidate: { run_id: run.run_id, input_hash: run.input_hash, metrics: { homes_flooded: 2 } },
+        changes: [{ asset_id: 'PIPE-P07', after: fix.diameterM }],
+        intervention: { kind: 'upsize', label: best.label, asset_id: 'PIPE-P07' },
+      });
+      await expect(propose({ asset_id: 'PIPE-P05', candidate_run_id: run.run_id })).rejects.toThrow(/must match the fix asset \(PIPE-P07\)/);
+      // Two baselines, or the fix as the baseline, are refused.
+      await expect(propose({ asset_id: 'PIPE-P07', candidate_run_id: result.baselineRunId })).rejects.toThrow(/baseline and intervention/);
+      await expect(propose({ asset_id: 'PIPE-P07', baseline_run_id: run.run_id, candidate_run_id: run.run_id })).rejects.toThrow(/baseline and intervention/);
+    });
+
+    it('attaches an accepted storage fix (no pipe changes), targeting its node', async () => {
+      const { api, id, result, propose } = await analysed();
+      const storage = result.ranked.find((r) => r.fix.kind === 'storage')!;
+      const run = await api.acceptFix(id, storage.resultKey);
+      const proposal = await propose({ asset_id: 'NODE-J05', candidate_run_id: run.run_id });
+      expect(proposal.asset_id).toBe('NODE-J05');
+      expect(proposal.comparison).toMatchObject({ candidate: { run_id: run.run_id }, changes: [], intervention: { kind: 'storage', label: storage.label, asset_id: 'NODE-J05' } });
+      await expect(propose({ asset_id: 'NODE-J07', candidate_run_id: run.run_id })).rejects.toThrow(/must match the fix asset \(NODE-J05\)/);
+    });
+
+    it('rejects a tampered fix snapshot, a run from another project and a pruned run', async () => {
+      const { api, id, result, propose, store } = await analysed();
+      const best = result.ranked[0];
+      const run = await api.acceptFix(id, best.resultKey);
+      const stored = (await store.getRun(run.run_id))!;
+      const intervention = stored.run.input_snapshot!.intervention as { kind: string; label: string; changes: { after: number }[] };
+      for (const tamper of [
+        (i: typeof intervention) => (i.label = 'Something else'),
+        (i: typeof intervention) => (i.changes[0].after = 1.5),
+        (i: typeof intervention) => (i.kind = 'storage'),
+        (i: typeof intervention) => (i.changes = []),
+      ]) {
+        const copy = structuredClone(stored);
+        tamper(copy.run.input_snapshot!.intervention as typeof intervention);
+        await store.putRun(copy);
+        await expect(propose({ asset_id: 'PIPE-P07', candidate_run_id: run.run_id })).rejects.toThrow(/do not match the declared change/);
+      }
+      await store.putRun(stored);
+      expect((await propose({ asset_id: 'PIPE-P07', candidate_run_id: run.run_id })).comparison).not.toBeNull();
+
+      // A run from another project.
+      const other = await api.request<SiteProject>('/api/site-projects', body);
+      await expect(api.request(`/api/site-projects/${other.project_id}/proposals`, { ...draft, asset_id: 'PIPE-P07', baseline_run_id: result.baselineRunId, candidate_run_id: run.run_id })).rejects.toThrow(/from this project/);
+
+      // A pruned run.
+      await store.deleteRun(run.run_id);
+      await expect(propose({ asset_id: 'PIPE-P07', candidate_run_id: run.run_id })).rejects.toThrow(RUN_NOT_RETAINED);
+    });
   });
 
   it('prunes after accepting, and forgets results on discard', async () => {

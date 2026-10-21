@@ -24,7 +24,25 @@ const DEBRIS = ['leaf_litter', 'sediment', 'plastic', 'mixed', 'none'];
 type Run = StoredRun['run'];
 type Change = { asset_id: string; before: number | null; after: number };
 /** What a run changed relative to the baseline (`kind` and `label` only for fixes from the automated analysis). */
-type Intervention = { kind?: FixAction['kind']; label?: string; changes: Change[] };
+/** For a fix, `asset_id` is the uploaded asset a proposal targets: the pipe (upsize) or node (relief start, storage, inlet). */
+type Intervention = { kind?: FixAction['kind']; label?: string; asset_id?: string; changes: Change[] };
+const FIX_KINDS: readonly string[] = ['upsize', 'relief', 'storage', 'inlet'] satisfies FixAction['kind'][];
+
+/** The intervention a run declares, rebuilt from its stored snapshot with only the known fields, or null if malformed. */
+function declaredIntervention(raw: unknown): Intervention | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  if (!Array.isArray(r.changes)) return null;
+  const changes: Change[] = [];
+  for (const c of r.changes as unknown[]) {
+    const x = (c ?? {}) as Record<string, unknown>;
+    if (typeof x.asset_id !== 'string' || typeof x.after !== 'number' || !(x.before === null || typeof x.before === 'number')) return null;
+    changes.push({ asset_id: x.asset_id, before: x.before as number | null, after: x.after });
+  }
+  if (r.kind === undefined) return changes.length === 1 && r.label === undefined && r.asset_id === undefined ? { changes } : null;
+  if (typeof r.kind !== 'string' || !FIX_KINDS.includes(r.kind) || typeof r.label !== 'string' || !r.label || typeof r.asset_id !== 'string' || !r.asset_id) return null;
+  return { kind: r.kind as FixAction['kind'], label: r.label, asset_id: r.asset_id, changes };
+}
 
 /** Streamed while the automated fix analysis runs (spec §6, §9). */
 export type AnalysisEvent =
@@ -115,6 +133,13 @@ function snapshotFor(project: SiteProject, intervention: Intervention | null) {
 }
 
 /** The asset changes a fix makes, where a before/after value is meaningful (none for storage and inlets). */
+/** The uploaded asset a fix is proposed for. */
+function fixTarget(fix: FixAction): string {
+  if (fix.kind === 'upsize') return fix.pipeId;
+  if (fix.kind === 'relief') return fix.fromNode;
+  return fix.nodeId;
+}
+
 function changesOf(fix: FixAction, site: SiteSpec): Change[] {
   if (fix.kind === 'upsize') return [{ asset_id: fix.pipeId, before: site.assets.conduits.find((c) => c.conduit_id === fix.pipeId)?.diameter_m ?? null, after: fix.diameterM }];
   if (fix.kind === 'relief') return [{ asset_id: `RELIEF-${fix.fromNode}-${fix.toNode}`, before: null, after: fix.diameterM }];
@@ -213,19 +238,23 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
       if (!base || !cand) fail(RUN_NOT_RETAINED);
       if (base!.projectId !== p.project_id || cand!.projectId !== p.project_id) fail(invalid);
       const a = base!.run.input_snapshot as { intervention?: unknown };
-      const c = cand!.run.input_snapshot as { intervention?: { changes: Change[] } | null };
+      const c = cand!.run.input_snapshot as { intervention?: unknown };
       if (a.intervention !== null || !c.intervention) fail(invalid);
-      const changes = c.intervention!.changes;
-      if (changes.length !== 1 || changes[0].asset_id !== str('asset_id')) fail('Proposal target must match the candidate pipe.');
+      const declared = declaredIntervention(c.intervention) ?? fail('Candidate inputs do not match the declared change and project.');
+      const changes = declared.changes;
+      if (declared.kind) {
+        if (declared.asset_id !== str('asset_id')) fail(`Proposal target must match the fix asset (${declared.asset_id}).`);
+      } else if (changes[0].asset_id !== str('asset_id')) fail('Proposal target must match the candidate pipe.');
       if (base!.run.status !== 'succeeded' || cand!.run.status !== 'succeeded') fail('Both attached runs must have finished successfully.');
       const [baseResults, candResults] = await Promise.all([store.getRunResults(baselineId), store.getRunResults(candidateId)]);
       if (!baseResults || !candResults) fail(RUN_NOT_RETAINED);
-      const [expected, reference] = await Promise.all([sha256Hex(canonicalJson(snapshotFor(p, { changes: [changes[0]] }))), sha256Hex(canonicalJson(snapshotFor(p, null)))]);
+      const [expected, reference] = await Promise.all([sha256Hex(canonicalJson(snapshotFor(p, declared))), sha256Hex(canonicalJson(snapshotFor(p, null)))]);
       if (expected !== cand!.run.input_hash || reference !== base!.run.input_hash) fail('Candidate inputs do not match the declared change and project.');
       comparison = {
         baseline: { run_id: base!.run.run_id, input_hash: base!.run.input_hash, metrics: baseResults!.metrics },
         candidate: { run_id: cand!.run.run_id, input_hash: cand!.run.input_hash, metrics: candResults!.metrics },
         changes,
+        ...(declared.kind ? { intervention: { kind: declared.kind, label: declared.label, asset_id: declared.asset_id } } : {}),
       };
     }
     const inspections = await records<InspectionRecord>('inspections', p.project_id);
@@ -493,7 +522,7 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
       for (const c of generateCandidates(diagnosis, site)) {
         const label = fixLabel(c.fix, site);
         try {
-          prepared.push({ ...c, label, costRM: fixCostRM(c.fix, site), location: fixLocation(c.fix, site), site: applyFix(site, c.fix), intervention: { kind: c.fix.kind, label, changes: changesOf(c.fix, site) } });
+          prepared.push({ ...c, label, costRM: fixCostRM(c.fix, site), location: fixLocation(c.fix, site), site: applyFix(site, c.fix), intervention: { kind: c.fix.kind, label, asset_id: fixTarget(c.fix), changes: changesOf(c.fix, site) } });
         } catch (e) {
           log(`${label}: skipped: ${e instanceof Error ? e.message : String(e)}`);
         }
