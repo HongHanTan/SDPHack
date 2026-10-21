@@ -5,7 +5,7 @@ import { TAMAN_KYRA as S } from '../../src/scenario/site';
 
 const snap = JSON.stringify(S);
 const j07 = S.assets.nodes.find((n) => n.node_id === 'NODE-J07')!;
-const down = S.assets.nodes.filter((n) => n.invert_elevation_m < j07.invert_elevation_m)[0];
+const down = S.assets.nodes.find((n) => n.invert_elevation_m < j07.invert_elevation_m && !S.assets.conduits.some((c) => c.from_node_id === j07.node_id && c.to_node_id === n.node_id))!;
 const fixes: FixAction[] = [
   { kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.75 },
   { kind: 'relief', fromNode: j07.node_id, toNode: down.node_id, diameterM: 0.6 },
@@ -74,5 +74,38 @@ describe('fix actions', () => {
     const b = S.assets.nodes.find((n) => n.node_id === p7.to_node_id)!.position_m;
     expect(fixLocation(fixes[0], S)).toEqual({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
     expect(STANDARD_PIPE_SIZES_M.length).toBe(13);
+  });
+});
+
+describe('storage and relief guards', () => {
+  it('network vmax equals the requested volume on the sample site', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const { buildSiteFromFiles } = await import('../../src/import/buildSite');
+    const { buildScenario } = await import('../../src/scenario/index');
+    const dir = resolve(__dirname, '../../../../data/samples/taman_kyra_site');
+    const rd = (name: string) => ({ name, text: readFileSync(resolve(dir, name), 'utf8') });
+    const { site } = buildSiteFromFiles({ inp: rd('taman_kyra.inp'), geojson: rd('taman_kyra_layout.geojson'), asc: rd('taman_kyra_ground.asc') });
+    const s = applyFix(site!, { kind: 'storage', nodeId: 'NODE-J05', volumeM3: 800 });
+    const net = buildScenario([], 'synthetic_80mmh_60min', [], { site: s }).network;
+    const n = net.nodes.find((x) => x.id === 'NODE-J05')!;
+    expect(Math.abs(n.area * n.maxDepth - 800) / 800).toBeLessThan(0.01);
+  });
+  it('never reduces capacity', () => {
+    const big = structuredClone(S);
+    big.assets.nodes.find((x) => x.node_id === 'NODE-J05')!.storage_area_m2 = 5000;
+    expect(applyFix(big, { kind: 'storage', nodeId: 'NODE-J05', volumeM3: 10 }).assets.nodes.find((x) => x.node_id === 'NODE-J05')!.storage_area_m2).toBe(5000);
+  });
+  it('relief guards', () => {
+    expect(() => applyFix(S, { kind: 'relief', fromNode: j07.node_id, toNode: j07.node_id, diameterM: 0.6 })).toThrow();
+    const dup = applyFix(S, fixes[1]);
+    expect(() => applyFix(dup, fixes[1])).toThrow(/already exists/);
+    const c = S.assets.conduits[0];
+    expect(() => applyFix(S, { kind: 'relief', fromNode: c.from_node_id, toNode: c.to_node_id, diameterM: 0.6 })).toThrow();
+    const near = structuredClone(S);
+    const a = near.assets.nodes.find((x) => x.node_id === down.node_id)!;
+    const o = near.assets.nodes.find((x) => x.node_id === j07.node_id)!;
+    a.position_m = { ...o.position_m, x: o.position_m.x + 0.5 };
+    expect(() => applyFix(near, fixes[1])).toThrow(/1 m/);
   });
 });

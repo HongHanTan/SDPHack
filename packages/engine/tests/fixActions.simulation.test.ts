@@ -16,7 +16,7 @@ describe('fix actions simulate on the sample package', () => {
   const run = (s: typeof site) => runSimulation(buildScenario([], 'synthetic_80mmh_60min', [], { site: s!, storm: storm!, blockage: { 'INLET-D07': 0.4 } })).metrics;
   const base = run(site);
   const j07 = site!.assets.nodes.find((n) => n.node_id === 'NODE-J07')!;
-  const down = site!.assets.nodes.find((n) => n.invert_elevation_m < j07.invert_elevation_m - 0.1 && n.node_id !== j07.node_id)!;
+  const down = site!.assets.nodes.find((n) => n.invert_elevation_m < j07.invert_elevation_m - 0.1 && !site!.assets.conduits.some((c) => c.from_node_id === j07.node_id && c.to_node_id === n.node_id))!;
   const fixes: FixAction[] = [
     { kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.75 },
     { kind: 'relief', fromNode: j07.node_id, toNode: down.node_id, diameterM: 0.6 },

@@ -67,7 +67,8 @@ export function buildNetwork(grid: Grid, blockage: Record<string, number> = {}, 
     const inlet = inletByNode.get(nd.node_id);
     return makeNode(grid, nd.node_id, p.x, p.y, {
       invert: nd.invert_elevation_m,
-      ...(nd.storage_area_m2 ? { area: nd.storage_area_m2 } : {}),
+      // A storage chamber holds area × asset depth (= the requested volume), whatever the grid ground says.
+      ...(nd.storage_area_m2 ? { area: nd.storage_area_m2, maxDepth: nd.max_depth_m } : {}),
       inletPerimeter: inlet ? inletPerimeter(inlet.grate_area_m2, blockage[inlet.inlet_id] ?? 0) : 0,
       // The outfall headwall chamber keeps its asset depth, so canal backflow can fill it and throttle P08.
       ...(nd.node_type === 'outfall' ? { maxDepth: nd.max_depth_m } : {}),

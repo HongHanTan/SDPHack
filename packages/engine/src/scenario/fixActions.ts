@@ -1,4 +1,5 @@
 import { CUSTOM_PIPE_RM_PER_M_PER_M_DIA } from './index';
+import { MANHOLE } from './config';
 import type { AssetConduit } from './layout';
 import type { SiteSpec } from './site';
 import { withPipeDiameter } from './siteVariants';
@@ -44,7 +45,10 @@ export const fixId = (fix: FixAction): string => {
   }
 };
 
-/** A new site with the fix applied (the input is never mutated); throws on invalid input. */
+/**
+ * A new site with the fix applied (the input is never mutated); throws on invalid input. An extra grate raises both
+ * the surface inlet capacity (grate area) and the catchment capture (curve scaled by (n+1)/n), as a real grate does.
+ */
 export function applyFix(site: SiteSpec, fix: FixAction): SiteSpec {
   if (fix.kind === 'upsize') return withPipeDiameter(site, fix.pipeId, fix.diameterM);
   const copy = structuredClone(site);
@@ -53,6 +57,11 @@ export function applyFix(site: SiteSpec, fix: FixAction): SiteSpec {
     positive(fix.diameterM, 'pipe diameter');
     const a = nodeOf(copy, fix.fromNode);
     const b = nodeOf(copy, fix.toNode);
+    if (a.node_id === b.node_id) throw new Error('Relief pipe must connect two different nodes');
+    if (reliefLength(a, b) < 1) throw new Error('Relief pipe is shorter than 1 m');
+    if (copy.assets.conduits.some((c) => c.conduit_id === `RELIEF-${a.node_id}-${b.node_id}` || (c.from_node_id === a.node_id && c.to_node_id === b.node_id))) {
+      throw new Error(`A pipe ${fix.fromNode} → ${fix.toNode} already exists`);
+    }
     if (!(a.invert_elevation_m > b.invert_elevation_m)) throw new Error(`Relief pipe ${fix.fromNode} → ${fix.toNode} runs uphill`);
     copy.assets.conduits.push({
       conduit_id: `RELIEF-${fix.fromNode}-${fix.toNode}`,
@@ -66,7 +75,8 @@ export function applyFix(site: SiteSpec, fix: FixAction): SiteSpec {
     positive(fix.volumeM3, 'storage volume');
     const n = nodeOf(copy, fix.nodeId);
     if (!(n.max_depth_m > 0)) throw new Error(`Node ${fix.nodeId} has no depth for storage`);
-    n.storage_area_m2 = fix.volumeM3 / n.max_depth_m;
+    // Never reduce capacity: keep any larger existing plan area (default manhole area).
+    n.storage_area_m2 = Math.max(fix.volumeM3 / n.max_depth_m, n.storage_area_m2 ?? 0, MANHOLE.area);
   } else {
     positive(fix.grates, 'grate count');
     const n = nodeOf(copy, fix.nodeId);
@@ -86,6 +96,7 @@ export function fixLabel(fix: FixAction, site: SiteSpec): string {
     case 'upsize': return `Upsize ${fix.pipeId} to Ø${mm(fix.diameterM)}`;
     case 'relief': return `Relief pipe ${fix.fromNode} → ${fix.toNode} (Ø${mm(fix.diameterM)})`;
     case 'storage': return `${Math.round(fix.volumeM3)} m³ storage at ${fix.nodeId}`;
+    // An extra grate raises both surface inlet capacity and catchment capture.
     case 'inlet': return fix.grates === 1 ? `Extra inlet grate at ${fix.nodeId}` : `${fix.grates} extra inlet grates at ${fix.nodeId}`;
   }
 }
