@@ -3,6 +3,8 @@ type F={name:string;text:string};
 export type SwmmConversion={bundleFile?:{name:string;text:string;role:'bundle'};originals:string[];errors:string[];warnings:string[];notes:string[];counts:Record<string,number>};
 const sha=async(text:string)=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 const isLayout=(text:string)=>{try{return JSON.parse(text)?.type==='FeatureCollection';}catch{return false;}};
+/** A picked .asc is only meaningful next to a SWMM .inp. */
+export const ascWithoutInp=(names:string[])=>names.some(n=>n.toLowerCase().endsWith('.asc'))&&!names.some(n=>n.toLowerCase().endsWith('.inp'));
 export async function convertSwmmPackage(files:F[]):Promise<SwmmConversion>{
  const out:SwmmConversion={originals:files.map(f=>f.name),errors:[],warnings:[],notes:[],counts:{}};
  const lower=(f:F)=>f.name.toLowerCase();

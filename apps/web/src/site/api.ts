@@ -2,7 +2,8 @@ import { apiClient } from '../api/client';
 import type { SimulationRun, SimulationFramesResponse, SimulationMetricsResponse } from '../types';
 import type { SiteResult } from './types';
 export async function siteRequest<T>(path:string,body?:unknown,signal?:AbortSignal):Promise<T>{
- const response=await fetch(`${apiClient.getBaseUrl()}${path}`,{...(body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),signal});
+ let response:Response;
+ try{response=await fetch(`${apiClient.getBaseUrl()}${path}`,{...(body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),signal});}catch(e){if((e as Error)?.name==='AbortError')throw e;throw new Error(`Project API unreachable at ${apiClient.getBaseUrl()}. Start the local API on port 8000 (see md/UPLOAD_FIRST_WALKTHROUGH.md).`);}
  const value=await response.json().catch(()=>null);
  if(!response.ok)throw new Error(value?.error?.message??`Site API returned ${response.status}. Check the API connection.`);
  return value as T;

@@ -19,6 +19,7 @@ dist/
 
 # Local scratch, recordings and logs (keep curated demo packs only)
 tmp/
+!tmp/foundation-road-smoke.ts
 output/*.log
 output/recorded-walkthrough/
 output/site-onboarding-demo/

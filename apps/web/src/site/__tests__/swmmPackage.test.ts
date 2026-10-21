@@ -1,7 +1,8 @@
-import {describe,expect,it} from 'vitest';
+import {describe,expect,it,vi} from 'vitest';
+import {siteRequest} from '../api';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {convertSwmmPackage} from '../swmmPackage';
+import {convertSwmmPackage,ascWithoutInp} from '../swmmPackage';
 const dir=join(__dirname,'../../../public/site-examples/taman-kyra-swmm');
 const read=(name:string)=>({name,text:readFileSync(join(dir,name),'utf8')});
 const three=()=>['taman_kyra.inp','taman_kyra_layout.geojson','taman_kyra_ground.asc'].map(read);
@@ -24,5 +25,13 @@ describe('SWMM package conversion',()=>{
  it('rejects two .inp files',async()=>{
   const r=await convertSwmmPackage([read('taman_kyra.inp'),read('taman_kyra_p07_750.inp')]);
   expect(r.errors.join(' ')).toMatch(/Only one \.inp/);
+ });
+});
+describe('portal edge cases',()=>{
+ it('flags a lone .asc',()=>{expect(ascWithoutInp(['g.asc'])).toBe(true);expect(ascWithoutInp(['g.asc','m.inp'])).toBe(false);expect(ascWithoutInp(['nodes.csv'])).toBe(false);});
+ it('explains an unreachable API',async()=>{
+  const spy=vi.spyOn(globalThis,'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+  await expect(siteRequest('/x')).rejects.toThrow(/Project API unreachable at .*port 8000/);
+  spy.mockRestore();
  });
 });
