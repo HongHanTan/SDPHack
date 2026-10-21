@@ -72,7 +72,19 @@ export class MemorySiteStore implements SiteStore {
 }
 
 export const DB_NAME = 'floodops-local-sites';
-const DB_VERSION = 1;
+// v2: v1 databases created before `runResults` existed lack that store; the upgrade creates any missing store.
+const DB_VERSION = 2;
+
+/** Creates every object store the app needs that the database doesn't have yet (keeps existing data). */
+function ensureStores(db: IDBDatabase): void {
+  const has = (name: string) => db.objectStoreNames.contains(name);
+  if (!has('projects')) db.createObjectStore('projects', { keyPath: 'project_id' });
+  if (!has('runs')) db.createObjectStore('runs', { keyPath: 'run.run_id' }).createIndex('projectId', 'projectId');
+  if (!has('runResults')) db.createObjectStore('runResults');
+  if (!has('inspections')) db.createObjectStore('inspections', { keyPath: 'rec.id' }).createIndex('projectId', 'projectId');
+  if (!has('proposals')) db.createObjectStore('proposals', { keyPath: 'rec.id' }).createIndex('projectId', 'projectId');
+  if (!has('media')) db.createObjectStore('media');
+}
 
 const done = <T>(req: IDBRequest<T>) =>
   new Promise<T>((resolve, reject) => {
@@ -93,18 +105,7 @@ export class IndexedDbSiteStore implements SiteStore {
         }
         let gaveUp = false;
         const req = indexedDB.open(DB_NAME, DB_VERSION);
-        req.onupgradeneeded = (e) => {
-          const db = req.result;
-          if (e.oldVersion < 1) {
-            db.createObjectStore('projects', { keyPath: 'project_id' });
-            db.createObjectStore('runs', { keyPath: 'run.run_id' }).createIndex('projectId', 'projectId');
-            db.createObjectStore('runResults');
-            db.createObjectStore('inspections', { keyPath: 'rec.id' }).createIndex('projectId', 'projectId');
-            db.createObjectStore('proposals', { keyPath: 'rec.id' }).createIndex('projectId', 'projectId');
-            db.createObjectStore('media');
-          }
-          // Later versions: add `if (e.oldVersion < 2) { … }` here.
-        };
+        req.onupgradeneeded = () => ensureStores(req.result);
         req.onsuccess = () => {
           const db = req.result;
           // An open that completes after we gave up (blocked) must not leak a connection.

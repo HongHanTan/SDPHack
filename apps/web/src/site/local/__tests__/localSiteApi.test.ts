@@ -295,6 +295,19 @@ describe('local site API — engine runs', () => {
     });
   }
 
+  it('labels a non-quota storage failure as a storage error, not a full disk', async () => {
+    class BrokenStore extends MemorySiteStore {
+      async putRunResults(_id: string, _r: RunResults): Promise<void> {
+        throw new DOMException("Failed to execute 'transaction' on 'IDBDatabase': One of the specified object stores was not found.", 'NotFoundError');
+      }
+    }
+    const api = createLocalSiteApi(new BrokenStore(), instantRunner());
+    const project = await api.request<SiteProject>('/api/site-projects', body);
+    await expect(api.execute(project.project_id, { acknowledge_assumptions: true }, () => {}, new AbortController().signal)).rejects.toThrow(/could not be saved in this browser/);
+    const [run] = (await api.request<{ items: SimulationRun[] }>(`/api/site-projects/${project.project_id}/simulations`)).items;
+    expect(run).toMatchObject({ status: 'failed', error: { code: 'STORAGE_ERROR' } });
+  });
+
   it('records a small failed run when the results cannot be stored', async () => {
     class FullStore extends MemorySiteStore {
       async putRunResults(_id: string, _r: RunResults): Promise<void> {
@@ -303,7 +316,7 @@ describe('local site API — engine runs', () => {
     }
     const api = createLocalSiteApi(new FullStore(), instantRunner());
     const project = await api.request<SiteProject>('/api/site-projects', body);
-    await expect(api.execute(project.project_id, { acknowledge_assumptions: true }, () => {}, new AbortController().signal)).rejects.toThrow(/storage .*may be full/);
+    await expect(api.execute(project.project_id, { acknowledge_assumptions: true }, () => {}, new AbortController().signal)).rejects.toThrow(/storage for the site is full/);
     const [run] = (await api.request<{ items: SimulationRun[] }>(`/api/site-projects/${project.project_id}/simulations`)).items;
     expect(run).toMatchObject({ status: 'failed', error: { code: 'STORAGE_FULL' } });
     expect(await api.runDepth(run.run_id)).toBeNull();

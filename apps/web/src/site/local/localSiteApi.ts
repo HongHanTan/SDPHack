@@ -244,8 +244,15 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
         if (final.results) await store.putRunResults(run.run_id, final.results);
         await store.putRun({ run: final.run, projectId: p.project_id });
       } catch (e) {
-        // Usually a quota error: record a small failed run so it does not stay "running".
-        final = { run: failedRun('STORAGE_FULL', `The results could not be saved: this browser's storage for the site may be full (${e instanceof Error ? e.message : String(e)}). Delete old projects or free disk space, then run again.`), results: null };
+        // Record a small failed run so it does not stay "running". Only a quota error means the storage is full.
+        const detail = e instanceof Error ? e.message : String(e);
+        final = {
+          run:
+            e instanceof DOMException && e.name === 'QuotaExceededError'
+              ? failedRun('STORAGE_FULL', `The results could not be saved: this browser's storage for the site is full (${detail}). Delete old projects or free disk space, then run again.`)
+              : failedRun('STORAGE_ERROR', `The results could not be saved in this browser (${detail}). Reload the page and run again.`),
+          results: null,
+        };
         try {
           await store.putRun({ run: final.run, projectId: p.project_id });
         } catch (again) {
