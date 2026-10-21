@@ -29,9 +29,10 @@ describe('SWMM package conversion',()=>{
 });
 describe('portal edge cases',()=>{
  it('flags a lone .asc',()=>{expect(ascWithoutInp(['g.asc'])).toBe(true);expect(ascWithoutInp(['g.asc','m.inp'])).toBe(false);expect(ascWithoutInp(['nodes.csv'])).toBe(false);});
- it('explains an unreachable API',async()=>{
-  const spy=vi.spyOn(globalThis,'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
-  await expect(siteRequest('/x')).rejects.toThrow(/Project API unreachable at .*port 8000/);
+ it('answers site requests in the browser, never over the network',async()=>{
+  const spy=vi.spyOn(globalThis,'fetch');
+  await expect(siteRequest('/x')).rejects.toThrow('Unknown local site request: /x');
+  expect(spy).not.toHaveBeenCalled();
   spy.mockRestore();
  });
 });
