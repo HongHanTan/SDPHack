@@ -1,7 +1,7 @@
 import { createElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { timingHint } from '../FixFinderPanel';
-import { FixPinCard, KEEP_EVENTS_ON_PIN, PinAnchor } from '../FixPins';
+import { FixPinCard, KEEP_EVENTS_ON_PIN, PinAnchor, PinMarker } from '../FixPins';
 import type { PinView } from '../fixPinText';
 
 type Props = Record<string, unknown> & { children?: ReactNode };
@@ -43,6 +43,22 @@ describe('FixPinCard', () => {
     (buttons[1].props.onClick as () => void)();
     expect(onOk).toHaveBeenCalledWith('k1');
     expect(onDismiss).toHaveBeenCalledOnce();
+  });
+});
+
+describe('PinMarker', () => {
+  it('is a legacy-style map pin button that toggles its card and reports whether it is open', () => {
+    const onToggle = vi.fn();
+    const [closed] = elements(createElement(PinMarker, { title: '⚠ Bottleneck: PIPE-P07 full at 01:30', open: false, onToggle }));
+    expect(closed.type).toBe('button');
+    expect(closed.props['aria-expanded']).toBe(false);
+    expect(closed.props.className).toContain('site-map-pin');
+    (closed.props.onClick as () => void)();
+    expect(onToggle).toHaveBeenCalledOnce();
+    const [open] = elements(createElement(PinMarker, { open: true, pending: true, onToggle }));
+    expect(open.props['aria-expanded']).toBe(true);
+    expect(open.props.className).toContain('open');
+    expect(open.props.className).toContain('pending');
   });
 });
 

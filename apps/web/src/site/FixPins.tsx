@@ -1,7 +1,7 @@
 // Map pins for the automated fix analysis (spec §9): one drei Html card per problem, placed in team coordinates
 // (x east, y north, z up → three [x, z, −y]) at the problem's location on the uploaded city. Html removes its own DOM
 // node on unmount; nothing else is created here.
-import { useMemo, type ReactNode, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, useState, type ReactNode, type SyntheticEvent } from 'react';
 import { Html } from '@react-three/drei';
 import { LoaderCircle } from 'lucide-react';
 import type { SiteSpec } from '@floodops/engine/scenario/site';
@@ -13,6 +13,10 @@ export interface MapPin {
   x: number;
   y: number;
   content: ReactNode;
+  /** Short marker tooltip, e.g. the problem heading. */
+  title?: string;
+  /** Marker shows a spinner while the analysis for this problem is still running. */
+  pending?: boolean;
 }
 
 /** Height of a pin's tip above the ground (m). */
@@ -33,13 +37,40 @@ export function PinAnchor({ children }: { children: ReactNode }) {
   return <div className="site-fix-pin-anchor" {...KEEP_EVENTS_ON_PIN}><div className="site-fix-pin" role="dialog" aria-label="Automated analysis finding">{children}</div></div>;
 }
 
+/**
+ * Map marker in the legacy viewer's pin style (round head with an icon, short stem): the problem shows as a pin first;
+ * pressing it opens its card above the pin. One card is open at a time.
+ */
+export function PinMarker({ title, pending, open, onToggle }: { title?: string; pending?: boolean; open: boolean; onToggle: () => void }) {
+  return <button type="button" className={`site-map-pin ${open ? 'open' : ''} ${pending ? 'pending' : ''}`} aria-expanded={open} aria-label={title ? `${title}: ${open ? 'hide' : 'show'} suggested fix` : 'Show suggested fix'} title={title} onClick={onToggle}>
+    <span className="site-map-pin-head">{pending ? <LoaderCircle size={13} className="site-spin"/> : <span aria-hidden>⚠</span>}</span>
+  </button>;
+}
+
 export function FixPins({ site, pins }: { site: SiteSpec; pins: readonly MapPin[] }) {
   const placed = useMemo(() => pins.map((p) => ({ ...p, position: [p.x, groundAt(site, p.x, p.y) + LIFT_M, -p.y] as [number, number, number] })), [site, pins]);
+  const [openId, setOpenId] = useState<string | null>(null);
+  // A pin that disappears (seek back, Dismiss, OK) closes its card.
+  useEffect(() => {
+    if (openId && !pins.some((p) => p.id === openId)) setOpenId(null);
+  }, [pins, openId]);
+  useEffect(() => {
+    if (!openId) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenId(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openId]);
   return <>
     {placed.map((p) => (
-      // zIndexRange keeps the cards under the workspace's sticky header and tabs; pointer events stay on for the buttons.
-      <Html key={p.id} position={p.position} zIndexRange={[20, 10]} style={{ pointerEvents: 'auto' }}>
-        <PinAnchor>{p.content}</PinAnchor>
+      // zIndexRange keeps pins under the workspace's sticky header and tabs; the open pin sits above the others.
+      <Html key={p.id} position={p.position} zIndexRange={openId === p.id ? [30, 21] : [20, 10]} style={{ pointerEvents: 'auto' }}>
+        <div className="site-map-pin-anchor" {...KEEP_EVENTS_ON_PIN}>
+          {openId === p.id && <div className="site-fix-pin site-fix-pin-popover" role="dialog" aria-label="Automated analysis finding">
+            <button type="button" className="site-fix-pin-close" aria-label="Close" onClick={() => setOpenId(null)}>×</button>
+            {p.content}
+          </div>}
+          <PinMarker title={p.title} pending={p.pending} open={openId === p.id} onToggle={() => setOpenId((cur) => (cur === p.id ? null : p.id))} />
+        </div>
       </Html>
     ))}
   </>;

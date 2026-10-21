@@ -119,13 +119,17 @@ export function useFixAnalysis({ projectId, baseline, site, active, onAccepted, 
     restart: () => setNonce((n) => n + 1),
     mapPins(t) {
       if (phase === 'idle' || !diagnosis) return [];
-      return visibleProblems(diagnosis.problems, t, dismissed).map((p) => ({
-        id: p.id,
-        x: p.location.x,
-        y: p.location.y,
-        content: <FixPinCard view={pinView(p, { phase, progress: state.progress, diagnosis: state.result?.diagnosis, ranked: state.result?.ranked })}
-          busy={accepting !== null} onOk={(key) => void accept(key)} onDismiss={() => setDismissed((d) => new Set(d).add(p.id))}/>,
-      }));
+      return visibleProblems(diagnosis.problems, t, dismissed).map((p) => {
+        const view = pinView(p, { phase, progress: state.progress, diagnosis: state.result?.diagnosis, ranked: state.result?.ranked });
+        return {
+          id: p.id,
+          x: p.location.x,
+          y: p.location.y,
+          title: view.heading,
+          pending: view.pending,
+          content: <FixPinCard view={view} busy={accepting !== null} onOk={(key) => void accept(key)} onDismiss={() => setDismissed((d) => new Set(d).add(p.id))}/>,
+        };
+      });
     },
   };
 }
