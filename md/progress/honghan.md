@@ -199,3 +199,10 @@ Plan: `docs/superpowers/plans/2026-10-23-team-ui-engine.md`
 | P12-3 | Analysis in the local site API (worker pool, streaming log) | ✅ done (d393ab8, proposals fix d256f4a) |
 | P12-4 | Automatic analysis, playback-timed map pins, OK to side-by-side | ✅ done (8f21935) |
 | P12-5 | Final review + fixes (clickable pins, J07 wording and fallback fix, abort race, timing text, memory) | ✅ done (4b4bb1b) |
+
+## Phase 13: Fix finder demo variety (3 zones)
+| Task | Description | Status |
+|---|---|---|
+| P12-6 | Pins first, card beside the pin | ✅ done (b094d5d, 4fea180) |
+| P13-1 | Finder: series bottlenecks, per-problem candidates, no storage | ✅ done (8270628) |
+| P13-2 | Synthetic 3-zone demo package (upsize, relief, extra inlet) | ✅ done (4b9639d) — finder picks upsize P02, relief J04→J08, extra grate at J07 |
