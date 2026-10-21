@@ -119,6 +119,37 @@ describe('generateCandidates', () => {
     expect(big[4].problemId).toBe('bottleneck:PIPE-P07');
   });
 
+  it('always keeps the ponding inlet when two bottlenecks fill the list', () => {
+    const big = generateCandidates(diagnose(stormFrames, metrics, S), S);
+    expect(big).toHaveLength(6);
+    expect(big[5]).toEqual({ fix: { kind: 'inlet', nodeId: 'NODE-J07', grates: 1 }, problemId: 'ponding:NODE-J07' });
+    expect(big.slice(0, 5).map((x) => x.fix.kind)).toEqual(['upsize', 'upsize', 'upsize', 'upsize', 'relief']);
+  });
+
+  it('skips a relief target that already has a direct pipe from A and walks on', () => {
+    // J07 → J08 → J09 → OUT01; J07 already has a second pipe straight to J09 (the first qualifying node).
+    const site = structuredClone(S);
+    site.key = 'test-direct-pipe';
+    const out = site.assets.nodes.find((n) => n.node_id === 'NODE-OUT01')!;
+    site.assets.nodes.push({ ...structuredClone(out), node_id: 'NODE-J09', node_type: 'junction', invert_elevation_m: 8.4, position_m: { x: 40, y: -75, z: 8.4 } });
+    const p08 = site.assets.conduits.find((c) => c.conduit_id === 'PIPE-P08')!;
+    p08.to_node_id = 'NODE-J09';
+    site.assets.conduits.push(
+      { conduit_id: 'PIPE-P09', from_node_id: 'NODE-J09', to_node_id: 'NODE-OUT01', diameter_m: 0.75, length_m: 25, manning_n: 0.013 },
+      { conduit_id: 'PIPE-X', from_node_id: 'NODE-J07', to_node_id: 'NODE-J09', diameter_m: 0.3, length_m: 75, manning_n: 0.013 },
+    );
+    const c = generateCandidates(diagnose(p07Only, metrics, site), site);
+    expect(c.find((x) => x.fix.kind === 'relief')!.fix).toEqual({ kind: 'relief', fromNode: 'NODE-J07', toNode: 'NODE-OUT01', diameterM: 0.6 });
+  });
+
+  it('skips a relief target whose RELIEF id already exists', () => {
+    const site = structuredClone(S);
+    site.key = 'test-relief-exists';
+    site.assets.conduits.push({ conduit_id: 'RELIEF-NODE-J07-NODE-OUT01', from_node_id: 'NODE-J08', to_node_id: 'NODE-OUT01', diameter_m: 0.3, length_m: 50, manning_n: 0.013 });
+    const c = generateCandidates(diagnose(p07Only, metrics, site), site);
+    expect(c.some((x) => x.fix.kind === 'relief')).toBe(false);
+  });
+
   it('drops duplicates when two bottlenecks would give the same fix', () => {
     // P05 and P07 both full: relief from J07 and storage upstream are generated once.
     const big = generateCandidates(diagnose(stormFrames, metrics, S), S);
@@ -203,7 +234,7 @@ describe('logLines', () => {
     expect(logLines.recommended({ ...relief, label: 'Relief pipe NODE-J07 → NODE-OUT01 (Ø600)' }, baseline, 'NODE-J07')).toBe(
       '✔ Recommended: Relief pipe NODE-J07 → NODE-OUT01 (Ø600): homes 5 → 1, flood volume 640 → 500 m³, NODE-J07 peak 0.42 → 0.35 m, about RM 30,000 (indicative)',
     );
-    expect(logLines.noImprovingFix()).toBe('No tested fix reduced flooding');
+    expect(logLines.noImprovingFix()).toBe('No tested fix reduced flooding here');
   });
 
   it('formats the problem pin lines', () => {

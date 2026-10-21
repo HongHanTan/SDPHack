@@ -205,7 +205,9 @@ export function generateCandidates(diagnosis: Diagnosis, site: SiteSpec): Candid
       seen.add(cur);
       const n = nodeOf(cur);
       if (!n) break;
-      if (links >= 2 && n.invert_elevation_m < a.invert_elevation_m - 0.1) {
+      // Skip a B that already has a pipe A → B or a relief pipe with that id (applyFix would refuse it).
+      const taken = site.assets.conduits.some((c) => c.conduit_id === `RELIEF-${aId}-${cur}` || (c.from_node_id === aId && c.to_node_id === cur));
+      if (links >= 2 && !taken && n.invert_elevation_m < a.invert_elevation_m - 0.1) {
         push({ kind: 'relief', fromNode: aId, toNode: cur, diameterM: first.diameter_m }, tie(aProblem));
         break;
       }
@@ -229,8 +231,10 @@ export function generateCandidates(diagnosis: Diagnosis, site: SiteSpec): Candid
   }
 
   // 4. Extra inlet: +1 grate at the hotspot, tied to its ponding problem (skipped when the hotspot does not pond).
+  //    It always keeps its slot; the fixes above fill the rest in order.
   if (hotspotPonds && nodeOf(diagnosis.hotspotNodeId)) {
-    push({ kind: 'inlet', nodeId: diagnosis.hotspotNodeId, grates: 1 }, `ponding:${diagnosis.hotspotNodeId}`);
+    const inlet: Candidate = { fix: { kind: 'inlet', nodeId: diagnosis.hotspotNodeId, grates: 1 }, problemId: `ponding:${diagnosis.hotspotNodeId}` };
+    return [...out.slice(0, MAX_CANDIDATES - 1), inlet];
   }
 
   return out.slice(0, MAX_CANDIDATES);
@@ -302,7 +306,7 @@ export const logLines = {
     const cost = Math.round(best.costRM).toLocaleString('en-US');
     return `✔ Recommended: ${best.label}: homes ${baseline.homesFlooded} → ${o.homesFlooded}, flood volume ${vol(baseline.floodVolumeM3)} → ${vol(o.floodVolumeM3)} m³, ${hotspot} peak ${m2(baseline.hotspotPeakM)} → ${m2(o.hotspotPeakM)} m, about RM ${cost} (indicative)`;
   },
-  noImprovingFix: () => 'No tested fix reduced flooding',
+  noImprovingFix: () => NO_IMPROVING_FIX_TEXT,
   problem(p: Problem): string {
     const what = p.kind === 'bottleneck' ? 'full' : `water ${m2(PONDING_DEPTH_M)} m`;
     return `⚠ ${kindName(p)}: ${p.assetId} ${what} at ${mmss(p.onsetS)}`;
