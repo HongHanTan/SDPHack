@@ -197,8 +197,7 @@ S1 70 4 3 6 0
       { t: 0, v: 4 },
       { t: 1800, v: 5 },
     ]);
-    expect(m.subcatchments[0]).toEqual({ id: 'S1', outlet: 'J1', areaHa: 1.5, imperviousPercent: 70 });
-    expect([m.subcatchments[0].rainGage, m.subcatchments[0].widthM, m.subcatchments[0].slopePercent]).toEqual(['G1', 120, 0.5]);
+    expect(m.subcatchments[0]).toEqual({ id: 'S1', outlet: 'J1', areaHa: 1.5, imperviousPercent: 70, rainGage: 'G1', widthM: 120, slopePercent: 0.5 });
     expect(m.subareas.get('S1')).toEqual([0.012, 0.1, 1.5, 5, 20]);
     expect(m.subareaRouting.get('S1')).toEqual({ routeTo: 'IMPERVIOUS', pctRouted: 40 });
     expect(m.infiltration.get('S1')).toEqual([70, 4, 3, 6, 0]);

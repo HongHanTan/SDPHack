@@ -3,10 +3,6 @@ export interface InpSubcatchment {
   outlet: string;
   areaHa: number;
   imperviousPercent: number;
-  /**
-   * `rainGage`, `widthM` and `slopePercent` are non-enumerable, so deep-equality checks and spreads of a
-   * subcatchment still see only `{ id, outlet, areaHa, imperviousPercent }`. Read them by name.
-   */
   rainGage: string;
   widthM: number;
   slopePercent: number;
@@ -152,16 +148,7 @@ export function parseInp(text: string): InpModel {
         m.xsections.set(t[0], { shape: (t[1] ?? '').toUpperCase(), geom1: num(t[2]) });
         break;
       case 'SUBCATCHMENTS':
-        m.subcatchments.push(
-          Object.defineProperties(
-            { id: t[0], outlet: t[2], areaHa: num(t[3]), imperviousPercent: num(t[4]) },
-            {
-              rainGage: { value: t[1], enumerable: false },
-              widthM: { value: num(t[5]), enumerable: false },
-              slopePercent: { value: num(t[6]), enumerable: false },
-            },
-          ) as InpSubcatchment,
-        );
+        m.subcatchments.push({ id: t[0], outlet: t[2], areaHa: num(t[3]), imperviousPercent: num(t[4]), rainGage: t[1], widthM: num(t[5]), slopePercent: num(t[6]) });
         break;
       case 'COORDINATES':
         m.coordinates.set(t[0], [num(t[1]), num(t[2])]);

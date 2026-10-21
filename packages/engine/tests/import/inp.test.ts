@@ -42,7 +42,7 @@ describe('parseInp', () => {
     expect(m.xsections.get('P2')).toEqual({ shape: 'RECT_CLOSED', geom1: 0.6 });
   });
   it('reads subcatchments, coordinates, polygons and the list of sections', () => {
-    expect(m.subcatchments).toEqual([{ id: 'S1', outlet: 'J1', areaHa: 1.5, imperviousPercent: 70 }]);
+    expect(m.subcatchments).toEqual([{ id: 'S1', outlet: 'J1', areaHa: 1.5, imperviousPercent: 70, rainGage: 'G1', widthM: 100, slopePercent: 1 }]);
     expect(m.coordinates.get('J2')).toEqual([1050, 2000]);
     expect(m.polygons.get('S1')).toHaveLength(3);
     expect(m.sections).toContain('PUMPS');
