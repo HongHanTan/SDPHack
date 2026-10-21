@@ -155,3 +155,30 @@ At most 3 problems, ordered by onset.
 **Analysis details:**
 - A collapsible "Analysis details" section in the sidebar holds the real streaming log (§6 message formats) and the list of every tested fix with its result, including "no effect".
 - Footer as §7.
+
+## 10. Amendment: per-problem fixes and a 3-zone demo package (2026-10-21)
+
+**Why:** the current sample has a single cause (PIPE-P07), so every pin suggests an upsize. The finder should be able to show different fix types where different causes exist. The demo needs a synthetic package in which they do.
+
+### Finder changes (engine)
+
+- **Series bottlenecks become one problem.** Bottleneck pipes that are consecutive along the flow path (the downstream end of one is the upstream end of the next) are merged into one problem, located at the most upstream pipe of the chain.
+- **Candidates are generated per problem**, in onset order, for up to 3 problems:
+  - **Bottleneck chain:**
+    - upsize the most-loaded pipe in the chain to the next 2 standard sizes;
+    - one relief pipe from the chain's upstream node to the first node at least 1 link below the chain's last pipe, with invert(B) < invert(A) − 0.1. Diameter = the largest pipe in the chain. The existing duplicate-route and uphill pre-filters apply.
+  - **Ponding node:** an extra inlet grate at that node.
+- **Storage is no longer generated.** The storage action stays in the engine.
+- **Cap:** at most 8 candidates. Each problem keeps at least 1 candidate.
+- **Best fix per problem:** the best improving fix tied to that problem. The §9/§3 fallback to another problem's fix applies only if none of its own fixes improves.
+
+### Demo package `data/samples/taman_kyra_demo/` (synthetic, alongside the existing sample)
+
+- **Base:** the same Taman Kyra layout and ground (houses, roads, pond, canal). The network is changed so there are 3 independent problem zones in different parts of the map:
+  - **Zone A, trunk:** one undersized trunk pipe. Its best fix is an **upsize**.
+  - **Zone B:** two undersized pipes in series on a separate branch. Upsizing either one alone barely helps; a **relief pipe** bypassing both is best.
+  - **Zone C:** a low street with a small, partly blocked grate and spare pipe capacity below it. Only **extra inlet grates** help.
+- **Plausible values:** MSMA ranges for diameters, n and slopes.
+- **Labelling:** everything is labelled synthetic in the file titles and README; the coordinates are the illustrative projected metres used by the sample.
+- **Generator:** `npm -w @floodops/engine run sample` also writes this package, and the drift test covers it. The portal links it as "Download the 3-zone demo (synthetic)".
+- **Reproducibility:** a slow test (in `story`) runs the real finder pipeline on the package. It asserts 3 problems in different zones, with best fixes of upsize, relief and extra inlet respectively. Nothing is hard-coded: the engine must arrive at these outcomes.
