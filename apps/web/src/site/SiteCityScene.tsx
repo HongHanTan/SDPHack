@@ -16,6 +16,10 @@ import { FlowRibbons } from '../view/FlowRibbons';
 import { SiteEnvironment } from './SiteEnvironment';
 import { siteFrame } from './siteFrame';
 import { cityCamera, fogScale, rainPlacement } from './siteCity';
+import { LinkedCamera, type CameraLink } from '../story/LinkedCamera';
+
+/** Links already posed at a site's overview (keyed by site), so a remount keeps the shared user view. */
+const posedLinks = new WeakMap<CameraLink, string>();
 
 export interface SiteCitySceneProps {
   site: SiteSpec;
@@ -30,6 +34,8 @@ export interface SiteCitySceneProps {
   raining: boolean;
   /** Uploaded rain at the shown time (mm/h); drives the rain look. */
   rainMmh?: number;
+  /** Shared camera (side-by-side compare): both panes follow either pane's orbit. Starts at this site's overview. */
+  cameraLink?: CameraLink;
 }
 
 /** SceneLook sets the shared fog distances for the built-in site; stretch them for larger sites. */
@@ -47,11 +53,16 @@ function FogScale({ k }: { k: number }) {
   return null;
 }
 
-export function SiteCityScene({ site, phase, xray, selected, onSelect, frame, depth, raining, rainMmh }: SiteCitySceneProps) {
+export function SiteCityScene({ site, phase, xray, selected, onSelect, frame, depth, raining, rainMmh, cameraLink }: SiteCitySceneProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const f = useMemo(() => siteFrame(site), [site.key]);
   const cam = useMemo(() => cityCamera(f), [f]);
   const rain = useMemo(() => rainPlacement(f), [f]);
+  // Tay's LinkedCamera applies link.pose when it mounts, so the pose is set to this site's overview first (once per link and site).
+  if (cameraLink && posedLinks.get(cameraLink) !== site.key) {
+    cameraLink.pose = { position: [...cam.position], target: [...cam.target] };
+    posedLinks.set(cameraLink, site.key);
+  }
   const controlsRef = useRef<any>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const keyLightRef = useRef<THREE.DirectionalLight>(null);
@@ -94,6 +105,7 @@ export function SiteCityScene({ site, phase, xray, selected, onSelect, frame, de
         <SceneLook ambient={ambientRef} keyLight={keyLightRef} fill={fillLightRef} />
         <FogScale k={fogScale(f)} />
         <OrbitControls ref={controlsRef} makeDefault target={cam.target} enableDamping maxDistance={cam.maxDistance} maxPolarAngle={Math.PI / 2.05} />
+        {cameraLink && <LinkedCamera controlsRef={controlsRef} link={cameraLink} />}
 
         <group position={rain.position} scale={rain.scale}>
           <RainEffect active={raining} stormIntensityMmh={rainMmh ?? 80} />
