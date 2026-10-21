@@ -38,14 +38,16 @@ const P07 = pipeIdx('PIPE-P07');
 const J07 = nodeIdx(site.hotspotNodeId);
 const J07_CELL = sc.network.nodes[J07].cell;
 
+/** Set by a test to make the extra inlet improve (it has no effect by default). */
+let inletHelps = false;
+
 /** What a scripted run gives: homes flooded and hotspot peak per fix kind (from the site key suffix). */
 function outcomeFor(opts: ScenarioOptions): { homes: number; peak: number } {
   const key = opts.site!.key;
   const suffix = key.includes('|') ? key.slice(key.indexOf('|') + 1) : '';
   if (!suffix) return { homes: 5, peak: 0.5 };
   if (suffix.startsWith('relief:')) return { homes: 3, peak: 0.3 };
-  if (suffix.startsWith('storage:')) return { homes: 4, peak: 0.4 };
-  if (suffix.startsWith('inlet:')) return { homes: 5, peak: 0.5 }; // no effect
+  if (suffix.startsWith('inlet:')) return inletHelps ? { homes: 4, peak: 0.4 } : { homes: 5, peak: 0.5 }; // no effect by default
   return { homes: 2, peak: 0.2 }; // upsize
 }
 
@@ -164,8 +166,8 @@ describe('local site API — automated fix analysis', () => {
     expect(candidates.find((c) => c.fix.kind === 'inlet')).toMatchObject({ improved: false, label: 'Extra inlet grate at NODE-J07', costRM: 8000 });
     expect(candidates.find((c) => c.fix.kind === 'upsize')).toMatchObject({ improved: true, metrics: { homes_flooded: 2 } });
 
-    // Ranking: upsizes (2 homes), relief (3), storage (4); inlet is "no effect".
-    expect(result.ranked.map((r) => r.fix.kind)).toEqual(['upsize', 'upsize', 'relief', 'storage']);
+    // Ranking: upsizes (2 homes), relief (3); inlet is "no effect". Storage is not generated (spec §10).
+    expect(result.ranked.map((r) => r.fix.kind)).toEqual(['upsize', 'upsize', 'relief']);
     expect(result.ranked[0]).toMatchObject({ fix: { kind: 'upsize', pipeId: 'PIPE-P07' }, problemId: 'bottleneck:PIPE-P07', outcome: { homesFlooded: 2 } });
     expect(result.ranked[0].location).toEqual(expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }));
     expect(result.noEffect).toEqual(['Extra inlet grate at NODE-J07']);
@@ -218,10 +220,7 @@ describe('local site API — automated fix analysis', () => {
     expect(await api.acceptFix(id, best.resultKey)).toEqual(run);
     expect(await runs()).toHaveLength(2);
 
-    // Storage and inlet fixes store an empty change list; relief records the new pipe.
-    const storage = result.ranked.find((r) => r.fix.kind === 'storage')!;
-    const s = await api.acceptFix(id, storage.resultKey);
-    expect(s.input_snapshot!.intervention).toEqual({ kind: 'storage', label: storage.label, asset_id: 'NODE-J05', changes: [] });
+    // A relief fix records the new pipe.
     const relief = result.ranked.find((r) => r.fix.kind === 'relief');
     if (relief) {
       const r = await api.acceptFix(id, relief.resultKey);
@@ -263,14 +262,20 @@ describe('local site API — automated fix analysis', () => {
       await expect(propose({ asset_id: 'PIPE-P07', baseline_run_id: run.run_id, candidate_run_id: run.run_id })).rejects.toThrow(/baseline and intervention/);
     });
 
-    it('attaches an accepted storage fix (no pipe changes), targeting its node', async () => {
-      const { api, id, result, propose } = await analysed();
-      const storage = result.ranked.find((r) => r.fix.kind === 'storage')!;
-      const run = await api.acceptFix(id, storage.resultKey);
-      const proposal = await propose({ asset_id: 'NODE-J05', candidate_run_id: run.run_id });
-      expect(proposal.asset_id).toBe('NODE-J05');
-      expect(proposal.comparison).toMatchObject({ candidate: { run_id: run.run_id }, changes: [], intervention: { kind: 'storage', label: storage.label, asset_id: 'NODE-J05' } });
-      await expect(propose({ asset_id: 'NODE-J07', candidate_run_id: run.run_id })).rejects.toThrow(/must match the fix asset \(NODE-J05\)/);
+    it('attaches an accepted inlet fix (no pipe changes), targeting its node', async () => {
+      inletHelps = true;
+      try {
+        const { api, id, result, propose } = await analysed();
+        const inlet = result.ranked.find((r) => r.fix.kind === 'inlet')!;
+        const run = await api.acceptFix(id, inlet.resultKey);
+        expect(run.input_snapshot!.intervention).toEqual({ kind: 'inlet', label: inlet.label, asset_id: 'NODE-J07', changes: [] });
+        const proposal = await propose({ asset_id: 'NODE-J07', candidate_run_id: run.run_id });
+        expect(proposal.asset_id).toBe('NODE-J07');
+        expect(proposal.comparison).toMatchObject({ candidate: { run_id: run.run_id }, changes: [], intervention: { kind: 'inlet', label: inlet.label, asset_id: 'NODE-J07' } });
+        await expect(propose({ asset_id: 'NODE-J05', candidate_run_id: run.run_id })).rejects.toThrow(/must match the fix asset \(NODE-J07\)/);
+      } finally {
+        inletHelps = false;
+      }
     });
 
     it('rejects a tampered fix snapshot, a run from another project and a pruned run', async () => {
@@ -408,10 +413,10 @@ describe('local site API — automated fix analysis', () => {
       const lines = logs();
       const skip = lines.findIndex((l) => l === 'Relief pipe NODE-J07 → NODE-OUT01 (Ø600): skipped: Relief pipe runs uphill');
       expect(skip).toBeGreaterThan(0);
-      expect(lines[skip + 1]).toMatch(/^Generating 4 candidate fixes: /);
+      expect(lines[skip + 1]).toMatch(/^Generating 3 candidate fixes: /);
       expect(lines[skip + 1]).not.toMatch(/Relief/);
-      expect(engines.calls).toHaveLength(4);
-      expect(result.ranked.map((r) => r.fix.kind)).toEqual(['upsize', 'upsize', 'storage']);
+      expect(engines.calls).toHaveLength(3);
+      expect(result.ranked.map((r) => r.fix.kind)).toEqual(['upsize', 'upsize']);
     } finally {
       reject.kind = null;
     }

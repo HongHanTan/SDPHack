@@ -1,7 +1,7 @@
 /**
  * Automated fix finder (simulation-based optimisation, no LLM): pure diagnosis of a baseline run,
  * candidate fix generation tied to problems, ranking of simulated results, and the log message formats.
- * Spec: docs/superpowers/specs/2026-10-21-automated-fix-finder-design.md (§3–§6, §9).
+ * Spec: docs/superpowers/specs/2026-10-21-automated-fix-finder-design.md (§3–§6, §9, §10).
  */
 import { fixId, STANDARD_PIPE_SIZES_M, type FixAction } from '../scenario/fixActions';
 import type { SiteSpec } from '../scenario/site';
@@ -25,7 +25,7 @@ export interface DiagnoseOptions {
 
 export const FULL_LOAD = 0.999;
 export const PONDING_DEPTH_M = 0.15;
-export const MAX_CANDIDATES = 6;
+export const MAX_CANDIDATES = 8;
 export const MAX_PROBLEMS = 3;
 export const NO_IMPROVING_FIX_TEXT = 'No tested fix reduced flooding here';
 
@@ -34,7 +34,10 @@ export interface NodeDiagnosis { nodeId: string; floods: boolean; floodingFrames
 export interface Problem {
   id: string;
   kind: 'bottleneck' | 'ponding';
+  /** Bottleneck: the most upstream pipe of the chain; ponding: the node. */
   assetId: string;
+  /** Bottleneck only: the full pipes in series (the downstream end of one is the upstream end of the next), most upstream first. */
+  pipeIds?: string[];
   onsetS: number;
   /** Ponding only: what set the onset — the node's first `flooding` status, or the hotspot street depth reaching 0.15 m. */
   onsetBy?: 'flooding' | 'depth';
@@ -76,6 +79,41 @@ function pipeMid(site: SiteSpec, pipeId: string) {
   const a = nodePos(site, c.from_node_id);
   const b = nodePos(site, c.to_node_id);
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+/**
+ * Bottleneck pipes grouped into chains of pipes in series (the downstream end of one is the upstream end of the next),
+ * most upstream first. Where several full pipes leave or join a node, the higher-ranked pipe (bottleneck order) links;
+ * the others start or end their own chains. Chains are ordered by their best-ranked pipe.
+ */
+function bottleneckChains(bottlenecks: ReadonlyArray<PipeDiagnosis>, site: SiteSpec): PipeDiagnosis[][] {
+  const conduit = new Map(site.assets.conduits.map((c) => [c.conduit_id, c]));
+  const rank = new Map(bottlenecks.map((b, i) => [b.pipeId, i]));
+  const next = new Map<string, PipeDiagnosis>();
+  const hasPrev = new Set<string>();
+  for (const b of bottlenecks) {
+    const c = conduit.get(b.pipeId);
+    if (!c) continue;
+    const n = bottlenecks.find((x) => x !== b && !hasPrev.has(x.pipeId) && conduit.get(x.pipeId)?.from_node_id === c.to_node_id);
+    if (n) {
+      next.set(b.pipeId, n);
+      hasPrev.add(n.pipeId);
+    }
+  }
+  const seen = new Set<string>();
+  const walk = (start: PipeDiagnosis) => {
+    const chain: PipeDiagnosis[] = [];
+    for (let p: PipeDiagnosis | undefined = start; p && !seen.has(p.pipeId); p = next.get(p.pipeId)) {
+      seen.add(p.pipeId);
+      chain.push(p);
+    }
+    return chain;
+  };
+  const chains: PipeDiagnosis[][] = [];
+  for (const b of bottlenecks) if (!hasPrev.has(b.pipeId)) chains.push(walk(b));
+  for (const b of bottlenecks) if (!seen.has(b.pipeId)) chains.push(walk(b)); // a loop of full pipes has no head
+  const best = (chain: PipeDiagnosis[]) => Math.min(...chain.map((p) => rank.get(p.pipeId)!));
+  return chains.sort((a, b) => best(a) - best(b));
 }
 
 export function diagnose(
@@ -138,21 +176,28 @@ export function diagnose(
     if (i >= 0 && (!prev || frames[i].timestamp_s < prev.s)) pondOnset.set(hotspot, { s: frames[i].timestamp_s, by: 'depth' });
   }
 
-  // Priority: top bottleneck, hotspot ponding, second bottleneck, other ponding nodes (most flooding frames first).
-  const bottleneckProblem = (p: PipeDiagnosis): Problem => ({
-    id: `bottleneck:${p.pipeId}`, kind: 'bottleneck', assetId: p.pipeId, onsetS: p.onsetS!, location: pipeMid(site, p.pipeId),
+  // Priority: top bottleneck chain, hotspot ponding, second chain, other ponding nodes (most flooding frames first),
+  // remaining chains. A chain is a run of full pipes in series and is one problem at its most upstream pipe (§10).
+  const chains = bottleneckChains(bottlenecks, site);
+  const bottleneckProblem = (chain: PipeDiagnosis[]): Problem => ({
+    id: `bottleneck:${chain[0].pipeId}`,
+    kind: 'bottleneck',
+    assetId: chain[0].pipeId,
+    pipeIds: chain.map((p) => p.pipeId),
+    onsetS: Math.min(...chain.map((p) => p.onsetS!)),
+    location: pipeMid(site, chain[0].pipeId),
   });
   const pondingProblem = (nodeId: string): Problem => ({
     id: `ponding:${nodeId}`, kind: 'ponding', assetId: nodeId, onsetS: pondOnset.get(nodeId)!.s, onsetBy: pondOnset.get(nodeId)!.by, location: nodePos(site, nodeId),
   });
   const pool: Problem[] = [];
-  if (bottlenecks[0]) pool.push(bottleneckProblem(bottlenecks[0]));
+  if (chains[0]) pool.push(bottleneckProblem(chains[0]));
   if (pondOnset.has(hotspot)) pool.push(pondingProblem(hotspot));
-  if (bottlenecks[1]) pool.push(bottleneckProblem(bottlenecks[1]));
+  if (chains[1]) pool.push(bottleneckProblem(chains[1]));
   for (const n of [...flooding].sort((a, b) => b.floodingFrames - a.floodingFrames)) {
     if (n.nodeId !== hotspot) pool.push(pondingProblem(n.nodeId));
   }
-  for (const b of bottlenecks.slice(2)) pool.push(bottleneckProblem(b));
+  for (const c of chains.slice(2)) pool.push(bottleneckProblem(c));
   const problems = pool.slice(0, MAX_PROBLEMS).sort((a, b) => a.onsetS - b.onsetS);
 
   return {
@@ -174,74 +219,81 @@ export interface Candidate { fix: FixAction; problemId: string }
 const outPipe = (site: SiteSpec, nodeId: string) =>
   site.assets.conduits.filter((c) => c.from_node_id === nodeId).sort((a, b) => b.diameter_m - a.diameter_m)[0];
 
-/** Candidate fixes (spec §4, §9), each tied to a problem; at most 6, duplicates dropped. */
+/**
+ * At most `max` candidates, input order kept: first every problem's first candidate, then the rest in order
+ * (so each problem keeps at least one).
+ */
+export function capCandidates<T extends Candidate>(list: ReadonlyArray<T>, max = MAX_CANDIDATES): T[] {
+  if (list.length <= max) return [...list];
+  const keep = new Set<T>();
+  const problems = new Set<string>();
+  for (const c of list) {
+    if (!problems.has(c.problemId)) {
+      problems.add(c.problemId);
+      keep.add(c);
+    }
+  }
+  for (const c of list) {
+    if (keep.size >= max) break;
+    keep.add(c);
+  }
+  return list.filter((c) => keep.has(c));
+}
+
+/**
+ * Candidate fixes per problem (spec §10), in onset order for up to 3 problems; at most 8, duplicates dropped.
+ * - Bottleneck chain: upsize its most-loaded pipe to the next 2 standard sizes, and one relief pipe from the chain's
+ *   upstream node A to the first node B at least 1 link below the chain's last pipe with invert(B) < invert(A) − 0.1,
+ *   at the chain's largest diameter (skipping a B that already has a pipe from A or a relief pipe with that id).
+ * - Ponding node: one extra inlet grate at that node.
+ * Storage is not generated (the action stays available in the engine).
+ */
 export function generateCandidates(diagnosis: Diagnosis, site: SiteSpec): Candidate[] {
   const out: Candidate[] = [];
-  const problemIds = new Set(diagnosis.problems.map((p) => p.id));
-  const tie = (id: string) => (problemIds.has(id) ? id : diagnosis.problems[0]?.id);
-  const push = (fix: FixAction, problemId: string | undefined) => {
-    if (problemId && !out.some((c) => fixId(c.fix) === fixId(fix))) out.push({ fix, problemId });
+  const push = (fix: FixAction, problemId: string) => {
+    if (!out.some((c) => fixId(c.fix) === fixId(fix))) out.push({ fix, problemId });
   };
   const nodeOf = (id: string) => site.assets.nodes.find((n) => n.node_id === id);
-  const top = diagnosis.bottlenecks[0];
-  const hotspotPonds = problemIds.has(`ponding:${diagnosis.hotspotNodeId}`);
-  if (!top && !diagnosis.worstFloodingNodeId && !hotspotPonds) return [];
+  const conduitOf = (id: string) => site.assets.conduits.find((c) => c.conduit_id === id);
+  const pipeDiag = new Map(diagnosis.pipes.map((p) => [p.pipeId, p]));
 
-  // 1. Upsize: the next 2 standard sizes above each of the top 2 bottlenecks.
-  for (const b of diagnosis.bottlenecks.slice(0, 2)) {
-    if (b.diameterM === null) continue;
-    for (const d of STANDARD_PIPE_SIZES_M.filter((s) => s > b.diameterM! + 1e-9).slice(0, 2)) {
-      push({ kind: 'upsize', pipeId: b.pipeId, diameterM: d }, tie(`bottleneck:${b.pipeId}`));
+  for (const problem of [...diagnosis.problems].sort((a, b) => a.onsetS - b.onsetS).slice(0, MAX_PROBLEMS)) {
+    if (problem.kind === 'ponding') {
+      if (nodeOf(problem.assetId)) push({ kind: 'inlet', nodeId: problem.assetId, grates: 1 }, problem.id);
+      continue;
     }
-  }
+    const chain = (problem.pipeIds ?? [problem.assetId]).map(conduitOf).filter((c) => c !== undefined);
+    if (!chain.length) continue;
 
-  // 2. Relief: from the top bottleneck's upstream node (else the worst flooding node / ponding hotspot)
-  //    to the first node ≥ 2 links downstream whose invert is > 0.1 m lower.
-  const topPipe = top && site.assets.conduits.find((c) => c.conduit_id === top.pipeId);
-  const aId = topPipe ? topPipe.from_node_id : diagnosis.worstFloodingNodeId ?? diagnosis.hotspotNodeId;
-  const aProblem = topPipe ? `bottleneck:${top.pipeId}` : `ponding:${aId}`;
-  const a = nodeOf(aId);
-  const first = a && outPipe(site, aId);
-  if (a && first) {
-    const seen = new Set([aId]);
-    let cur = first.to_node_id;
-    for (let links = 1; !seen.has(cur); links++) {
+    // Upsize the most-loaded pipe (peak load, then minutes full; the upstream one on a tie).
+    const load = (id: string) => pipeDiag.get(id)?.peakLoad ?? 0;
+    const full = (id: string) => pipeDiag.get(id)?.surchargedMin ?? 0;
+    const most = [...chain].sort((a, b) => load(b.conduit_id) - load(a.conduit_id) || full(b.conduit_id) - full(a.conduit_id))[0];
+    for (const d of STANDARD_PIPE_SIZES_M.filter((s) => s > most.diameter_m + 1e-9).slice(0, 2)) {
+      push({ kind: 'upsize', pipeId: most.conduit_id, diameterM: d }, problem.id);
+    }
+
+    // Relief bypassing the whole chain.
+    const aId = chain[0].from_node_id;
+    const a = nodeOf(aId);
+    if (!a) continue;
+    const diameterM = Math.max(...chain.map((c) => c.diameter_m));
+    let cur = chain[chain.length - 1].to_node_id;
+    const seen = new Set([aId, cur]);
+    for (let next = outPipe(site, cur); next && !seen.has(next.to_node_id); next = outPipe(site, cur)) {
+      cur = next.to_node_id;
       seen.add(cur);
-      const n = nodeOf(cur);
-      if (!n) break;
+      const b = nodeOf(cur);
+      if (!b) break;
       // Skip a B that already has a pipe A → B or a relief pipe with that id (applyFix would refuse it).
       const taken = site.assets.conduits.some((c) => c.conduit_id === `RELIEF-${aId}-${cur}` || (c.from_node_id === aId && c.to_node_id === cur));
-      if (links >= 2 && !taken && n.invert_elevation_m < a.invert_elevation_m - 0.1) {
-        push({ kind: 'relief', fromNode: aId, toNode: cur, diameterM: first.diameter_m }, tie(aProblem));
+      if (!taken && b.invert_elevation_m < a.invert_elevation_m - 0.1) {
+        push({ kind: 'relief', fromNode: aId, toNode: cur, diameterM }, problem.id);
         break;
       }
-      const next = outPipe(site, cur);
-      if (!next) break;
-      cur = next.to_node_id;
     }
   }
-
-  // 3. Storage upstream of the top bottleneck: at the node feeding its upstream node through the largest
-  //    incoming pipe (the main trunk), else at its upstream node; skipped when that node is under 0.5 m deep.
-  if (topPipe) {
-    const feeder = site.assets.conduits
-      .filter((c) => c.to_node_id === topPipe.from_node_id)
-      .sort((x, y) => y.diameter_m - x.diameter_m)[0];
-    const s = nodeOf(feeder ? feeder.from_node_id : topPipe.from_node_id);
-    if (s && s.max_depth_m >= 0.5) {
-      const volumeM3 = Math.max(200, Math.ceil((diagnosis.floodVolumeM3 * 1.2) / 100) * 100);
-      push({ kind: 'storage', nodeId: s.node_id, volumeM3 }, tie(`bottleneck:${top.pipeId}`));
-    }
-  }
-
-  // 4. Extra inlet: +1 grate at the hotspot, tied to its ponding problem (skipped when the hotspot does not pond).
-  //    It always keeps its slot; the fixes above fill the rest in order.
-  if (hotspotPonds && nodeOf(diagnosis.hotspotNodeId)) {
-    const inlet: Candidate = { fix: { kind: 'inlet', nodeId: diagnosis.hotspotNodeId, grates: 1 }, problemId: `ponding:${diagnosis.hotspotNodeId}` };
-    return [...out.slice(0, MAX_CANDIDATES - 1), inlet];
-  }
-
-  return out.slice(0, MAX_CANDIDATES);
+  return capCandidates(out);
 }
 
 export interface Outcome { homesFlooded: number; floodVolumeM3: number; hotspotPeakM: number }
@@ -343,7 +395,8 @@ export const logLines = {
   noImprovingFix: () => NO_IMPROVING_FIX_TEXT,
   problem(p: Problem): string {
     const what = p.kind === 'bottleneck' ? 'full' : p.onsetBy === 'flooding' ? 'overflowing' : `water ${m2(PONDING_DEPTH_M)} m`;
-    return `⚠ ${kindName(p)}: ${p.assetId} ${what} at ${mmss(p.onsetS)}`;
+    const asset = p.kind === 'bottleneck' && p.pipeIds && p.pipeIds.length > 1 ? p.pipeIds.join(' + ') : p.assetId;
+    return `⚠ ${kindName(p)}: ${asset} ${what} at ${mmss(p.onsetS)}`;
   },
   /** A fix tied to another problem that also helps this one. */
   fixedByOther: (sharedFromProblemId: string, label: string) => `Fixed by the ${problemAsset(sharedFromProblemId)} fix: ${label}`,

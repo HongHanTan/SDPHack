@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   bestFixPerProblem,
+  capCandidates,
   diagnose,
   fixPerProblem,
   generateCandidates,
   logLines,
+  MAX_CANDIDATES,
   NO_IMPROVING_FIX_TEXT,
   rankResults,
+  type Candidate,
   type CandidateResult,
   type TeamFrameLike,
   type TeamMetricsLike,
@@ -53,12 +56,32 @@ describe('diagnose', () => {
     expect(d).toMatchObject({ hotspotNodeId: 'NODE-J07', hotspotPeakM: 0.42, homesFlooded: 5, floodVolumeM3: 640, worstFloodingNodeId: 'NODE-J07' });
   });
 
-  it('lists problems with onset and location, ordered by onset', () => {
+  it('merges series bottlenecks into one problem at the most upstream pipe (P05 → J07 → P07)', () => {
     expect(d.problems).toEqual([
-      { id: 'bottleneck:PIPE-P07', kind: 'bottleneck', assetId: 'PIPE-P07', onsetS: 600, location: { x: 40, y: -25 } },
+      { id: 'bottleneck:PIPE-P05', kind: 'bottleneck', assetId: 'PIPE-P05', pipeIds: ['PIPE-P05', 'PIPE-P07'], onsetS: 600, location: { x: 60, y: 20 } },
       { id: 'ponding:NODE-J07', kind: 'ponding', assetId: 'NODE-J07', onsetS: 840, onsetBy: 'flooding', location: { x: 40, y: 0 } },
-      { id: 'bottleneck:PIPE-P05', kind: 'bottleneck', assetId: 'PIPE-P05', onsetS: 1080, location: { x: 60, y: 20 } },
     ]);
+    // The per-pipe bottleneck list is unchanged.
+    expect(d.bottlenecks.map((b) => b.pipeId)).toEqual(['PIPE-P07', 'PIPE-P05']);
+  });
+
+  it('keeps bottlenecks that are not in series as separate problems, ordered by onset', () => {
+    // P01 (J01 → J03) full from minute 5, P07 (J07 → J08) from minute 10; J07 floods from minute 14.
+    const f = frames((p, i) => (p === 'PIPE-P01' && i >= 5 ? 1 : p === 'PIPE-P07' && i >= 10 ? 1 : 0.5), (n, i) => n === 'NODE-J07' && i >= 14);
+    const ps = diagnose(f, metrics, S).problems;
+    expect(ps.map((p) => [p.id, p.pipeIds, p.onsetS])).toEqual([
+      ['bottleneck:PIPE-P01', ['PIPE-P01'], 300],
+      ['bottleneck:PIPE-P07', ['PIPE-P07'], 600],
+      ['ponding:NODE-J07', undefined, 840],
+    ]);
+    expect(ps[1].location).toEqual({ x: 40, y: -25 });
+  });
+
+  it('a longer series chain (P03 → P05 → P07) is one problem', () => {
+    const f = frames((p, i) => (['PIPE-P03', 'PIPE-P05', 'PIPE-P07'].includes(p) && i >= 8 ? 1 : 0.5), () => false);
+    const ps = diagnose(f, metrics, S).problems;
+    expect(ps).toHaveLength(1);
+    expect(ps[0]).toMatchObject({ id: 'bottleneck:PIPE-P03', assetId: 'PIPE-P03', pipeIds: ['PIPE-P03', 'PIPE-P05', 'PIPE-P07'], onsetS: 480 });
   });
 
   it('takes the ponding onset from the hotspot street depth series when it is earlier', () => {
@@ -82,7 +105,7 @@ describe('diagnose', () => {
   });
 
   it('keeps at most 3 problems', () => {
-    const f = frames((p) => (['PIPE-P07', 'PIPE-P05', 'PIPE-P03'].includes(p) ? 1 : 0.5), (n) => n === 'NODE-J07' || n === 'NODE-J05');
+    const f = frames((p) => (['PIPE-P07', 'PIPE-P01', 'PIPE-P04'].includes(p) ? 1 : 0.5), (n) => n === 'NODE-J07' || n === 'NODE-J05');
     expect(diagnose(f, metrics, S).problems).toHaveLength(3);
   });
 });
@@ -92,47 +115,84 @@ describe('generateCandidates', () => {
   const d = diagnose(p07Only, metrics, S);
   const c = generateCandidates(d, S);
 
-  it('produces the standard fixes for the sample topology, in order', () => {
+  it('produces the standard fixes for the sample topology, in onset order', () => {
     const expected: FixAction[] = [
       { kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.675 },
       { kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.75 },
       { kind: 'relief', fromNode: 'NODE-J07', toNode: 'NODE-OUT01', diameterM: 0.6 },
-      { kind: 'storage', nodeId: 'NODE-J05', volumeM3: 800 },
       { kind: 'inlet', nodeId: 'NODE-J07', grates: 1 },
     ];
     expect(c.map((x) => x.fix)).toEqual(expected);
   });
 
   it('ties each fix to a problem', () => {
-    expect(c.map((x) => x.problemId)).toEqual([
-      'bottleneck:PIPE-P07', 'bottleneck:PIPE-P07', 'bottleneck:PIPE-P07', 'bottleneck:PIPE-P07', 'ponding:NODE-J07',
-    ]);
+    expect(c.map((x) => x.problemId)).toEqual(['bottleneck:PIPE-P07', 'bottleneck:PIPE-P07', 'bottleneck:PIPE-P07', 'ponding:NODE-J07']);
     for (const x of c) expect(d.problems.map((p) => p.id)).toContain(x.problemId);
   });
 
-  it('storage is at least 200 m³', () => {
-    const small = generateCandidates(diagnose(p07Only, { ...metrics, total_flooding_volume_m3: 10 }, S), S);
-    expect(small.find((x) => x.fix.kind === 'storage')!.fix).toEqual({ kind: 'storage', nodeId: 'NODE-J05', volumeM3: 200 });
+  it('generates no storage candidates', () => {
+    for (const diag of [d, diagnose(stormFrames, metrics, S), diagnose(stormFrames, { ...metrics, total_flooding_volume_m3: 10 }, S)]) {
+      expect(generateCandidates(diag, S).some((x) => x.fix.kind === 'storage')).toBe(false);
+    }
   });
 
-  it('keeps at most 6 and has no duplicates', () => {
-    const big = generateCandidates(diagnose(stormFrames, metrics, S), S);
-    expect(big.length).toBeLessThanOrEqual(6);
-    expect(new Set(big.map((x) => fixId(x.fix))).size).toBe(big.length);
-    expect(big.slice(0, 4).map((x) => x.fix)).toEqual([
-      { kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.675 },
-      { kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.75 },
-      { kind: 'upsize', pipeId: 'PIPE-P05', diameterM: 0.675 },
-      { kind: 'upsize', pipeId: 'PIPE-P05', diameterM: 0.75 },
+  it('a series chain: upsize the most-loaded pipe, one relief spanning the whole chain at its largest diameter', () => {
+    // P05 (J05 → J07) and P07 (J07 → J08) both full; P07 is full longer, so it is the most loaded. P05 is Ø750 here.
+    const site = structuredClone(S);
+    site.key = 'test-series';
+    site.assets.conduits.find((x) => x.conduit_id === 'PIPE-P05')!.diameter_m = 0.75;
+    const diag = diagnose(stormFrames, metrics, site);
+    expect(generateCandidates(diag, site)).toEqual([
+      { fix: { kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.675 }, problemId: 'bottleneck:PIPE-P05' },
+      { fix: { kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.75 }, problemId: 'bottleneck:PIPE-P05' },
+      // From the chain's upstream node J05, past its last pipe (P07 ends at J08), to OUT01 one link below.
+      { fix: { kind: 'relief', fromNode: 'NODE-J05', toNode: 'NODE-OUT01', diameterM: 0.75 }, problemId: 'bottleneck:PIPE-P05' },
+      { fix: { kind: 'inlet', nodeId: 'NODE-J07', grates: 1 }, problemId: 'ponding:NODE-J07' },
     ]);
-    expect(big[4].problemId).toBe('bottleneck:PIPE-P07');
   });
 
-  it('always keeps the ponding inlet when two bottlenecks fill the list', () => {
-    const big = generateCandidates(diagnose(stormFrames, metrics, S), S);
-    expect(big).toHaveLength(6);
-    expect(big[5]).toEqual({ fix: { kind: 'inlet', nodeId: 'NODE-J07', grates: 1 }, problemId: 'ponding:NODE-J07' });
-    expect(big.slice(0, 5).map((x) => x.fix.kind)).toEqual(['upsize', 'upsize', 'upsize', 'upsize', 'relief']);
+  it('upsizes the pipe with the highest peak load in a chain', () => {
+    const f = frames((p, i) => (p === 'PIPE-P05' && i >= 5 ? 1.2 : p === 'PIPE-P07' && i >= 5 ? 1 : 0.5), () => false);
+    const got = generateCandidates(diagnose(f, metrics, S), S);
+    expect(got.filter((x) => x.fix.kind === 'upsize').map((x) => fixId(x.fix))).toEqual(['upsize:PIPE-P05@0.675', 'upsize:PIPE-P05@0.75']);
+  });
+
+  it('each problem gets its own candidates, in onset order', () => {
+    const f = frames((p, i) => (p === 'PIPE-P01' && i >= 5 ? 1 : p === 'PIPE-P07' && i >= 10 ? 1 : 0.5), (n, i) => n === 'NODE-J07' && i >= 14);
+    expect(generateCandidates(diagnose(f, metrics, S), S).map((x) => [x.problemId, fixId(x.fix)])).toEqual([
+      ['bottleneck:PIPE-P01', 'upsize:PIPE-P01@0.525'],
+      ['bottleneck:PIPE-P01', 'upsize:PIPE-P01@0.6'],
+      ['bottleneck:PIPE-P01', 'relief:NODE-J01>NODE-J05@0.45'],
+      ['bottleneck:PIPE-P07', 'upsize:PIPE-P07@0.675'],
+      ['bottleneck:PIPE-P07', 'upsize:PIPE-P07@0.75'],
+      ['bottleneck:PIPE-P07', 'relief:NODE-J07>NODE-OUT01@0.6'],
+      ['ponding:NODE-J07', 'inlet:NODE-J07+1'],
+    ]);
+  });
+
+  it('a ponding node that is not the hotspot gets its own inlet', () => {
+    const f = frames(() => 0.5, (n, i) => n === 'NODE-J05' && i >= 5);
+    expect(generateCandidates(diagnose(f, metrics, S), S)).toEqual([{ fix: { kind: 'inlet', nodeId: 'NODE-J05', grates: 1 }, problemId: 'ponding:NODE-J05' }]);
+  });
+
+  it('keeps at most 8, with every problem keeping at least one, and no duplicates', () => {
+    expect(MAX_CANDIDATES).toBe(8);
+    // Three separate bottlenecks (P01, P04, P07) give 3 × 3 = 9 candidates.
+    const f = frames((p, i) => (p === 'PIPE-P01' && i >= 3 ? 1 : p === 'PIPE-P04' && i >= 6 ? 1 : p === 'PIPE-P07' && i >= 9 ? 1 : 0.5), () => false);
+    const diag = diagnose(f, metrics, S);
+    expect(diag.problems.map((p) => p.id)).toEqual(['bottleneck:PIPE-P01', 'bottleneck:PIPE-P04', 'bottleneck:PIPE-P07']);
+    const got = generateCandidates(diag, S);
+    expect(got).toHaveLength(8);
+    expect(new Set(got.map((x) => fixId(x.fix))).size).toBe(8);
+    for (const p of diag.problems) expect(got.some((x) => x.problemId === p.id)).toBe(true);
+    expect(got.at(-1)!.fix).toEqual({ kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.75 });
+  });
+
+  it('capCandidates keeps the first candidate of every problem before filling in order', () => {
+    const cand = (problemId: string, i: number): Candidate => ({ fix: { kind: 'inlet', nodeId: `N-${problemId}${i}`, grates: 1 }, problemId });
+    const list = [cand('a', 1), cand('a', 2), cand('a', 3), cand('b', 1), cand('b', 2), cand('c', 1)];
+    expect(capCandidates(list, 4)).toEqual([cand('a', 1), cand('a', 2), cand('b', 1), cand('c', 1)]);
+    expect(capCandidates(list, 10)).toEqual(list);
   });
 
   it('skips a relief target that already has a direct pipe from A and walks on', () => {
@@ -159,10 +219,12 @@ describe('generateCandidates', () => {
     expect(c.some((x) => x.fix.kind === 'relief')).toBe(false);
   });
 
-  it('drops duplicates when two bottlenecks would give the same fix', () => {
-    // P05 and P07 both full: relief from J07 and storage upstream are generated once.
-    const big = generateCandidates(diagnose(stormFrames, metrics, S), S);
-    expect(big.filter((x) => x.fix.kind === 'relief')).toHaveLength(1);
+  it('skips a relief target that is not 0.1 m below the chain upstream node', () => {
+    const site = structuredClone(S);
+    site.key = 'test-relief-uphill';
+    site.assets.nodes.find((n) => n.node_id === 'NODE-OUT01')!.invert_elevation_m = 8.95;
+    const c = generateCandidates(diagnose(p07Only, metrics, site), site);
+    expect(c.some((x) => x.fix.kind === 'relief')).toBe(false);
   });
 
   it('no flooding and no bottleneck gives no candidates', () => {
@@ -171,10 +233,9 @@ describe('generateCandidates', () => {
     expect(generateCandidates(calm, S)).toEqual([]);
   });
 
-  it('ponding without a bottleneck gives a relief from the hotspot and an inlet', () => {
+  it('ponding without a bottleneck gives an extra inlet only', () => {
     const pond = diagnose(frames(() => 0.6, (n, i) => n === 'NODE-J07' && i > 5), metrics, S);
     expect(generateCandidates(pond, S)).toEqual([
-      { fix: { kind: 'relief', fromNode: 'NODE-J07', toNode: 'NODE-OUT01', diameterM: 0.6 }, problemId: 'ponding:NODE-J07' },
       { fix: { kind: 'inlet', nodeId: 'NODE-J07', grates: 1 }, problemId: 'ponding:NODE-J07' },
     ]);
   });
@@ -278,7 +339,8 @@ describe('logLines', () => {
   });
 
   it('formats the problem pin lines', () => {
-    expect(logLines.problem(d.problems[0])).toBe('⚠ Bottleneck: PIPE-P07 full at 10:00');
+    expect(logLines.problem(d.problems[0])).toBe('⚠ Bottleneck: PIPE-P05 + PIPE-P07 full at 10:00');
+    expect(logLines.problem({ id: 'bottleneck:PIPE-P07', kind: 'bottleneck', assetId: 'PIPE-P07', pipeIds: ['PIPE-P07'], onsetS: 750, location: { x: 0, y: 0 } })).toBe('⚠ Bottleneck: PIPE-P07 full at 12:30');
     expect(logLines.problem(d.problems[1])).toBe('⚠ Ponding: NODE-J07 overflowing at 14:00');
     expect(logLines.problemPending(d.problems[0], 2, 5)).toBe('⚠ Bottleneck detected — testing fixes… (2/5)');
   });
@@ -295,7 +357,7 @@ describe('on the uploaded sample package', () => {
     const f = frames((p, i) => (p === 'PIPE-P07' && i >= 10 ? 1 : 0.6), (n, i) => n === site!.hotspotNodeId && i >= 15);
     const c = generateCandidates(diagnose(f, metrics, site!), site!);
     expect(c.map((x) => fixId(x.fix))).toEqual([
-      'upsize:PIPE-P07@0.675', 'upsize:PIPE-P07@0.75', 'relief:NODE-J07>NODE-OUT01@0.6', 'storage:NODE-J05@800', 'inlet:NODE-J07+1',
+      'upsize:PIPE-P07@0.675', 'upsize:PIPE-P07@0.75', 'relief:NODE-J07>NODE-OUT01@0.6', 'inlet:NODE-J07+1',
     ]);
   });
 });
