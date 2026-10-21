@@ -16,3 +16,9 @@ dist/
 
 # Brainstorming companion scratch
 .superpowers/
+
+# Local scratch, recordings and logs (keep curated demo packs only)
+tmp/
+output/*.log
+output/recorded-walkthrough/
+output/site-onboarding-demo/
