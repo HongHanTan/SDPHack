@@ -1,5 +1,6 @@
 import { buildSiteFromFiles } from '@floodops/engine/import/buildSite';
 import { stormFromInp } from '@floodops/engine/import/stormFromInp';
+import type { SiteSpec } from '@floodops/engine/scenario/site';
 import { withPipeDiameter } from '@floodops/engine/scenario/siteVariants';
 import type { InspectionMediaItem, InspectionRecord, SimulationFramesResponse, SimulationRun } from '../../types';
 import type { ProjectSummary, SiteProject, SiteProposal, SiteResult } from '../types';
@@ -32,6 +33,8 @@ export interface LocalSiteApi {
   mediaUrl(mediaId: string): Promise<string>;
   /** The street-water depth grids of a finished run (every 2nd frame), or null. */
   runDepth(runId: string): Promise<DepthGrids | null>;
+  /** The engine site built from a project's stored files (projects are immutable, so built once per project). */
+  siteSpec(projectId: string): Promise<SiteSpec>;
 }
 
 let last = 0;
@@ -325,7 +328,7 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
       void outcome.then(resolve).finally(() => signal.removeEventListener('abort', abort));
     });
     if (final.run.status !== 'succeeded' || !final.results) fail(final.run.error?.message ?? 'Engine calculation failed.');
-    return { run: final.run as SimulationRun, frames: final.results!.frames, metrics: final.results!.metrics };
+    return { run: final.run as SimulationRun, frames: final.results!.frames, metrics: final.results!.metrics, depth: final.results!.depth };
   };
 
   const uploadMedia: LocalSiteApi['uploadMedia'] = async (projectId, inspectionId, file) => {
@@ -354,9 +357,24 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
     return item;
   };
 
+  const sites = new Map<string, Promise<SiteSpec>>();
+  const siteSpec: LocalSiteApi['siteSpec'] = (projectId) => {
+    let s = sites.get(projectId);
+    if (!s) {
+      s = project(projectId).then((p) => {
+        const built = buildSiteFromFiles(p.sources);
+        return built.site ?? fail(`The saved files no longer build a site: ${built.report.errors.join(' ')}`);
+      });
+      s.catch(() => sites.delete(projectId));
+      sites.set(projectId, s);
+    }
+    return s;
+  };
+
   return {
     request,
     execute,
+    siteSpec,
     startRun,
     uploadMedia,
     mediaUrl: async (mediaId) => URL.createObjectURL((await store.getMedia(mediaId)) ?? fail('This attachment is not stored in this browser.')),

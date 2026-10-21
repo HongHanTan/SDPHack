@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import type {SiteProject} from './types';
 import type {SimulationFrame} from '../types';
 import {siteBounds,terrainHeight} from './geometry';
+import type {SiteSpec} from '@floodops/engine/scenario/site';
+import {SiteWater} from './SiteWater';
 
 function AssetLabel({text,position,selected,height,onSelect}:{text:string;position:[number,number,number];selected?:boolean;height:number;onSelect:()=>void}){
  const texture=useMemo(()=>{
@@ -30,8 +32,8 @@ function Road({coordinates,width,ground,point,xray}:{coordinates:number[][];widt
  return <mesh geometry={geometry}><meshStandardMaterial color="#63727b" side={THREE.DoubleSide} transparent opacity={xray?.35:1} depthWrite={!xray}/></mesh>;
 }
 
-interface SceneProps {project:SiteProject;phase:number;xray:boolean;selected:string|null;onSelect:(id:string)=>void;frame?:SimulationFrame;pipeOption?:{asset_id:string;after:number}}
-function Scene({project,phase,xray,selected,onSelect,frame,pipeOption}:SceneProps){
+interface SceneProps {project:SiteProject;phase:number;xray:boolean;selected:string|null;onSelect:(id:string)=>void;frame?:SimulationFrame;pipeOption?:{asset_id:string;after:number};water?:{site:SiteSpec;depth:Float32Array|null}}
+function Scene({project,phase,xray,selected,onSelect,frame,pipeOption,water}:SceneProps){
  const site=project.site,b=siteBounds(site);
  const point=useMemo(()=>(x:number,y:number,z:number):[number,number,number]=>[x-b.x,z-b.z,-(y-b.y)],[b]);
  const ground=useMemo(()=>(x:number,y:number)=>terrainHeight(site,x,y),[site]);
@@ -47,6 +49,7 @@ function Scene({project,phase,xray,selected,onSelect,frame,pipeOption}:SceneProp
  return <>
   <ambientLight intensity={1.2}/><directionalLight position={[60,140,30]} intensity={2}/><hemisphereLight args={['#e3f5ff','#809682',.8]}/>
   {phase>=1&&(mesh?<mesh geometry={mesh}><meshStandardMaterial color="#a7c0a7" side={THREE.DoubleSide} transparent opacity={xray?.38:1} depthWrite={!xray}/></mesh>:<mesh rotation={[-Math.PI/2,0,0]} position={[0,ground(b.x,b.y)-b.z,0]}><planeGeometry args={[b.span*1.15,b.span*1.15]}/><meshStandardMaterial color="#d8e1e6" transparent opacity={.5}/></mesh>)}
+  {phase>=1&&water&&<SiteWater site={water.site} depth={water.depth} point={point}/>}
   {phase>=2&&site.roads.map((road,i)=><Road key={`road-${i}`} coordinates={road.geometry.coordinates as number[][]} width={road.properties.width_m!} ground={ground} point={point} xray={xray}/>)}
   {phase>=2&&site.buildings.map((building,i)=>{
    const ring=(building.geometry.coordinates as number[][][])[0];const shape=new THREE.Shape(ring.map(p=>new THREE.Vector2(p[0]-b.x,p[1]-b.y)));

@@ -1,4 +1,5 @@
 import type { InspectionRecord, SimulationFrame, SimulationMetricsResponse, SimulationRun } from '../types';
+import type { DepthGrids } from './local/store';
 export interface SourceFile {name:string;text:string;role:string}
 export interface SiteNode {node_id:string;node_type:'junction'|'outfall';x:number;y:number;ground_elevation_m:number|null;invert_elevation_m:number|null;outfall_type?:string;water_level_m?:number|null}
 export interface SitePipe {conduit_id:string;from_node_id:string;to_node_id:string;diameter_m:number|null;length_m:number|null;manning_n:number|null}
@@ -13,5 +14,6 @@ export interface ImportedSite {
 export interface SitePreview {site:ImportedSite;manifest:{name:string;sha256:string;bytes:number;role:string;headers:string[]}[];issues:{level:'map'|'simulation'|'warning';location:string;message:string}[];assumptions:string[];map_ready:boolean;simulation_ready:boolean;counts:Record<string,number>;fields:Record<string,string[]>}
 export interface SiteProject extends SitePreview {project_id:string;model_version_id:string;model_hash:string;name:string;created_at:string;is_verified_site_model:false}
 export type ProjectSummary=Pick<SiteProject,'project_id'|'model_version_id'|'model_hash'|'name'|'created_at'|'counts'|'simulation_ready'>;
-export interface SiteResult {run:SimulationRun;frames:SimulationFrame[];metrics:SimulationMetricsResponse}
+/** `depth`: the run's stored street-water grids (local engine runs). */
+export interface SiteResult {run:SimulationRun;frames:SimulationFrame[];metrics:SimulationMetricsResponse;depth?:DepthGrids|null}
 export interface SiteProposal {proposal_id:string;asset_id:string;scope:string;owner:string;justification:string;status:'Draft';estimate_myr:number|null;estimate_source:string;created_at:string;comparison:unknown;inspection_snapshot:InspectionRecord[]}
