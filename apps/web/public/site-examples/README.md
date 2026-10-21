@@ -23,6 +23,23 @@ Instead of a bundle, select these **nine files together**: `project.json`, `node
 
 After checking, expand **Review CSV column mappings** if your export uses different column names. Map each required field to its source header, then click **Check my files** again. An unmapped field stays missing; no values are inferred.
 
+## SWMM package
+
+The portal also accepts our SWMM package: one `.inp` model, an optional layout `.geojson` and an optional `.asc` height grid, all in the same projected metres. It is converted in your browser into one `floodops-site-v1` bundle (role `bundle`) whose `source_reference` records the SHA-256 of each original file.
+
+- Coordinates and elevations are copied unchanged; the `.inp` must use SI flow units (CMS, LPS or MLD).
+- Junction ground = invert + max depth. An outfall's ground is its invert plus a stated default depth (listed in the notes).
+- Buildings need `height_m` and roads need `width_m`; features without them are omitted and listed. Nothing is invented.
+- Anything the site format cannot hold (trees, pond, canal, hotspot, roundabout) is left out and listed in the "What was converted / left out" notes.
+- Do not mix an `.inp` with the site tables in one selection.
+
+Demo with the files in `taman-kyra-swmm/`:
+
+1. Choose `taman_kyra.inp`, `taman_kyra_layout.geojson` and `taman_kyra_ground.asc`.
+2. Check my files: expect 9 nodes, 8 pipes, 4 catchments, 18,125 terrain points, the roads and 35 buildings; map and simulation ready.
+3. Build my township.
+4. Compare actions: run the baseline, then test PIPE-P07 at 0.75.
+
 ## File specification
 
 CSV files have a header row. JSON tables contain arrays of objects using the same field names. A bundle is an object with `format: "floodops-site-v1"`, a `project` object and arrays named `nodes`, `pipes`, `inlets`, `catchments`, `rainfall`, `terrain`, `roads`, `buildings`. Optional `hydrology` can override the explicitly disclosed software assumptions. See the complete example for the exact structure.
