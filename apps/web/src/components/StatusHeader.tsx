@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   Search,
-  Bell,
   Settings,
   LayoutDashboard,
   Map,
@@ -19,6 +18,7 @@ import { DataMode } from '../api/client';
 import { HealthResponse, AppMode } from '../types';
 
 interface StatusHeaderProps {
+  activeTab: 'dashboard' | 'map' | 'assets' | 'analytics' | 'reports';
   mode: DataMode;
   onToggleMode: (newMode: DataMode) => void;
   appMode: AppMode;
@@ -30,28 +30,21 @@ interface StatusHeaderProps {
   loading: boolean;
   onRefresh: () => void;
   apiError: string | null;
-  /** Engine mode only: opens the site import panel. The button is hidden when absent. */
-  onOpenSiteImport?: () => void;
-  /** Engine mode only: shown while site files are being watched. */
-  siteWatch?: { count: number; updatedAt: Date | null; onStop: () => void };
 }
 
 export const StatusHeader: React.FC<StatusHeaderProps> = ({
+  activeTab,
   mode,
   onToggleMode,
   appMode,
   onChangeAppMode,
-  onOpenInterventions,
   onSelectTab,
   onSearch,
   health,
   loading,
   onRefresh,
   apiError,
-  onOpenSiteImport,
-  siteWatch,
 }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'map' | 'assets' | 'analytics' | 'reports'>('dashboard');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -75,9 +68,9 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
       )}
 
       {/* Main Brand Top Navigation Bar (Sime Darby Property Theme - Light Mode) */}
-      <div className="flex items-center justify-between px-6 h-15 backdrop-blur-xl bg-white/95 border-b border-slate-200/90 shadow-sm pointer-events-auto">
+      <div className="flex items-center justify-between px-4 h-15 backdrop-blur-xl bg-white/95 border-b border-slate-200/90 shadow-sm pointer-events-auto">
         {/* Left: Sime Darby Property Wave Crest & Title */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2.5">
             {/* Sime Darby stylized triple-wave brand logo */}
             <div className="flex flex-col gap-1 items-center justify-center p-1">
@@ -105,10 +98,9 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
           <nav className="flex items-center gap-1 text-xs">
             <button
               onClick={() => {
-                setActiveTab('dashboard');
                 onSelectTab?.('dashboard');
               }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === 'dashboard'
                   ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -120,10 +112,9 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
 
             <button
               onClick={() => {
-                setActiveTab('map');
                 onSelectTab?.('map');
               }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === 'map'
                   ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -135,10 +126,9 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
 
             <button
               onClick={() => {
-                setActiveTab('assets');
                 onSelectTab?.('assets');
               }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === 'assets'
                   ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -150,34 +140,30 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
 
             <button
               onClick={() => {
-                setActiveTab('analytics');
                 onSelectTab?.('analytics');
-                onOpenInterventions();
               }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === 'analytics'
                   ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
-              <span>Analytics</span>
+              <span>Compare</span>
             </button>
 
             <button
               onClick={() => {
-                setActiveTab('reports');
                 onSelectTab?.('reports');
-                onOpenInterventions();
               }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl font-medium transition cursor-pointer ${
                 activeTab === 'reports'
                   ? 'bg-red-600 text-white shadow-md shadow-red-600/20'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Reports</span>
+              <span>Proposals</span>
             </button>
 
             <button
@@ -197,11 +183,11 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
         {/* Right: Search Bar, Notifications, User Profile */}
         <div className="flex items-center gap-3.5">
           {/* Search Bar matching mockup */}
-          <div className="relative w-64 md:w-80">
+          <div className="relative w-40 xl:w-64">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search location, asset or address..."
+              placeholder="Search asset ID or demo zone..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -216,48 +202,10 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
             />
           </div>
 
-          {siteWatch && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium">
-              <span>
-                👁 Watching {siteWatch.count} files ·{' '}
-                {siteWatch.updatedAt
-                  ? 'updated ' + siteWatch.updatedAt.toLocaleTimeString('en-GB', { hour12: false })
-                  : 'no changes yet'}
-              </span>
-              <button
-                onClick={siteWatch.onStop}
-                title="Stop watching"
-                className="text-emerald-600 hover:text-emerald-900 cursor-pointer"
-              >
-                ✕
-              </button>
-            </span>
-          )}
-
-          {onOpenSiteImport && (
-            <button
-              onClick={onOpenSiteImport}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-medium transition cursor-pointer"
-            >
-              📂 Import site
-            </button>
-          )}
-
-          {/* Notification Bell with Badge */}
-          <button
-            className="relative p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-200 transition cursor-pointer"
-            title="Notifications (3 active alerts)"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-[10px] font-bold text-white flex items-center justify-center border-2 border-white">
-              3
-            </span>
-          </button>
-
-          {/* User Profile Badge (John Doe / Township Admin) */}
+          {/* Operations role indicator */}
           <div className="flex items-center gap-2.5 pl-1 border-l border-slate-200">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-amber-700 text-white font-bold text-xs flex items-center justify-center shadow-sm border border-red-500/30">
-              JD
+              OP
             </div>
             <div className="hidden lg:flex flex-col text-left">
               <span className="text-xs font-semibold text-slate-800 leading-tight">John Doe</span>
@@ -349,7 +297,7 @@ export const StatusHeader: React.FC<StatusHeaderProps> = ({
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Idle (Patrol)
+                Idle
               </button>
               <button
                 onClick={() => onChangeAppMode('diagnose')}

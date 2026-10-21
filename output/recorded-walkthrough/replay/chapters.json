@@ -1,0 +1,77 @@
+[
+  {
+    "seconds": 1.353,
+    "title": "1. Open the operations dashboard",
+    "detail": "This isolated browser contains synthetic practice entries only."
+  },
+  {
+    "seconds": 7.1,
+    "title": "2. Record the D07 complaint",
+    "detail": "Link the asset, retain complaint DEMO-C01, and assign an inspection."
+  },
+  {
+    "seconds": 26.294,
+    "title": "Saved: 1 open, 1 overdue, 1 needs inspection",
+    "detail": "The report is synthetic. Linking an inlet does not confirm the cause."
+  },
+  {
+    "seconds": 36.926,
+    "title": "3. Record an inspection with an attachment",
+    "detail": "65% visible leaf coverage is fictional. It does not set hydraulic loss."
+  },
+  {
+    "seconds": 52.93,
+    "title": "Inspection and PDF saved",
+    "detail": "The observed-inspection gap stays open because this evidence is synthetic."
+  },
+  {
+    "seconds": 58.119,
+    "title": "4. Define the road and storm",
+    "detail": "D07; 15 cm reference; 80 mm/h for 60 minutes; assumed 40% loss; normal canal."
+  },
+  {
+    "seconds": 74.913,
+    "title": "5. Calculate the current network",
+    "detail": "The worker calculates two hours: one hour of rain and one hour of drainage."
+  },
+  {
+    "seconds": 141.714,
+    "title": "Current network: 60.0 cm; 760 m2; 75 minutes",
+    "detail": "Peak at fixed road point R1, maximum simultaneous road area above 15 cm, and R1 duration."
+  },
+  {
+    "seconds": 148.32,
+    "title": "6. Try cleaning D07",
+    "detail": "Only the effective D07 hydraulic loss changes to zero."
+  },
+  {
+    "seconds": 222.34,
+    "title": "Cleaning: 59.8 cm; 760 m2; 74 minutes",
+    "detail": "Cleaning makes little difference in this particular model."
+  },
+  {
+    "seconds": 228.785,
+    "title": "7. Test the larger P07 pipe",
+    "detail": "600 to 750 mm. This separate option retains the original 40% inlet loss."
+  },
+  {
+    "seconds": 319.747,
+    "title": "Larger pipe: 7.7 cm; 0 m2 above 15 cm",
+    "detail": "A reason to request engineering review, not construction approval or a real-site guarantee."
+  },
+  {
+    "seconds": 346.819,
+    "title": "8. Check the calculation basis",
+    "detail": "Input checks retain matching conditions. Reference checks execute known numerical cases."
+  },
+  {
+    "seconds": 371.799,
+    "title": "Five reference checks passed",
+    "detail": "These checks do not establish field calibration or real street-depth accuracy."
+  },
+  {
+    "seconds": 376.165,
+    "title": "9. Prepare an engineering-review proposal",
+    "detail": "Choose Request engineering review so the pipe comparison is attached."
+  }
+]

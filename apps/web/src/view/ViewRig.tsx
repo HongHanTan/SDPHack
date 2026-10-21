@@ -23,18 +23,13 @@ export function ViewRig({
   is2d,
   controlsRef,
   onMetresPerPixel,
-  frame,
-  resetPose,
+  damping = true,
 }: {
   is2d: boolean;
   controlsRef: MutableRefObject<any>;
   onMetresPerPixel: (mpp: number) => void;
-  /** Area the plan view frames (scene x/z centre, extent, ground y). Default: the built-in scene's SITE and GROUND_Y. */
-  frame?: { cx: number; cz: number; w: number; h: number; groundY: number };
-  /** When `key` changes (not on mount) the 3D pose to return to; moves the camera there from 3D, 2D or mid-glide. */
-  resetPose?: { key: string; pos: [number, number, number]; target: [number, number, number] };
+  damping?: boolean;
 }) {
-  const f = frame ?? { cx: SITE.cx, cz: SITE.cz, w: SITE.w, h: SITE.h, groundY: GROUND_Y };
   const size = useThree((s) => s.size);
   const get = useThree((s) => s.get);
   const perspRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -47,12 +42,12 @@ export function ViewRig({
   };
   const saved = useRef<Pose | null>(null);
   const anim = useRef<{ from: Pose; to: Pose; start: number | null; then: () => void } | null>(null);
-  const zoom = orthoZoomFor(size.width, size.height, f.w, f.h);
+  const zoom = orthoZoomFor(size.width, size.height);
   const lookRef = useRef(DEFAULT_POSE.target.clone()); // current look-at, kept live during glides
 
   const topPose = (): Pose => {
     const h = topHeightFor(size.height, zoom, perspRef.current!.fov);
-    return { pos: new THREE.Vector3(f.cx, f.groundY + h, f.cz + 0.01), target: new THREE.Vector3(f.cx, f.groundY, f.cz) };
+    return { pos: new THREE.Vector3(SITE.cx, GROUND_Y + h, SITE.cz + 0.01), target: new THREE.Vector3(SITE.cx, GROUND_Y, SITE.cz) };
   };
 
   useEffect(() => {
@@ -78,7 +73,7 @@ export function ViewRig({
       } else {
         from = { pos: persp.position.clone(), target: lookRef.current.clone() };
       }
-      const to: Pose = saved.current ?? DEFAULT_POSE;
+      const to = saved.current ?? DEFAULT_POSE;
       anim.current = {
         from,
         to,
@@ -87,7 +82,7 @@ export function ViewRig({
           go('3d');
           const c = controlsRef.current;
           if (c) {
-            c.target.copy((saved.current ?? to).target);
+            c.target.copy(to.target);
             c.update();
           }
         },
@@ -96,27 +91,6 @@ export function ViewRig({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [is2d]);
-
-  const poseKeyRef = useRef(resetPose?.key);
-  useEffect(() => {
-    if (!resetPose || poseKeyRef.current === resetPose.key) return;
-    poseKeyRef.current = resetPose.key;
-    const pose: Pose = { pos: new THREE.Vector3(...resetPose.pos), target: new THREE.Vector3(...resetPose.target) };
-    saved.current = pose;
-    const p = phaseRef.current;
-    if (p === '3d') {
-      const persp = perspRef.current!;
-      persp.position.copy(pose.pos);
-      const c = controlsRef.current;
-      if (c) {
-        c.target.copy(pose.target);
-        c.update();
-      } else persp.lookAt(pose.target);
-    } else if (p === 'to3d' && anim.current) {
-      anim.current.to = pose; // the glide (already heading back to 3D) now ends at the new pose
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetPose?.key]);
 
   useFrame(({ clock }) => {
     const a = anim.current;
@@ -143,8 +117,8 @@ export function ViewRig({
     const cam = orthoRef.current;
     if (phase !== '2d' || !cam) return;
     cam.up.set(0, 0, -1); // north (−Z) at the top of the screen
-    cam.position.set(f.cx, f.groundY + 600, f.cz);
-    cam.lookAt(f.cx, f.groundY, f.cz);
+    cam.position.set(SITE.cx, GROUND_Y + 600, SITE.cz);
+    cam.lookAt(SITE.cx, GROUND_Y, SITE.cz);
     cam.zoom = zoom;
     cam.updateProjectionMatrix();
     // Only on entering 2D: a window resize must not reset the user's pan/zoom.
@@ -159,7 +133,7 @@ export function ViewRig({
           makeDefault
           enableRotate={false}
           screenSpacePanning
-          target={[f.cx, f.groundY, f.cz]}
+          target={[SITE.cx, GROUND_Y, SITE.cz]}
           onChange={(e) => {
             const cam = (e?.target as unknown as { object?: THREE.OrthographicCamera })?.object;
             if (cam?.zoom) onMetresPerPixel(1 / cam.zoom);
@@ -173,7 +147,7 @@ export function ViewRig({
       ref={controlsRef}
       makeDefault
       enabled={phase === '3d'}
-      enableDamping
+      enableDamping={damping}
       dampingFactor={0.05}
       maxPolarAngle={Math.PI / 2 - 0.05}
       minDistance={10}

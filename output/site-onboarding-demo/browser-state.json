@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "floodops_problems_v1_%5B%22api%22%2C%22site_34517b2eff154dc2bda9104f5e3fd0e9%22%2C%22uploaded_6062c6b350f745ebbd312bf507d8680a%22%2C%22http%3A%2F%2Flocalhost%3A8000%22%5D",
+          "value": "{\"version\":1,\"scope_key\":\"[\\\"api\\\",\\\"site_34517b2eff154dc2bda9104f5e3fd0e9\\\",\\\"uploaded_6062c6b350f745ebbd312bf507d8680a\\\",\\\"http://localhost:8000\\\"]\",\"items\":[{\"title\":\"Water reported near the trunk drain\",\"location\":\"Riverside example central road\",\"asset_id\":\"LINK-TRUNK\",\"external_reference\":\"\",\"owner\":\"Township engineering team\",\"next_action\":\"Inspect location\",\"due_date\":\"\",\"status\":\"Open\",\"closure_note\":\"\",\"problem_id\":\"c86e6eed-f6d5-46f7-8b41-8b167774f700\",\"revision\":1,\"created_at\":\"2026-10-21T09:45:48.034Z\",\"updated_at\":\"2026-10-21T09:45:48.034Z\",\"reports\":[{\"occurred_at\":\"2026-10-21T09:45:00.000Z\",\"source_type\":\"synthetic\",\"source_reference\":\"DEMO-REPORT-01\",\"description\":\"Practice complaint for the uploaded fictional catchment; no real event is claimed.\",\"reported_impact\":\"\",\"report_id\":\"f43ad4fd-8f41-447b-8a92-f834c59d4938\",\"recorded_at\":\"2026-10-21T09:45:48.035Z\"}],\"history\":[{\"timestamp\":\"2026-10-21T09:45:48.034Z\",\"note\":\"Problem recorded. Reported conditions are not independently verified.\"}]}]}"
+        }
+      ]
+    }
+  ]
+}

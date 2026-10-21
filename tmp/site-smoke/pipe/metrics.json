@@ -1,0 +1,42 @@
+{
+  "run_id": "run_d33b5a3fb42248589ce6a2e452e88065",
+  "model_version_id": "uploaded_smoke",
+  "result_type": "simulated",
+  "engine": "EPA SWMM",
+  "engine_version": "5.2.4",
+  "is_verified_site_model": false,
+  "assumptions": [
+    "Catchment runoff enters the named junction directly. Inlet markers are geometry/evidence only; no measured inlet-capture relation is supplied.",
+    "Pipes are circular and connect at node inverts with zero offsets.",
+    "A 60-minute dry drainage period follows the uploaded rainfall.",
+    "Native SWMM is a 1D drainage-network calculation. Node depth is measured from the pipe invert; no street depth or flood extent is inferred.",
+    "Uploaded provenance is retained; file completeness is not field calibration or engineering approval.",
+    "Source reference: FLOODOPS-UPLOAD-EXAMPLE-01; fictional geometry and hydrology, not site evidence",
+    "Catchment runoff enters the named junction directly. Inlet markers are geometry/evidence only; no measured inlet-capture relation is supplied.",
+    "Pipes are circular and connect at node inverts with zero offsets.",
+    "A 60-minute dry drainage period follows the uploaded rainfall.",
+    "Native SWMM is a 1D drainage-network calculation. Node depth is measured from the pipe invert; no street depth or flood extent is inferred.",
+    "Uploaded provenance is retained; file completeness is not field calibration or engineering approval."
+  ],
+  "warnings": [],
+  "status_definitions": {
+    "node_surcharged": "Junction depth + 0.00003048 m >= highest connected conduit crown above its invert; outfall excluded. Matches SWMM crown criterion for this zero-offset, circular-conduit model.",
+    "node_flooding": "Reported node flooding loss rate > 1e-9 m3/s; takes display precedence over surcharge. Not a surface flood depth.",
+    "node_normal": "Neither flooding nor crown exceedance at this report instant; outfall is not classified as surcharged.",
+    "pipe_surcharged": "Hydraulic heads at both endpoints exceed their respective conduit crown elevations by > 0.00003048 m; indicates pressurized closed conduit at both ends.",
+    "pipe_near_capacity": "Not surcharged by the endpoint-head rule and reported conduit depth/diameter >= 0.8; a geometric fullness display threshold, not a discharge-capacity or failure estimate.",
+    "pipe_normal": "Neither endpoint-head surcharge nor depth/diameter >= 0.8 at this report instant.",
+    "unknown": "Missing or unsupported hydraulic information; never inferred from inlet restriction.",
+    "inlet": "Independent assumed hydraulic_inlet_clogging_fraction=0; T1 uses unlimited direct-node runoff entry, not a finite-capacity inlet or calibrated capture model."
+  },
+  "inlet_volumes": null,
+  "total_flooding_volume_m3": 148.72181492390197,
+  "flooded_node_count": 2,
+  "surcharge_duration_s": 1406.0,
+  "metric_definitions": {
+    "total_flooding_volume_m3": "Sum of SWMM native node volFlooded statistics, converted by the toolkit to m3 for this CMS model; includes all routing steps, not just displayed report samples.",
+    "flooded_node_count": "Number of nodes with native accumulated flooding volume > 1e-6 m3 over the full simulation; brief events between report frames are included.",
+    "surcharge_duration_s": "Time union over junction crown-exceedance flags sampled at each native routing-step endpoint, weighted by that step duration; overlaps count once, outfall excluded. At most 1 s routing step in the standard model.",
+    "frames": "Actual binary output samples at 60,120,...,7200 s. No fabricated t=0 frame or visual interpolation. A 60 s report sample can miss a routing-step peak."
+  }
+}

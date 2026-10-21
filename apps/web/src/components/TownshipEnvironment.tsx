@@ -730,7 +730,7 @@ const TownshipEnvironmentInner: React.FC<TownshipEnvironmentProps> = ({
             anchorY="bottom"
           >
             {appMode === 'idle'
-              ? '📡 Active Grid Patrol & Field Telemetry Zone (Taman Kyra)'
+              ? 'Township Overview (Taman Kyra)'
               : appMode === 'diagnose'
               ? '🔍 Historical Ponding Forensic & Diagnosis Zone (Taman Kyra)'
               : '⚡ 50-Year Extreme Monsoon Flood Stress Test Zone (120 mm/h)'}

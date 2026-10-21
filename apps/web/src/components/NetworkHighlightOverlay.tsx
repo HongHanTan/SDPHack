@@ -288,7 +288,7 @@ export const NetworkHighlightOverlay: React.FC<NetworkHighlightOverlayProps> = (
             key={`tracer-${conduit.conduit_id}`}
             fromNode={fromNode}
             toNode={toNode}
-            status={state?.status || 'normal'}
+            status={state?.status || 'unknown'}
             flowM3s={state?.flow || 0}
             isSelected={selectedAssetId === conduit.conduit_id}
             onClick={() => onSelectAsset({ type: 'conduit', id: conduit.conduit_id, data: conduit })}
@@ -303,7 +303,7 @@ export const NetworkHighlightOverlay: React.FC<NetworkHighlightOverlayProps> = (
           <GlowingJunctionMarker
             key={`marker-${node.node_id}`}
             node={node}
-            status={state?.status || 'normal'}
+            status={state?.status || 'unknown'}
             isSelected={selectedAssetId === node.node_id}
             onClick={() => onSelectAsset({ type: 'node', id: node.node_id, data: node })}
           />

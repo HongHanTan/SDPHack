@@ -1,0 +1,8 @@
+{
+  "name": "Riverside Estate - upload example",
+  "coordinate_units": "m",
+  "coordinate_system": "Example local survey grid, east/north metres",
+  "vertical_datum": "Example local benchmark - synthetic",
+  "source_type": "synthetic",
+  "source_reference": "FLOODOPS-UPLOAD-EXAMPLE-01; fictional geometry and hydrology, not site evidence"
+}

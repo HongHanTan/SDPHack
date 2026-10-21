@@ -1,0 +1,719 @@
+{
+  "format": "floodops-site-v1",
+  "project": {
+    "name": "Riverside - missing survey inputs",
+    "coordinate_units": "m",
+    "coordinate_system": "Example local survey grid, east/north metres",
+    "vertical_datum": "Example local benchmark - synthetic",
+    "source_type": "synthetic",
+    "source_reference": "FLOODOPS-UPLOAD-EXAMPLE-01; fictional geometry and hydrology, not site evidence"
+  },
+  "nodes": [
+    {
+      "node_id": "MH-A",
+      "node_type": "junction",
+      "x": 0,
+      "y": 90,
+      "ground_elevation_m": 15.316,
+      "invert_elevation_m": 13.4
+    },
+    {
+      "node_id": "MH-B",
+      "node_type": "junction",
+      "x": 70,
+      "y": 100,
+      "ground_elevation_m": 15.464,
+      "invert_elevation_m": 13.6
+    },
+    {
+      "node_id": "MH-C",
+      "node_type": "junction",
+      "x": 35,
+      "y": 35,
+      "ground_elevation_m": 14.621,
+      "invert_elevation_m": null
+    },
+    {
+      "node_id": "MH-D",
+      "node_type": "junction",
+      "x": 35,
+      "y": -25,
+      "ground_elevation_m": 13.901,
+      "invert_elevation_m": 12
+    },
+    {
+      "node_id": "OUT-RIVER",
+      "node_type": "outfall",
+      "x": 35,
+      "y": -100,
+      "ground_elevation_m": 13.001,
+      "invert_elevation_m": 10.9,
+      "outfall_type": "FREE"
+    }
+  ],
+  "pipes": [
+    {
+      "conduit_id": "LINK-A",
+      "from_node_id": "MH-A",
+      "to_node_id": "MH-C",
+      "diameter_m": 0.45,
+      "length_m": 65,
+      "manning_n": 0.013
+    },
+    {
+      "conduit_id": "LINK-B",
+      "from_node_id": "MH-B",
+      "to_node_id": "MH-C",
+      "diameter_m": 0.45,
+      "length_m": 75,
+      "manning_n": 0.013
+    },
+    {
+      "conduit_id": "LINK-TRUNK",
+      "from_node_id": "MH-C",
+      "to_node_id": "MH-D",
+      "diameter_m": null,
+      "length_m": 60,
+      "manning_n": 0.013
+    },
+    {
+      "conduit_id": "LINK-OUT",
+      "from_node_id": "MH-D",
+      "to_node_id": "OUT-RIVER",
+      "diameter_m": 0.75,
+      "length_m": 75,
+      "manning_n": 0.013
+    }
+  ],
+  "inlets": [
+    {
+      "inlet_id": "GRATE-1",
+      "node_id": "MH-A",
+      "x": 3,
+      "y": 90,
+      "ground_elevation_m": 15.316,
+      "grate_area_m2": 0.6
+    },
+    {
+      "inlet_id": "GRATE-2",
+      "node_id": "MH-B",
+      "x": 73,
+      "y": 100,
+      "ground_elevation_m": 15.464,
+      "grate_area_m2": 0.6
+    },
+    {
+      "inlet_id": "GRATE-3",
+      "node_id": "MH-C",
+      "x": 38,
+      "y": 35,
+      "ground_elevation_m": 14.621,
+      "grate_area_m2": 0.6
+    },
+    {
+      "inlet_id": "GRATE-4",
+      "node_id": "MH-D",
+      "x": 38,
+      "y": -25,
+      "ground_elevation_m": 13.901,
+      "grate_area_m2": 0.6
+    }
+  ],
+  "catchments": [],
+  "rainfall": [],
+  "terrain": [
+    {
+      "x": -60,
+      "y": -140,
+      "z": 12.844
+    },
+    {
+      "x": -25,
+      "y": -140,
+      "z": 12.641
+    },
+    {
+      "x": 10,
+      "y": -140,
+      "z": 12.536
+    },
+    {
+      "x": 45,
+      "y": -140,
+      "z": 12.529
+    },
+    {
+      "x": 80,
+      "y": -140,
+      "z": 12.62
+    },
+    {
+      "x": 115,
+      "y": -140,
+      "z": 12.809
+    },
+    {
+      "x": 150,
+      "y": -140,
+      "z": 13.096
+    },
+    {
+      "x": -60,
+      "y": -90,
+      "z": 13.444
+    },
+    {
+      "x": -25,
+      "y": -90,
+      "z": 13.241
+    },
+    {
+      "x": 10,
+      "y": -90,
+      "z": 13.136
+    },
+    {
+      "x": 45,
+      "y": -90,
+      "z": 13.129
+    },
+    {
+      "x": 80,
+      "y": -90,
+      "z": 13.22
+    },
+    {
+      "x": 115,
+      "y": -90,
+      "z": 13.409
+    },
+    {
+      "x": 150,
+      "y": -90,
+      "z": 13.696
+    },
+    {
+      "x": -60,
+      "y": -40,
+      "z": 14.044
+    },
+    {
+      "x": -25,
+      "y": -40,
+      "z": 13.841
+    },
+    {
+      "x": 10,
+      "y": -40,
+      "z": 13.736
+    },
+    {
+      "x": 45,
+      "y": -40,
+      "z": 13.729
+    },
+    {
+      "x": 80,
+      "y": -40,
+      "z": 13.82
+    },
+    {
+      "x": 115,
+      "y": -40,
+      "z": 14.009
+    },
+    {
+      "x": 150,
+      "y": -40,
+      "z": 14.296
+    },
+    {
+      "x": -60,
+      "y": 10,
+      "z": 14.644
+    },
+    {
+      "x": -25,
+      "y": 10,
+      "z": 14.441
+    },
+    {
+      "x": 10,
+      "y": 10,
+      "z": 14.336
+    },
+    {
+      "x": 45,
+      "y": 10,
+      "z": 14.329
+    },
+    {
+      "x": 80,
+      "y": 10,
+      "z": 14.42
+    },
+    {
+      "x": 115,
+      "y": 10,
+      "z": 14.609
+    },
+    {
+      "x": 150,
+      "y": 10,
+      "z": 14.896
+    },
+    {
+      "x": -60,
+      "y": 60,
+      "z": 15.244
+    },
+    {
+      "x": -25,
+      "y": 60,
+      "z": 15.041
+    },
+    {
+      "x": 10,
+      "y": 60,
+      "z": 14.936
+    },
+    {
+      "x": 45,
+      "y": 60,
+      "z": 14.929
+    },
+    {
+      "x": 80,
+      "y": 60,
+      "z": 15.02
+    },
+    {
+      "x": 115,
+      "y": 60,
+      "z": 15.209
+    },
+    {
+      "x": 150,
+      "y": 60,
+      "z": 15.496
+    },
+    {
+      "x": -60,
+      "y": 110,
+      "z": 15.844
+    },
+    {
+      "x": -25,
+      "y": 110,
+      "z": 15.641
+    },
+    {
+      "x": 10,
+      "y": 110,
+      "z": 15.536
+    },
+    {
+      "x": 45,
+      "y": 110,
+      "z": 15.529
+    },
+    {
+      "x": 80,
+      "y": 110,
+      "z": 15.62
+    },
+    {
+      "x": 115,
+      "y": 110,
+      "z": 15.809
+    },
+    {
+      "x": 150,
+      "y": 110,
+      "z": 16.096
+    },
+    {
+      "x": -60,
+      "y": 160,
+      "z": 16.444
+    },
+    {
+      "x": -25,
+      "y": 160,
+      "z": 16.241
+    },
+    {
+      "x": 10,
+      "y": 160,
+      "z": 16.136
+    },
+    {
+      "x": 45,
+      "y": 160,
+      "z": 16.129
+    },
+    {
+      "x": 80,
+      "y": 160,
+      "z": 16.22
+    },
+    {
+      "x": 115,
+      "y": 160,
+      "z": 16.409
+    },
+    {
+      "x": 150,
+      "y": 160,
+      "z": 16.696
+    }
+  ],
+  "roads": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "North approach",
+        "width_m": 9
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            0,
+            140
+          ],
+          [
+            0,
+            90
+          ],
+          [
+            35,
+            35
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "East approach",
+        "width_m": 9
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            100,
+            140
+          ],
+          [
+            70,
+            100
+          ],
+          [
+            35,
+            35
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "River road",
+        "width_m": 10
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            35,
+            35
+          ],
+          [
+            35,
+            -25
+          ],
+          [
+            35,
+            -100
+          ]
+        ]
+      }
+    }
+  ],
+  "buildings": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 1",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -25,
+              100
+            ],
+            [
+              -13,
+              100
+            ],
+            [
+              -13,
+              115
+            ],
+            [
+              -25,
+              115
+            ],
+            [
+              -25,
+              100
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 2",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -20,
+              65
+            ],
+            [
+              -8,
+              65
+            ],
+            [
+              -8,
+              80
+            ],
+            [
+              -20,
+              80
+            ],
+            [
+              -20,
+              65
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 3",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22,
+              110
+            ],
+            [
+              34,
+              110
+            ],
+            [
+              34,
+              125
+            ],
+            [
+              22,
+              125
+            ],
+            [
+              22,
+              110
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 4",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              85,
+              100
+            ],
+            [
+              97,
+              100
+            ],
+            [
+              97,
+              115
+            ],
+            [
+              85,
+              115
+            ],
+            [
+              85,
+              100
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 5",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              85,
+              65
+            ],
+            [
+              97,
+              65
+            ],
+            [
+              97,
+              80
+            ],
+            [
+              85,
+              80
+            ],
+            [
+              85,
+              65
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 6",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              70,
+              20
+            ],
+            [
+              82,
+              20
+            ],
+            [
+              82,
+              35
+            ],
+            [
+              70,
+              35
+            ],
+            [
+              70,
+              20
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 7",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              10,
+              -15
+            ],
+            [
+              22,
+              -15
+            ],
+            [
+              22,
+              0
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              -15
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 8",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              65,
+              -45
+            ],
+            [
+              77,
+              -45
+            ],
+            [
+              77,
+              -30
+            ],
+            [
+              65,
+              -30
+            ],
+            [
+              65,
+              -45
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

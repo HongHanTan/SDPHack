@@ -6,7 +6,7 @@ from .schemas import AssetsResponse, BootstrapResponse
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SEED_DIR = REPO_ROOT / "data" / "synthetic"
-API_VERSION = "1.2.0"
+API_VERSION = "1.5.0"
 
 
 def load_assets() -> AssetsResponse:

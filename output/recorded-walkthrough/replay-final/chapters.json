@@ -1,0 +1,92 @@
+[
+  {
+    "seconds": 1.305,
+    "title": "1. Open the operations dashboard",
+    "detail": "This isolated browser contains synthetic practice entries only."
+  },
+  {
+    "seconds": 6.951,
+    "title": "2. Record the D07 complaint",
+    "detail": "Link the asset, retain complaint DEMO-C01, and assign an inspection."
+  },
+  {
+    "seconds": 21.682,
+    "title": "Saved: 1 open, 1 overdue, 1 needs inspection",
+    "detail": "The report is synthetic. Linking an inlet does not confirm the cause."
+  },
+  {
+    "seconds": 33.249,
+    "title": "3. Record an inspection with an attachment",
+    "detail": "65% visible leaf coverage is fictional. It does not set hydraulic loss."
+  },
+  {
+    "seconds": 45.02,
+    "title": "Inspection and PDF saved",
+    "detail": "The observed-inspection gap stays open because this evidence is synthetic."
+  },
+  {
+    "seconds": 50.192,
+    "title": "4. Define the road and storm",
+    "detail": "D07; 15 cm reference; 80 mm/h for 60 minutes; assumed 40% loss; normal canal."
+  },
+  {
+    "seconds": 66.774,
+    "title": "5. Calculate the current network",
+    "detail": "The worker calculates two hours: one hour of rain and one hour of drainage."
+  },
+  {
+    "seconds": 133.671,
+    "title": "Current network: 60.0 cm; 760 m2; 75 minutes",
+    "detail": "Peak at fixed road point R1, maximum simultaneous road area above 15 cm, and R1 duration."
+  },
+  {
+    "seconds": 140.437,
+    "title": "6. Try cleaning D07",
+    "detail": "Only the effective D07 hydraulic loss changes to zero."
+  },
+  {
+    "seconds": 210.438,
+    "title": "Cleaning: 59.8 cm; 760 m2; 74 minutes",
+    "detail": "Cleaning makes little difference in this particular model."
+  },
+  {
+    "seconds": 216.921,
+    "title": "7. Test the larger P07 pipe",
+    "detail": "600 to 750 mm. This separate option retains the original 40% inlet loss."
+  },
+  {
+    "seconds": 303.498,
+    "title": "Larger pipe: 7.7 cm; 0 m2 above 15 cm",
+    "detail": "A reason to request engineering review, not construction approval or a real-site guarantee."
+  },
+  {
+    "seconds": 329.573,
+    "title": "8. Check the calculation basis",
+    "detail": "Input checks retain matching conditions. Reference checks execute known numerical cases."
+  },
+  {
+    "seconds": 354.972,
+    "title": "Five reference checks passed",
+    "detail": "These checks do not establish field calibration or real street-depth accuracy."
+  },
+  {
+    "seconds": 359.351,
+    "title": "9. Prepare an engineering-review proposal",
+    "detail": "Choose Request engineering review so the pipe comparison is attached."
+  },
+  {
+    "seconds": 391.168,
+    "title": "Draft saved: cost remains unknown",
+    "detail": "The P07 comparison is attached. D07 evidence remains with the original inlet record."
+  },
+  {
+    "seconds": 398.953,
+    "title": "10. Give the follow-up an owner and date",
+    "detail": "Return to the complaint. Request engineering review and keep it Investigating."
+  },
+  {
+    "seconds": 410.31,
+    "title": "End: an assigned investigation, not a claimed repair",
+    "detail": "1 open; 0 overdue; engineering review due 22 October. Real evidence and genuine cost information are still needed."
+  }
+]

@@ -1,0 +1,5 @@
+inlet_id,node_id,x,y,ground_elevation_m,grate_area_m2
+GRATE-1,MH-A,3,90,15.316,0.6
+GRATE-2,MH-B,73,100,15.464,0.6
+GRATE-3,MH-C,38,35,14.621,0.6
+GRATE-4,MH-D,38,-25,13.901,0.6

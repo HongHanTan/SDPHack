@@ -23,7 +23,7 @@ import { makeContext, toTeamFrame, toTeamMetrics, type EngineMetricsExtras } fro
 export const MODEL_VERSION = 'taman_kyra_synthetic_v1';
 export const DEBRIS_CASES = [0, 0.2, 0.4, 0.6].map((f) => ({ id: f === 0 ? 'engine_d07_clean' : `engine_d07_${Math.round(f * 100)}pct`, fraction: f }));
 const MAX_RUNS = 2;
-const CAPS = { assets: true, storm_creation: false, simulations: true, inspections: false, debris: true, comparisons: true };
+const CAPS = { assets: true, storm_creation: false, simulations: true, inspections: true, debris: true, comparisons: true, interventions:true };
 
 interface RunRecord {
   status: SimulationRun['status'];

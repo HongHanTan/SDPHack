@@ -1,0 +1,85 @@
+{
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   \"NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.\"\n+ ]\n- []\n",
+  "errors": [
+    "NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node."
+  ],
+  "url": "http://localhost:5173/",
+  "body": "Township FloodOps\nLocal pilot workspace\nOpen illustrative demo\nYOUR SITE. YOUR EVIDENCE. YOUR NEXT DECISION.\nBuild around your township.\n\nUpload the drainage and site data you already have. See what is usable, resolve the gaps, then build your model.\n\nGeometry comes from your files.\nComplete inputs still need field validation.\nUpload site files\n02\nReview the inputs\n03\nBuild your township\n04\nTest and investigate\n01 / SOURCE FILES\nStart with a site, not a scene.\n\nUse one site bundle, or select the separate CSV / geometry files together. All coordinates must share a metric site reference.\n\nProject name\nLeave blank to use the name in project metadata.\n1 file selected\nCSV, JSON or site-metre GeoJSON · 8 MiB per file · 24 MiB total\nriverside-map-only.site.json\n11.9 KiB\nbundle\nproject\nnodes\npipes\ninlets\ncatchments\nrainfall\nterrain\nroads\nbuildings\nCheck my files\nClear selection\nWhat files do I need?\n02 / READINESS REVIEW\nRiverside incomplete survey\n\nExample local survey grid, east/north metres\n\nMap inputs usable\n5\nnodes\n4\npipes\n0\ncatchments\n49\nterrain points\n3\nroads\n8\nbuildings\nMap readiness\nCoordinates and geometry can be displayed.\nSimulation readiness\nMore hydraulic inputs are needed. A map can still be built if its checks pass.\nSIMULATIONnodes.MH-C\n\nMissing ground or pipe-bottom elevation. The location can be mapped, but hydraulics cannot run.\n\nSIMULATIONpipes.LINK-TRUNK.diameter_m\n\nSupply a positive diameter_m; the software will not invent it.\n\nSIMULATIONcatchments\n\nUpload contributing areas and their junction outlets.\n\nSIMULATIONrainfall\n\nProvide 1..72 five-minute rainfall intervals (up to 6 hours). Each value applies to the following interval.\n\nBuild the supplied geometry. Missing hydraulic information stays visible.\n\nBuild my township\nYour saved projects\nRefresh projects\n5 NODES · 4 PIPES\nRiverside incomplete survey\nMap built · simulation inputs missing\nOpen project\n5 NODES · 4 PIPES\nRiverside Estate drainage review\nRequired network inputs supplied\nOpen project\n5 NODES · 4 PIPES\nRiverside Estate drainage review\nRequired network inputs supplied\nOpen project\n5 NODES · 4 PIPES\nRiverside Estate drainage review\nRequired network inputs supplied\nOpen project\nLocal API connection\n15. A specific next data-collection task\nThe manager knows exactly what measurements are missing. The app does not invent the values or replace a failed calculation with mock output.",
+  "chapters": [
+    {
+      "seconds": 2.59,
+      "title": "1. Start with the stakeholder’s site",
+      "detail": "The first page has no preloaded township, invented workers or rain. Choose the site files first."
+    },
+    {
+      "seconds": 5.696,
+      "title": "2. Upload the source file",
+      "detail": "This fictional bundle supplies surveyed-style geometry, drainage tables and rainfall. Its provenance stays synthetic."
+    },
+    {
+      "seconds": 9.14,
+      "title": "3. Review what can be used",
+      "detail": "5 nodes, 4 pipes, 49 terrain points, 3 roads and 8 buildings. Input completeness is separate from field validation."
+    },
+    {
+      "seconds": 16.49,
+      "title": "4. Build the matching 3D site",
+      "detail": "Terrain, roads, footprints and pipe connections come from this file. The sequence reveals imported layers."
+    },
+    {
+      "seconds": 23.803,
+      "title": "5. Inspect an uploaded asset",
+      "detail": "MH-C uses the uploaded ID, position and elevations. No fixed D07 dataset is required."
+    },
+    {
+      "seconds": 28.708,
+      "title": "6. Review the model assumptions",
+      "detail": "Native SWMM models this 1D network. Soil defaults and direct catchment entry are disclosed before calculation."
+    },
+    {
+      "seconds": 33.199,
+      "title": "7. Calculate the uploaded baseline",
+      "detail": "About 1,597 m³ leaves drainage nodes over the run. This is calculated by EPA SWMM, not a dashboard lookup."
+    },
+    {
+      "seconds": 39.047,
+      "title": "8. Test one physical change",
+      "detail": "The uploaded LINK-TRUNK pipe changes from 0.30 m to 0.60 m. Same rainfall and site; loss is about 149 m³."
+    },
+    {
+      "seconds": 48.907,
+      "title": "9. Explain the result honestly",
+      "detail": "Node columns and this curve show depth above the pipe invert. Street flood depth and flooded houses are not inferred."
+    },
+    {
+      "seconds": 54.473,
+      "title": "10. Save a reviewable action",
+      "detail": "The Draft links actual run IDs and original source hashes. Cost remains unknown. Engineering review comes before expenditure."
+    },
+    {
+      "seconds": 64.236,
+      "title": "11. Track the real operating question",
+      "detail": "The register links the complaint to LINK-TRUNK and assigns investigation follow-up. Practice reports remain synthetic."
+    },
+    {
+      "seconds": 75.618,
+      "title": "12. Retain the evidence chain",
+      "detail": "Source text, SHA-256, model version and synthetic inspection stay visible. Visual coverage does not secretly change pipe hydraulics."
+    },
+    {
+      "seconds": 83.874,
+      "title": "13. Resume the saved project",
+      "detail": "The API retains the imported model and native runs. Problem follow-up remains scoped to this browser and project."
+    },
+    {
+      "seconds": 89.2,
+      "title": "14. Show what happens when data is missing",
+      "detail": "This second file lacks MH-C invert, LINK-TRUNK diameter, catchments and rainfall. It can map, but cannot simulate."
+    },
+    {
+      "seconds": 96.569,
+      "title": "15. A specific next data-collection task",
+      "detail": "The manager knows exactly what measurements are missing. The app does not invent the values or replace a failed calculation with mock output."
+    }
+  ]
+}

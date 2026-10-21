@@ -166,128 +166,52 @@ export class ApiClient {
     });
   }
 
-  // Load inspections from backend or local storage
-  public async getInspections(assetId?: string): Promise<{ items: InspectionRecord[] }> {
-    if (this.mode === 'engine') {
-      return { items: [] };
-    }
-    if (this.mode === 'mock') {
-      let local: InspectionRecord[] = [];
-      try {
-        const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_INSPECTIONS) : null;
-        local = stored ? JSON.parse(stored) : [];
-      } catch {
-        local = [];
-      }
-      const combined = [...local, ...MOCK_INSPECTIONS];
-      const filtered = assetId ? combined.filter((i) => i.asset_id === assetId) : combined;
-      return { items: filtered };
-    }
+  // Local evidence stays in this browser; API evidence stays on the server.
+  private inspectionKey() { return `${STORAGE_KEY_INSPECTIONS}_${this.mode}`; }
 
-    const query = assetId ? `?asset_id=${encodeURIComponent(assetId)}` : '';
-    return this.request<{ items: InspectionRecord[] }>(`/api/inspections${query}`);
+  public async getInspections(assetId?: string): Promise<{ items: InspectionRecord[] }> {
+    if (this.mode === 'api') {
+      const query = assetId ? `?asset_id=${encodeURIComponent(assetId)}` : '';
+      return this.request(`/api/inspections${query}`);
+    }
+    let stored = localStorage.getItem(this.inspectionKey());
+    if (!stored && this.mode === 'mock') {
+      const legacy = localStorage.getItem(STORAGE_KEY_INSPECTIONS);
+      if (legacy) { JSON.parse(legacy); localStorage.setItem(this.inspectionKey(), legacy); stored = legacy; }
+    }
+    const local: InspectionRecord[] = stored ? JSON.parse(stored) : [];
+    if (!Array.isArray(local)) throw new Error('Saved inspection data is invalid.');
+    const fixtures = this.mode === 'mock' ? MOCK_INSPECTIONS.map(i => ({ ...i, source_type: 'synthetic' as const, source_reference: 'Illustrative fixture; not a site observation.' })) : [];
+    return { items: [...local, ...fixtures].filter(i => !assetId || i.asset_id === assetId) };
   }
 
   public async createInspection(data: Partial<InspectionRecord>): Promise<InspectionRecord> {
-    if (this.mode === 'engine') {
-      throw new Error('[ENGINE] Not supported in engine mode — switch to Mock or SWMM API');
-    }
-    const isGrateAsset = (data.asset_id || '').startsWith('INLET');
-    const isoTimestamp = data.timestamp || new Date().toISOString();
-
-    const payload: Partial<InspectionRecord> = {
-      asset_id: data.asset_id || 'INLET-D07',
-      timestamp: isoTimestamp,
-      inspector: data.inspector || 'Inspector Azman (Field Unit A)',
-      method: data.method || 'visual',
-      source_type: data.source_type || 'synthetic',
-      visible_grate_coverage_fraction: isGrateAsset
-        ? (data.visible_grate_coverage_fraction ?? 0.65)
-        : null as unknown as number,
-      debris_category: data.debris_category || 'leaf_litter',
-      notes: data.notes || '',
-      source_reference: data.source_reference || 'Township FloodOps 3D Client',
-    };
-
-    if (this.mode === 'mock') {
-      const item: InspectionRecord = {
-        inspection_id: `insp-${Date.now()}`,
-        asset_id: payload.asset_id!,
-        timestamp: payload.timestamp!,
-        inspector: payload.inspector!,
-        method: payload.method!,
-        source_type: payload.source_type!,
-        visible_grate_coverage_fraction: payload.visible_grate_coverage_fraction ?? 0.65,
-        debris_category: payload.debris_category!,
-        notes: payload.notes!,
-        source_reference: payload.source_reference,
-        media_urls: data.media_urls || ['/assets/mock_inlet_clogged.jpg'],
-        media: data.media || [],
-      };
-
-      try {
-        const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_INSPECTIONS) : null;
-        const local = stored ? JSON.parse(stored) : [];
-        local.unshift(item);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_KEY_INSPECTIONS, JSON.stringify(local));
-        }
-      } catch {
-        // Fallback
-      }
-      MOCK_INSPECTIONS.unshift(item);
-      return item;
-    }
-
-    return this.request<InspectionRecord>('/api/inspections', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    const payload = { asset_id: data.asset_id, timestamp: data.timestamp || new Date().toISOString(), inspector: data.inspector,
+      method: data.method || 'visual', source_type: data.source_type || 'synthetic',
+      visible_grate_coverage_fraction: data.asset_id?.startsWith('INLET') ? data.visible_grate_coverage_fraction : null,
+      debris_category: data.debris_category || 'none', notes: data.notes || '', source_reference: data.source_reference || '' };
+    if (this.mode === 'api') return this.request('/api/inspections', { method: 'POST', body: JSON.stringify(payload) });
+    const item = { ...payload, inspection_id: `insp-${crypto.randomUUID()}`, media_urls: [], media: [] } as InspectionRecord;
+    const stored = localStorage.getItem(this.inspectionKey());
+    const list = stored ? JSON.parse(stored) : [];
+    localStorage.setItem(this.inspectionKey(), JSON.stringify([item, ...list]));
+    return item;
   }
 
-  // Multipart media upload for inspections per T3 contract
-  public async uploadInspectionMedia(
-    inspectionId: string,
-    file: File
-  ): Promise<InspectionMediaItem> {
-    if (this.mode === 'engine') {
-      throw new Error('[ENGINE] Not supported in engine mode — switch to Mock or SWMM API');
-    }
-    const maxBytes = 10 * 1024 * 1024; // 10 MiB limit
-    if (file.size > maxBytes) {
-      throw new Error(`File size ${(file.size / (1024 * 1024)).toFixed(1)}MB exceeds maximum 10 MiB limit.`);
-    }
-
-    if (this.mode === 'mock') {
-      const mockItem: InspectionMediaItem = {
-        media_id: `media-${Date.now()}`,
-        filename: file.name,
-        content_type: file.type || 'image/jpeg',
-        size_bytes: file.size,
-        sha256: 'mock-sha256-' + Math.random().toString(36).substring(2, 10),
-        url: URL.createObjectURL(file),
-        created_at: new Date().toISOString(),
-      };
-
-      // Also attach to local mock inspection
-      try {
-        const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_INSPECTIONS) : null;
-        if (stored) {
-          const list = JSON.parse(stored) as InspectionRecord[];
-          const target = list.find((i) => i.inspection_id === inspectionId);
-          if (target) {
-            target.media = target.media || [];
-            target.media.unshift(mockItem);
-            target.media_urls = target.media_urls || [];
-            target.media_urls.unshift(mockItem.url);
-            localStorage.setItem(STORAGE_KEY_INSPECTIONS, JSON.stringify(list));
-          }
-        }
-      } catch {
-        // Ignore
-      }
-
-      return mockItem;
+  public async uploadInspectionMedia(inspectionId: string, file: File): Promise<InspectionMediaItem> {
+    if (file.size > 10 * 1024 * 1024) throw new Error('Media is limited to 10 MiB.');
+    if (!['image/png', 'image/jpeg', 'image/webp', 'application/pdf'].includes(file.type)) throw new Error('Use PNG, JPEG, WebP or PDF.');
+    if (this.mode !== 'api') {
+      const dataUrl = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('Unable to read attachment.')); reader.readAsDataURL(file); });
+      const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer()))).map(b => b.toString(16).padStart(2, '0')).join('');
+      const media: InspectionMediaItem = { media_id: crypto.randomUUID(), filename: file.name, content_type: file.type, size_bytes: file.size, sha256: hash, url: dataUrl, created_at: new Date().toISOString() };
+      const stored = localStorage.getItem(this.inspectionKey());
+      const list: InspectionRecord[] = stored ? JSON.parse(stored) : [];
+      const item = list.find(i => i.inspection_id === inspectionId);
+      if (!item) throw new Error('Inspection not found; attachment was not saved.');
+      item.media = [...(item.media || []), media]; item.media_urls = [...(item.media_urls || []), media.url];
+      localStorage.setItem(this.inspectionKey(), JSON.stringify(list));
+      return media;
     }
 
     // Real API Multipart Upload (FormData)
@@ -378,7 +302,7 @@ export class ApiClient {
     if (this.mode === 'engine') {
       return engineSource.getSimulation(runId);
     }
-    if (this.mode === 'mock' || runId === 't1_baseline' || runId === 't1_stronger') {
+    if (this.mode === 'mock') {
       return runId === 't1_stronger' ? MOCK_RUN_STRONGER : MOCK_RUN_BASELINE;
     }
     return this.request<SimulationRun>(`/api/simulations/${runId}`);
@@ -388,7 +312,7 @@ export class ApiClient {
     if (this.mode === 'engine') {
       return engineSource.getSimulationFrames(runId);
     }
-    if (this.mode === 'mock' || runId === 't1_baseline' || runId === 't1_stronger') {
+    if (this.mode === 'mock') {
       return runId === 't1_stronger' ? MOCK_FRAMES_STRONGER : MOCK_FRAMES_BASELINE;
     }
     return this.request<SimulationFramesResponse>(`/api/simulations/${runId}/frames`);
@@ -398,7 +322,7 @@ export class ApiClient {
     if (this.mode === 'engine') {
       return engineSource.getSimulationMetrics(runId);
     }
-    if (this.mode === 'mock' || runId === 't1_baseline' || runId === 't1_stronger') {
+    if (this.mode === 'mock') {
       return runId === 't1_stronger' ? MOCK_METRICS_STRONGER : MOCK_METRICS_BASELINE;
     }
     return this.request<SimulationMetricsResponse>(`/api/simulations/${runId}/metrics`);
@@ -406,10 +330,12 @@ export class ApiClient {
 
   // Explicit helper to get verified offline EPA SWMM 5.2.4 datasets
   public getOfflineFrames(stormId: string): SimulationFramesResponse {
+    if (!['synthetic_80mmh_60min', 'synthetic_120mmh_60min'].includes(stormId)) throw new Error('No retained offline result exists for this storm.');
     return stormId === 'synthetic_120mmh_60min' ? MOCK_FRAMES_STRONGER : MOCK_FRAMES_BASELINE;
   }
 
   public getOfflineMetrics(stormId: string): SimulationMetricsResponse {
+    if (!['synthetic_80mmh_60min', 'synthetic_120mmh_60min'].includes(stormId)) throw new Error('No retained offline result exists for this storm.');
     return stormId === 'synthetic_120mmh_60min' ? MOCK_METRICS_STRONGER : MOCK_METRICS_BASELINE;
   }
 }

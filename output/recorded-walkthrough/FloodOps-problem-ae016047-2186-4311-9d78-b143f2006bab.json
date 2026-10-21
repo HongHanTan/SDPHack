@@ -1,0 +1,97 @@
+{
+  "format": "FloodOps problem evidence v1",
+  "exported_at": "2026-10-21T07:34:30.088Z",
+  "storage": "Browser-local problem register",
+  "scope": {
+    "mode": "engine",
+    "township_id": "taman_kyra_demo",
+    "model_version_id": "taman_kyra_synthetic_v1",
+    "api_base_url": "http://localhost:8000"
+  },
+  "problem": {
+    "title": "Water reported near D07",
+    "location": "Example D07 street junction",
+    "asset_id": "INLET-D07",
+    "external_reference": "DEMO-C01",
+    "owner": "Township engineering team",
+    "next_action": "Engineering review",
+    "due_date": "2026-10-22",
+    "status": "Investigating",
+    "closure_note": "",
+    "problem_id": "ae016047-2186-4311-9d78-b143f2006bab",
+    "revision": 2,
+    "created_at": "2026-10-21T07:23:31.445Z",
+    "updated_at": "2026-10-21T07:34:27.080Z",
+    "reports": [
+      {
+        "occurred_at": "2026-10-21T07:20:00.000Z",
+        "source_type": "synthetic",
+        "source_reference": "DEMO-C01",
+        "description": "Practice report: water collected near the D07 inlet after rain.",
+        "reported_impact": "Practice account of difficulty accessing a driveway.",
+        "report_id": "a844b024-161e-4192-ab2a-d0eff2865c21",
+        "recorded_at": "2026-10-21T07:23:31.446Z"
+      }
+    ],
+    "history": [
+      {
+        "timestamp": "2026-10-21T07:23:31.445Z",
+        "note": "Problem recorded. Reported conditions are not independently verified."
+      },
+      {
+        "timestamp": "2026-10-21T07:34:27.080Z",
+        "note": "Responsible team: Township maintenance -> Township engineering team\nNext action: Inspect location -> Engineering review\nDue date: 2026-10-20 -> 2026-10-22\nStatus: Open -> Investigating"
+      }
+    ]
+  },
+  "linked_asset_snapshot": {
+    "id": "INLET-D07",
+    "type": "inlet",
+    "data": {
+      "inlet_id": "INLET-D07",
+      "node_id": "NODE-J07",
+      "position_m": {
+        "x": 40,
+        "y": 0,
+        "z": 11
+      },
+      "grate_area_m2": 0.6,
+      "source_type": "synthetic"
+    }
+  },
+  "asset_inspection_snapshot": [
+    {
+      "asset_id": "INLET-D07",
+      "timestamp": "2026-10-21T07:23:41.348Z",
+      "inspector": "Demo Inspector",
+      "method": "visual",
+      "source_type": "synthetic",
+      "visible_grate_coverage_fraction": 0.65,
+      "debris_category": "leaf_litter",
+      "notes": "Synthetic demo: leaves cover about 65% of the visible grate. Actual hydraulic restriction is unknown. Related problem: DEMO-C01.",
+      "source_reference": "DEMO-INSP-D07-001 / DEMO-C01",
+      "inspection_id": "insp-71dc5d64-3222-442a-bc27-96ac911d11de",
+      "media_urls": [
+        "data:application/pdf;base64,JVBERi0xLjQKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3VyY2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAovQmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEgL1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9udCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9TdWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMgOCAwIFIgL01lZGlhQm94IFsgMCAwIDU5NS4yNzU2IDg0MS44ODk4IF0gL1BhcmVudCA3IDAgUiAvUmVzb3VyY2VzIDw8Ci9Gb250IDEgMCBSIC9Qcm9jU2V0IFsgL1BERiAvVGV4dCAvSW1hZ2VCIC9JbWFnZUMgL0ltYWdlSSBdCj4+IC9Sb3RhdGUgMCAvVHJhbnMgPDwKCj4+IAogIC9UeXBlIC9QYWdlCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9QYWdlTW9kZSAvVXNlTm9uZSAvUGFnZXMgNyAwIFIgL1R5cGUgL0NhdGFsb2cKPj4KZW5kb2JqCjYgMCBvYmoKPDwKL0F1dGhvciAoXChhbm9ueW1vdXNcKSkgL0NyZWF0aW9uRGF0ZSAoRDoyMDI2MTAyMTEwMzMxMiswOCcwMCcpIC9DcmVhdG9yIChcKHVuc3BlY2lmaWVkXCkpIC9LZXl3b3JkcyAoKSAvTW9kRGF0ZSAoRDoyMDI2MTAyMTEwMzMxMiswOCcwMCcpIC9Qcm9kdWNlciAoUmVwb3J0TGFiIFBERiBMaWJyYXJ5IC0gXChvcGVuc291cmNlXCkpIAogIC9TdWJqZWN0IChcKHVuc3BlY2lmaWVkXCkpIC9UaXRsZSAoXChhbm9ueW1vdXNcKSkgL1RyYXBwZWQgL0ZhbHNlCj4+CmVuZG9iago3IDAgb2JqCjw8Ci9Db3VudCAxIC9LaWRzIFsgNCAwIFIgXSAvVHlwZSAvUGFnZXMKPj4KZW5kb2JqCjggMCBvYmoKPDwKL0ZpbHRlciBbIC9BU0NJSTg1RGVjb2RlIC9GbGF0ZURlY29kZSBdIC9MZW5ndGggMTE5Nwo+PgpzdHJlYW0KR2F0bTo/JyFdISdSZi5HZ206WD8uXDhXV2ZmJzdIYjZsPClkVC5rdT4nWV1Da3AvISsqOCgpXUhYZ0drVkJyaSkiW21rW2daUClyQ1lxTHFeYzBmcVVdQzAkX3FmdEkyJ0xmVls+PkBfJSlUTXVNP2MxWSZIPEZrPGFcaEciKEY/OEAkajIhZ0cmYU9qTDFJQjpRKnNrPUxfYD5yQ048UjlVJSlgMihxQCMuRVMlWStOalY9XmQ4I288L2wrLlpKJzpdb0s8bT4uaHNeP1I7YF1NSWFnXCktWTQkc1dvP3FIMjBmVCJHRFAtNlM6OitVXDtoI2lCK2EjazdTLy5pTSFPbEY3PWM7LDlyU1lWcVMkWihZTlFuXzJJdTgnLTteXUdIXT9nMCouOytvNSMxUVQxNWhsSEZNRURoPUBKR0tsWW1gWTMxTks/LFgxMmEsblxWPC09UileJTl0MC80P1dPIi9TXVJeRCdHaisrSyFHMklyJz9gSi5JI1AsVGUiWkhqJUQ9ImQxNiJZMWxMV0pfc1RnPGR1YV1PJ3QtazVvZCU6KGU6QElvNUc5ZFlzZkFFQS9gYjUmOlUlLV9vNCRXQkYuJEM3SXRmNyopMjJFTGFKPSlIKDFkKT5nKWBUcDVFZHVfNkxvW2YwSjNmbT9xJ3UlR01NLlIxcztmJUxlZEpQL0hFZmNkOWlVZWBgX2MxayJzcF0sLytsV2MrRyk5XDhvVSpGZTlgTStvI0JHQWxTcl48Rl1eRG4razFXJkxQTWE2PGwxLkNkMzlaKzsjYjM9SD1LaFQhS2xkZm5lREdGTj82ZWQ5V0QwYW0jMjxpW0xQJzwncVcsQG5FZjo5X2Bfak0/PEcxYSh1YERDJyZuMDl0MCFjO1VdP1ktUi1NUkdPZ2VtL2hMVzxAVmwuR0UnPTNFOyFGZy9aREkpZUhPMGBYTkRUKSVVMlVLTElDTD5BRD9ndWYqU1ZHXVJiIyJjI1tDV0okV1VObzVBUE8nbUhyKCpiODxaJGdbaj9rQTlga1NnaFguW0g3RCdjaEFMTj8kcj8qblA+XTBjcDVlM0hjMUpmbVAhJ0tURSs9RHFIIjAtQSg1ZGEzYGYyTTNHTWxwXylXPztAZFo4PT89TUpHQW1KbS9jblkrVWtLW3UiUWQ1VSxROjghaEJRbVxaMm8rNTpIJChaPT9rOHU0ZCQwYUghIk9ZW0ZbWnJcKmomYEVbJElmPUU9SWMlNzM6Y3RuVCZkSj1HZkk7ZydpciU0OSZYcSpvPVhFJztET2xSY3FrOC1GTGVTWFQzMzwhQGZVXSpjOy1AVXFEQTxtQl5pNjgmJy9LOCgwbUw6L1NuLEdiU0wuPVtLbU9ITzYnOy80ZzRTciZwOTIhSjtsPjl0ajhTJnQjNHFnKSslS0gjLHNGU1Y5ZVhvQ1xAVkRHUS0pRkkmLi4iXWcja29IQGBhRF9AKWRPR2csai5SPkY3MUJEWDspaEwqcSNGN1RTPC9RIWtDQURIJGJOZjM3J09vPCsybnVDLkpaNDdFSWRdNEA4NkRKNTNSYGteLi5ndEMhTShiKEhqW1RSJiYhR21JJyppR34+ZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgOQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNjEgMDAwMDAgbiAKMDAwMDAwMDEwMiAwMDAwMCBuIAowMDAwMDAwMjA5IDAwMDAwIG4gCjAwMDAwMDAzMjEgMDAwMDAgbiAKMDAwMDAwMDUyNCAwMDAwMCBuIAowMDAwMDAwNTkyIDAwMDAwIG4gCjAwMDAwMDA4NzIgMDAwMDAgbiAKMDAwMDAwMDkzMSAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9JRCAKWzw3NzdmZmM4YjY4N2RhMGMxNTUxZWVhNjgwZWI0N2E3ND48Nzc3ZmZjOGI2ODdkYTBjMTU1MWVlYTY4MGViNDdhNzQ+XQolIFJlcG9ydExhYiBnZW5lcmF0ZWQgUERGIGRvY3VtZW50IC0tIGRpZ2VzdCAob3BlbnNvdXJjZSkKCi9JbmZvIDYgMCBSCi9Sb290IDUgMCBSCi9TaXplIDkKPj4Kc3RhcnR4cmVmCjIyMTkKJSVFT0YK"
+      ],
+      "media": [
+        {
+          "media_id": "3852f865-4a58-4dbd-a17d-dd0545b5ea8f",
+          "filename": "demo-d07-before.pdf",
+          "content_type": "application/pdf",
+          "size_bytes": 2610,
+          "sha256": "81d9a84dd00717580a153f5602e32d062d95eb68913b4a5603de64eee264aae9",
+          "url": "data:application/pdf;base64,JVBERi0xLjQKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3VyY2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAovQmFzZUZvbnQgL0hlbHZldGljYSAvRW5jb2RpbmcgL1dpbkFuc2lFbmNvZGluZyAvTmFtZSAvRjEgL1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iagozIDAgb2JqCjw8Ci9CYXNlRm9udCAvSGVsdmV0aWNhLUJvbGQgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YyIC9TdWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNCAwIG9iago8PAovQ29udGVudHMgOCAwIFIgL01lZGlhQm94IFsgMCAwIDU5NS4yNzU2IDg0MS44ODk4IF0gL1BhcmVudCA3IDAgUiAvUmVzb3VyY2VzIDw8Ci9Gb250IDEgMCBSIC9Qcm9jU2V0IFsgL1BERiAvVGV4dCAvSW1hZ2VCIC9JbWFnZUMgL0ltYWdlSSBdCj4+IC9Sb3RhdGUgMCAvVHJhbnMgPDwKCj4+IAogIC9UeXBlIC9QYWdlCj4+CmVuZG9iago1IDAgb2JqCjw8Ci9QYWdlTW9kZSAvVXNlTm9uZSAvUGFnZXMgNyAwIFIgL1R5cGUgL0NhdGFsb2cKPj4KZW5kb2JqCjYgMCBvYmoKPDwKL0F1dGhvciAoXChhbm9ueW1vdXNcKSkgL0NyZWF0aW9uRGF0ZSAoRDoyMDI2MTAyMTEwMzMxMiswOCcwMCcpIC9DcmVhdG9yIChcKHVuc3BlY2lmaWVkXCkpIC9LZXl3b3JkcyAoKSAvTW9kRGF0ZSAoRDoyMDI2MTAyMTEwMzMxMiswOCcwMCcpIC9Qcm9kdWNlciAoUmVwb3J0TGFiIFBERiBMaWJyYXJ5IC0gXChvcGVuc291cmNlXCkpIAogIC9TdWJqZWN0IChcKHVuc3BlY2lmaWVkXCkpIC9UaXRsZSAoXChhbm9ueW1vdXNcKSkgL1RyYXBwZWQgL0ZhbHNlCj4+CmVuZG9iago3IDAgb2JqCjw8Ci9Db3VudCAxIC9LaWRzIFsgNCAwIFIgXSAvVHlwZSAvUGFnZXMKPj4KZW5kb2JqCjggMCBvYmoKPDwKL0ZpbHRlciBbIC9BU0NJSTg1RGVjb2RlIC9GbGF0ZURlY29kZSBdIC9MZW5ndGggMTE5Nwo+PgpzdHJlYW0KR2F0bTo/JyFdISdSZi5HZ206WD8uXDhXV2ZmJzdIYjZsPClkVC5rdT4nWV1Da3AvISsqOCgpXUhYZ0drVkJyaSkiW21rW2daUClyQ1lxTHFeYzBmcVVdQzAkX3FmdEkyJ0xmVls+PkBfJSlUTXVNP2MxWSZIPEZrPGFcaEciKEY/OEAkajIhZ0cmYU9qTDFJQjpRKnNrPUxfYD5yQ048UjlVJSlgMihxQCMuRVMlWStOalY9XmQ4I288L2wrLlpKJzpdb0s8bT4uaHNeP1I7YF1NSWFnXCktWTQkc1dvP3FIMjBmVCJHRFAtNlM6OitVXDtoI2lCK2EjazdTLy5pTSFPbEY3PWM7LDlyU1lWcVMkWihZTlFuXzJJdTgnLTteXUdIXT9nMCouOytvNSMxUVQxNWhsSEZNRURoPUBKR0tsWW1gWTMxTks/LFgxMmEsblxWPC09UileJTl0MC80P1dPIi9TXVJeRCdHaisrSyFHMklyJz9gSi5JI1AsVGUiWkhqJUQ9ImQxNiJZMWxMV0pfc1RnPGR1YV1PJ3QtazVvZCU6KGU6QElvNUc5ZFlzZkFFQS9gYjUmOlUlLV9vNCRXQkYuJEM3SXRmNyopMjJFTGFKPSlIKDFkKT5nKWBUcDVFZHVfNkxvW2YwSjNmbT9xJ3UlR01NLlIxcztmJUxlZEpQL0hFZmNkOWlVZWBgX2MxayJzcF0sLytsV2MrRyk5XDhvVSpGZTlgTStvI0JHQWxTcl48Rl1eRG4razFXJkxQTWE2PGwxLkNkMzlaKzsjYjM9SD1LaFQhS2xkZm5lREdGTj82ZWQ5V0QwYW0jMjxpW0xQJzwncVcsQG5FZjo5X2Bfak0/PEcxYSh1YERDJyZuMDl0MCFjO1VdP1ktUi1NUkdPZ2VtL2hMVzxAVmwuR0UnPTNFOyFGZy9aREkpZUhPMGBYTkRUKSVVMlVLTElDTD5BRD9ndWYqU1ZHXVJiIyJjI1tDV0okV1VObzVBUE8nbUhyKCpiODxaJGdbaj9rQTlga1NnaFguW0g3RCdjaEFMTj8kcj8qblA+XTBjcDVlM0hjMUpmbVAhJ0tURSs9RHFIIjAtQSg1ZGEzYGYyTTNHTWxwXylXPztAZFo4PT89TUpHQW1KbS9jblkrVWtLW3UiUWQ1VSxROjghaEJRbVxaMm8rNTpIJChaPT9rOHU0ZCQwYUghIk9ZW0ZbWnJcKmomYEVbJElmPUU9SWMlNzM6Y3RuVCZkSj1HZkk7ZydpciU0OSZYcSpvPVhFJztET2xSY3FrOC1GTGVTWFQzMzwhQGZVXSpjOy1AVXFEQTxtQl5pNjgmJy9LOCgwbUw6L1NuLEdiU0wuPVtLbU9ITzYnOy80ZzRTciZwOTIhSjtsPjl0ajhTJnQjNHFnKSslS0gjLHNGU1Y5ZVhvQ1xAVkRHUS0pRkkmLi4iXWcja29IQGBhRF9AKWRPR2csai5SPkY3MUJEWDspaEwqcSNGN1RTPC9RIWtDQURIJGJOZjM3J09vPCsybnVDLkpaNDdFSWRdNEA4NkRKNTNSYGteLi5ndEMhTShiKEhqW1RSJiYhR21JJyppR34+ZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgOQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNjEgMDAwMDAgbiAKMDAwMDAwMDEwMiAwMDAwMCBuIAowMDAwMDAwMjA5IDAwMDAwIG4gCjAwMDAwMDAzMjEgMDAwMDAgbiAKMDAwMDAwMDUyNCAwMDAwMCBuIAowMDAwMDAwNTkyIDAwMDAwIG4gCjAwMDAwMDA4NzIgMDAwMDAgbiAKMDAwMDAwMDkzMSAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9JRCAKWzw3NzdmZmM4YjY4N2RhMGMxNTUxZWVhNjgwZWI0N2E3ND48Nzc3ZmZjOGI2ODdkYTBjMTU1MWVlYTY4MGViNDdhNzQ+XQolIFJlcG9ydExhYiBnZW5lcmF0ZWQgUERGIGRvY3VtZW50IC0tIGRpZ2VzdCAob3BlbnNvdXJjZSkKCi9JbmZvIDYgMCBSCi9Sb290IDUgMCBSCi9TaXplIDkKPj4Kc3RhcnR4cmVmCjIyMTkKJSVFT0YK",
+          "created_at": "2026-10-21T07:25:08.526Z"
+        }
+      ]
+    }
+  ],
+  "model_is_marked_verified": false,
+  "notes": [
+    "Reports describe entered accounts and do not independently verify a cause.",
+    "Asset inspection history is not automatically proof of this particular incident.",
+    "Administrative closure does not certify flood performance.",
+    "No hydraulic result or cost saving is claimed by this problem record."
+  ]
+}

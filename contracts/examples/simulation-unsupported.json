@@ -1,7 +1,7 @@
 {
   "error": {
     "code": "UNSUPPORTED_SCENARIO",
-    "message": "Only normal tailwater is enabled in T2; the high boundary is not yet validated.",
+    "message": "High tailwater remains unavailable pending numerical checks for that preset.",
     "details": {}
   }
 }

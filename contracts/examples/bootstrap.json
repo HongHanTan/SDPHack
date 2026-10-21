@@ -1,5 +1,5 @@
 {
-  "api_version": "1.2.0",
+  "api_version": "1.5.0",
   "township_id": "taman_kyra_demo",
   "model_versions": [
     {
@@ -130,12 +130,15 @@
     "simulations": true,
     "inspections": true,
     "debris": true,
-    "comparisons": false
+    "comparisons": true,
+    "interventions": true,
+    "maintenance_proposals": true,
+    "site_imports": true
   },
   "assumptions": [
     "Illustrative synthetic geography and uncalibrated hydrology; no verified site forecast or historical cause.",
     "Real SWMM executes asynchronously; query the returned run_id until succeeded or failed before fetching results.",
-    "T3 supports native finite inlet capture scenarios and append-only inspection/media evidence. Photo coverage and debris mass are independent of the constant hydraulic loss hypothesis. High tailwater remains unsupported.",
+    "Native finite inlet capture and explicit conceptual cleaning, pipe and storage interventions are supported. Photo coverage and debris mass do not determine hydraulic loss. Input changes are retained. High tailwater remains unsupported. Neither native reference checks nor browser calculations establish a validated street-depth map.",
     "Custom storms support constant 0..300 mm/h, 300..21600 seconds in 300-second increments, followed by 3600 seconds dry drainage."
   ]
 }

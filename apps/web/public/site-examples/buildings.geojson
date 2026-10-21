@@ -1,0 +1,277 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 1",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -25,
+              100
+            ],
+            [
+              -13,
+              100
+            ],
+            [
+              -13,
+              115
+            ],
+            [
+              -25,
+              115
+            ],
+            [
+              -25,
+              100
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 2",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -20,
+              65
+            ],
+            [
+              -8,
+              65
+            ],
+            [
+              -8,
+              80
+            ],
+            [
+              -20,
+              80
+            ],
+            [
+              -20,
+              65
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 3",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22,
+              110
+            ],
+            [
+              34,
+              110
+            ],
+            [
+              34,
+              125
+            ],
+            [
+              22,
+              125
+            ],
+            [
+              22,
+              110
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 4",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              85,
+              100
+            ],
+            [
+              97,
+              100
+            ],
+            [
+              97,
+              115
+            ],
+            [
+              85,
+              115
+            ],
+            [
+              85,
+              100
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 5",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              85,
+              65
+            ],
+            [
+              97,
+              65
+            ],
+            [
+              97,
+              80
+            ],
+            [
+              85,
+              80
+            ],
+            [
+              85,
+              65
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 6",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              70,
+              20
+            ],
+            [
+              82,
+              20
+            ],
+            [
+              82,
+              35
+            ],
+            [
+              70,
+              35
+            ],
+            [
+              70,
+              20
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 7",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              10,
+              -15
+            ],
+            [
+              22,
+              -15
+            ],
+            [
+              22,
+              0
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              -15
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Building 8",
+        "height_m": 6.8
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              65,
+              -45
+            ],
+            [
+              77,
+              -45
+            ],
+            [
+              77,
+              -30
+            ],
+            [
+              65,
+              -30
+            ],
+            [
+              65,
+              -45
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
