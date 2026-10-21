@@ -123,3 +123,35 @@ The **top 3** become cards and pins. The first is marked **Recommended**.
 
 - Commits by the user only, with no co-author lines. No push until asked.
 - Tay's files: minimal, gated edits, with credit lines.
+
+## 9. Amendment: automatic analysis and pins timed to playback (2026-10-21)
+
+This replaces the button-and-card-list flow in §1, §6 and §7.
+
+**Trigger:**
+- The analysis starts **automatically in the background** as soon as a baseline run finishes, or when a stored baseline is shown and no analysis exists for it in this session.
+- There is no "Find the best fix" button. A small "Analysing fixes… i/n" status shows in the Compare sidebar.
+
+**Problems and their onset:** the diagnosis also lists **problems**, each with a location and an **onset time** taken from the baseline frames:
+- **Bottleneck pipe:** the first frame where its load is ≥ 0.999. Location: the pipe midpoint.
+- **Ponding node:** the first frame where the node is `flooding`, or the hotspot's street depth reaches ≥ 0.15 m. Location: the node.
+
+At most 3 problems, ordered by onset.
+
+**Fix per problem:**
+- Candidates are tied to a problem:
+  - upsize, relief and storage → the bottleneck (relief and storage attach to the bottleneck's upstream node);
+  - extra inlet → the ponding node.
+- The pin shows the best-ranked improving fix for that problem. If none improve: "No tested fix reduced flooding here".
+
+**Pins during playback:**
+- While the baseline plays (single view), each problem's pin pops up on the city map at its location when playback time ≥ its onset, with a short animation.
+- Card text: "⚠ {problem}: {pipe/node} {full / water 0.15 m} at {mm:ss}", then the suggested fix label with before → after for homes flooded, street flood volume and hotspot peak, an indicative cost, and **OK** / **Dismiss**.
+- **Analysis not finished yet:** the pin shows "⚠ {problem} detected — testing fixes… (i/n)" and fills in when ready.
+- **Seeking backwards** hides pins whose onset is later than the current time.
+
+**OK:** saves that fix's run, sets it as the candidate, and switches to side by side. **Dismiss** hides the pin.
+
+**Analysis details:**
+- A collapsible "Analysis details" section in the sidebar holds the real streaming log (§6 message formats) and the list of every tested fix with its result, including "no effect".
+- Footer as §7.

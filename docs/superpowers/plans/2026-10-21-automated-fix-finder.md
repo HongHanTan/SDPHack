@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. Steps use checkbox (`- [ ]`) syntax.
 
-**Goal:** "Find the best fix" in the uploaded-site Compare tab. It diagnoses the baseline, generates up to 6 fixes of 4 types, simulates them in parallel, ranks them, shows pins and cards, and opens side-by-side on OK.
+**Goal:** an automatic fix analysis in the uploaded-site Compare tab, with pins timed to storm playback (spec §9). It diagnoses the baseline, generates up to 6 fixes of 4 types, simulates them in parallel, ranks them, shows pins and cards, and opens side-by-side on OK.
 
 **Spec:** `docs/superpowers/specs/2026-10-21-automated-fix-finder-design.md`. It has the exact rules, numbers and wording, and every task must follow it.
 
@@ -96,6 +96,16 @@
 - Ranking order and the no-effect rule.
 - The message formats.
 
+**Also (spec §9):**
+- `Diagnosis.problems`: at most 3 items of `{ id; kind: 'bottleneck' | 'ponding'; assetId; onsetS; location: { x, y } }`, ordered by onset.
+- `generateCandidates` returns `Array<{ fix: FixAction; problemId: string }>`.
+- `bestFixPerProblem(ranked)`.
+- Tests:
+  - onset times from synthetic frames;
+  - problem ↔ fix ties;
+  - best fix per problem;
+  - "no improving fix".
+
 **Commit:** `feat(engine): fix finder — diagnose, generate candidate fixes, rank simulated results`
 
 ### Task 3: Web: analysis in the local site API
@@ -129,7 +139,7 @@
 
 **Commit:** `feat(web): automated fix analysis in the local site API`
 
-### Task 4: Web: analysis panel, cards, map pins, OK → side by side
+### Task 4: Web: automatic analysis, playback-timed pins, OK → side by side (spec §9 replaces §7)
 
 **Files:**
 - Create:
@@ -141,15 +151,20 @@
   - `compare.ts` (the AFTER title uses `intervention.label` when present)
   - `docs/browser-checklist.md`
 
-**Behaviour:**
-- The UI and wording follow spec §7 exactly.
-- Pins use drei `Html` at `fixLocation`, converted through the scene's team → scene mapping.
-- OK calls `acceptFix`, sets `candidate` to the returned result (frames, metrics, depth), sets the view to side by side, and closes the panel.
-- Leaving the tab or project calls `discardAnalysis`.
+**Behaviour** (spec §9):
+- **Automatic start:** the analysis starts on its own when a baseline run finishes, or when a stored baseline is loaded with no analysis this session.
+- **Status:** "Analysing fixes… i/n" in the sidebar.
+- **Pins:**
+  - drei `Html`, one per problem, shown when playback time ≥ the problem's onset, with a pop-in animation;
+  - their content follows spec §9: a pending state while candidates are still running, then the suggested fix with before → after and an indicative cost;
+  - seeking backwards hides pins with a later onset.
+- **OK** calls `acceptFix`, sets the candidate (frames, metrics, depth) and switches to side by side. **Dismiss** hides the pin.
+- **"Analysis details":** a collapsible section with the streaming log and every tested fix.
+- **Leaving** the tab or project discards the analysis.
 
-**Checklist:** add items 60–62:
-- 60: Find the best fix runs, the log streams, and the progress bar advances.
-- 61: The cards and pins match. P07 upsize is recommended on the sample; an upstream pipe upsize shows "no effect".
-- 62: OK opens side-by-side with the fix label, and the strip shows the improvement.
+**Checklist items:**
+- 60: After Run uploaded baseline, "Analysing fixes… i/n" appears and Analysis details streams the log.
+- 61: Play the baseline: as water builds, a pin pops up at PIPE-P07 when it first runs full, and at J07 when water reaches 15 cm. On the sample the P07 upsize is suggested. Seeking back hides the pins.
+- 62: OK on a pin opens side by side with the fix label, and the strip shows the improvement.
 
-**Commit:** `feat(web): fix finder panel, map pins and OK to side-by-side`
+**Commit:** `feat(web): automatic fix analysis with playback-timed map pins; OK opens side by side`
