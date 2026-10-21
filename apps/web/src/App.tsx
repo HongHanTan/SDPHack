@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { apiClient, DataMode } from './api/client';
 import {
   AssetConduit,
@@ -11,9 +11,7 @@ import {
   SimulationMetricsResponse,
   AppMode,
   TwinViewMode,
-  FieldInspector,
-  ConduitStatus,
-  NodeStatus,
+  TownshipAssetsResponse,
 } from './types';
 import { StatusHeader } from './components/StatusHeader';
 import { SceneViewer } from './components/SceneViewer';
@@ -21,14 +19,18 @@ import { AssetDetailModal } from './components/AssetDetailModal';
 import { SimulationHUD } from './components/SimulationHUD';
 import { InspectionModal } from './components/InspectionModal';
 import { VirtualDebrisLab } from './components/VirtualDebrisLab';
-import { InterventionDashboard } from './components/InterventionDashboard';
-import { LiveTelemetryTicker } from './components/LiveTelemetryTicker';
+import { MaintenanceWorkspace, type WorkspaceView } from './maintenance/MaintenanceWorkspace';
+import { OPTIONS } from './maintenance/comparison';
+import { assetLocation, scenarioKey, type MaintenanceHandoff } from './maintenance/model';
+import { GuidedStory } from './story/GuidedStory';
+import { OperationsDashboard } from './operations/OperationsDashboard';
+import { scopeKey, type ProblemScope } from './operations/model';
 import { engineSource } from './engine/engineSource';
 import { useLiveEngine } from './engine/useLiveEngine';
-import { buildDashboardOptions, idsForOption } from './engine/dashboardOptions';
 import { rainIntensityAt, STORMS, type StormId } from '@floodops/engine/scenario/storms';
+import { SitePortal } from './site/SitePortal';
 
-export function App() {
+export function LegacyApp() {
   const [mode, setMode] = useState<DataMode>(apiClient.getDataMode());
   const engineMode = mode === 'engine';
   const live = useLiveEngine();
@@ -44,12 +46,17 @@ export function App() {
   // Simulation scenario parameters
   const [selectedStormId, setSelectedStormId] = useState<string>('synthetic_80mmh_60min');
   const [selectedDebrisId, setSelectedDebrisId] = useState<string>(
-    apiClient.getDataMode() === 'engine' ? 'engine_d07_40pct' : 'demo_inlet_clean'
+    apiClient.getDataMode() === 'engine' ? 'engine_d07_40pct' : 'demo_inlet_40pct'
   );
   const [selectedTailwater, setSelectedTailwater] = useState<string>('normal');
 
   // J4: Intervention Dashboard state
-  const [isInterventionDashboardOpen, setIsInterventionDashboardOpen] = useState<boolean>(false);
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView | null>('priorities');
+  const [storyOpen, setStoryOpen] = useState(false);
+  const [operationsOpen, setOperationsOpen] = useState(true);
+  const [storyHandoff, setStoryHandoff] = useState<MaintenanceHandoff | null>(null);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'map' | 'assets' | 'analytics' | 'reports'>('dashboard');
+  const [resultScenario, setResultScenario] = useState<string | null>(null);
 
   // Simulation execution & playback
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -81,7 +88,6 @@ export function App() {
     'PIPE-P07': 0.4,
     'INLET-D07': 0.4,
   });
-  const [selectedInspectorId, setSelectedInspectorId] = useState<string | null>(null);
 
   // Loading & error state
   const [loading, setLoading] = useState<boolean>(true);
@@ -89,12 +95,14 @@ export function App() {
 
   // Run token: each run takes the next number; a newer run, a mode switch or unmount makes older poll loops stale.
   const runTokenRef = useRef<number>(0);
+  const dataLoadTokenRef = useRef(0);
   // Engine mode: the run whose frames are shown (its depth grids feed the water surface), and the applied dashboard option.
   const [engineRunId, setEngineRunId] = useState<string | null>(null);
   const [appliedOptionId, setAppliedOptionId] = useState<string>('baseline');
 
   // Load foundational data (assets, bootstrap, health)
   const loadData = useCallback(async () => {
+    const myLoad=++dataLoadTokenRef.current;
     setLoading(true);
     setApiError(null);
     try {
@@ -103,6 +111,7 @@ export function App() {
         apiClient.getBootstrap(),
         apiClient.getTownshipAssets('taman_kyra_demo'),
       ]);
+      if(myLoad!==dataLoadTokenRef.current) return;
 
       setHealth(h);
       setBootstrap(b);
@@ -111,31 +120,27 @@ export function App() {
       setConduits(a.conduits);
 
       // In API mode, only call /api/inspections if backend capability is true (T2 has it as false)
-      const inspRes = await apiClient.getInspections();
+      const inspRes = b.capabilities.inspections || mode !== 'api' ? await apiClient.getInspections() : { items: [] };
+      if(myLoad!==dataLoadTokenRef.current) return;
       setInspections(inspRes.items);
 
-      if (mode !== 'engine') {
-        // Load initial offline verified SWMM 5.2.4 run
-        const offlineFrames = apiClient.getOfflineFrames(selectedStormId);
-        const offlineMetrics = apiClient.getOfflineMetrics(selectedStormId);
-        setFrames(offlineFrames.frames);
-        setMetrics(offlineMetrics);
-      } else {
-        setFrames([]);
-        setMetrics(null);
-      }
+      setFrames([]);
+      setMetrics(null);
+      setResultScenario(null);
     } catch (err: unknown) {
+      if(myLoad!==dataLoadTokenRef.current) return;
       console.error('Failed to load foundational data:', err);
       setApiError(err instanceof Error ? err.message : String(err));
     } finally {
-      setLoading(false);
+      if(myLoad===dataLoadTokenRef.current) setLoading(false);
     }
-  }, [selectedStormId, mode]);
+  }, [mode]);
 
   useEffect(() => {
     loadData();
     return () => {
       runTokenRef.current++;
+      dataLoadTokenRef.current++;
     };
   }, [loadData, mode]);
 
@@ -166,20 +171,31 @@ export function App() {
   };
 
   const handleToggleMode = (newMode: DataMode) => {
+    if(newMode===mode) return;
+    dataLoadTokenRef.current++;
+    setLoading(true);setBootstrap(null);setNodes([]);setInlets([]);setConduits([]);setInspections([]);
     runTokenRef.current++;
     setIsRunning(false);
     setRunProgressMessage('');
+    setSelectedAsset(null);
+    setWorkspaceView('priorities');
+    setStoryOpen(false);
+    setOperationsOpen(true);
+    setStoryHandoff(null);
+    setIsPlaying(false);
+    setActiveTab('dashboard');
     if (newMode !== 'engine') stopLive();
     apiClient.setDataMode(newMode);
     setMode(newMode);
     if (newMode === 'engine') {
+      if(!['synthetic_80mmh_60min','synthetic_120mmh_60min'].includes(selectedStormId))setSelectedStormId('synthetic_80mmh_60min');
       setSelectedDebrisId('engine_d07_40pct');
       // Entering engine mode starts from the baseline network (loadData reloads the assets).
       engineSource.setInterventions([]);
       setAppliedOptionId('baseline');
       setEngineRunId(null);
     } else if (mode === 'engine') {
-      setSelectedDebrisId('demo_inlet_clean');
+      setSelectedDebrisId('demo_inlet_40pct');
     }
   };
 
@@ -191,10 +207,12 @@ export function App() {
     setFrames(offlineFrames.frames);
     setMetrics(offlineMetrics);
     setCurrentFrameIndex(0);
+    setResultScenario(scenarioKey({ mode, storm_id: stormId, debris_id: selectedDebrisId, tailwater: selectedTailwater, model_version_id: 'taman_kyra_synthetic_v1' }) + '[]');
   };
 
   // Unified simulation start and playback controls
   const handleStartSimulation = () => {
+    if (mode !== 'mock' && !resultsCurrent) { void handleRunSimulation(); return; }
     setHasSimulationStarted(true);
     setIsPlaying(true);
     if (currentFrameIndex >= frames.length - 1) {
@@ -219,11 +237,13 @@ export function App() {
 
   // Run Simulation handler (with T2 polling support)
   const handleRunSimulation = async () => {
+    if(!engineMode)setAppliedOptionId('baseline');
     setHasSimulationStarted(true);
     setIsPlaying(true);
     setIsRunning(true);
     setApiError(null);
     setRunProgressMessage('Submitting hydraulic simulation job...');
+    const runKey = scenarioKey(scenario) + JSON.stringify(mode === 'engine' ? engineSource.getInterventions() : []);
     const myRun = ++runTokenRef.current;
     const isCurrent = () => runTokenRef.current === myRun;
 
@@ -242,6 +262,7 @@ export function App() {
         setFrames(offlineFrames.frames);
         setMetrics(offlineMetrics);
         setCurrentFrameIndex(0);
+        setResultScenario(runKey);
         return;
       }
 
@@ -304,6 +325,7 @@ export function App() {
 
         setFrames(newFrames.frames);
         setMetrics(newMetrics);
+        setResultScenario(runKey);
         setCurrentFrameIndex(0);
         if (mode === 'engine') setEngineRunId(run_id);
       }
@@ -320,16 +342,15 @@ export function App() {
 
   const handleCreateInspection = async (record: Partial<InspectionRecord>, file?: File) => {
     const saved = await apiClient.createInspection(record);
+    setInspections(prev => [saved, ...prev]);
     if (file) {
       try {
         const media = await apiClient.uploadInspectionMedia(saved.inspection_id, file);
         saved.media = [media, ...(saved.media || [])];
         saved.media_urls = [media.url, ...(saved.media_urls || [])];
-      } catch (uploadErr) {
-        console.error('Failed to upload inspection media:', uploadErr);
-      }
+        setInspections(prev => prev.map(i => i.inspection_id === saved.inspection_id ? { ...saved } : i));
+      } catch (err) { throw new Error(`Inspection ${saved.inspection_id} is saved, but its attachment failed: ${String(err)}. Close this form to view the saved record.`); }
     }
-    setInspections((prev) => [saved, ...prev]);
   };
 
   // J3 & T3: Handle hypothesis update with native finite inlet presets
@@ -348,108 +369,11 @@ export function App() {
     }
   };
 
-  // Dynamic blockage tuning & real-time hydraulic simulation recalculation
+  // An input edit never changes calculated frames or metrics in place.
   const handleUpdateBlockage = (assetId: string, fraction: number) => {
-    setCustomBlockages((prev) => ({ ...prev, [assetId]: fraction }));
-    if (engineMode) return;
-
-    if (assetId === 'INLET-D07' || assetId === 'NODE-J07') {
-      setDebrisRestrictionFraction(fraction);
-    }
-
-    // Dynamic hydraulic recalculation on simulation frames and metrics
-    setFrames((prevFrames) => {
-      return prevFrames.map((frame) => {
-        const nextFrame = { ...frame };
-
-        // 1. Throttling pipe states
-        nextFrame.pipe_states = nextFrame.pipe_states.map((ps) => {
-          const pipeBlockage =
-            assetId === ps.conduit_id
-              ? fraction
-              : customBlockages[ps.conduit_id] ?? 0;
-          if (pipeBlockage > 0) {
-            const throttledCapacity = 1.6 * Math.max(0.08, 1 - pipeBlockage);
-            const throttledFlow = Math.min(ps.flow_m3s, throttledCapacity);
-            const utilization = throttledFlow / throttledCapacity;
-            const newStatus: ConduitStatus =
-              utilization >= 0.92 || pipeBlockage >= 0.55
-                ? 'surcharged'
-                : utilization >= 0.72 || pipeBlockage >= 0.25
-                ? 'near_capacity'
-                : 'normal';
-            return {
-              ...ps,
-              flow_m3s: throttledFlow,
-              status: newStatus,
-              capacity_fraction: utilization,
-            };
-          }
-          return ps;
-        });
-
-        // 2. Upstream node surcharge & depth rise
-        nextFrame.node_states = nextFrame.node_states.map((ns) => {
-          const isTargetNode = ns.node_id === assetId;
-          const isUpstreamOfP07 =
-            ns.node_id === 'NODE-J07' &&
-            (assetId === 'PIPE-P07' || assetId === 'NODE-J07');
-          if (isTargetNode || isUpstreamOfP07) {
-            const headBuildup = fraction * 0.45;
-            const newDepth = Math.max(0.3, ns.depth_m + headBuildup);
-            const isFlooding = newDepth >= 1.45 || fraction >= 0.5;
-            const isSurcharged = newDepth >= 1.2 || fraction >= 0.25;
-            const newStatus: NodeStatus = isFlooding
-              ? 'flooding'
-              : isSurcharged
-              ? 'surcharged'
-              : 'normal';
-            return {
-              ...ns,
-              depth_m: newDepth,
-              status: newStatus,
-              surcharge_flag: isSurcharged,
-              flooding_rate_m3s: isFlooding ? fraction * 0.45 : 0,
-            };
-          }
-          return ns;
-        });
-
-        // 3. Inlet clogging
-        if (assetId.startsWith('INLET') || assetId === 'NODE-J07') {
-          nextFrame.inlet_states = nextFrame.inlet_states.map((is) => {
-            if (is.inlet_id === 'INLET-D07' || is.inlet_id === assetId) {
-              return {
-                ...is,
-                hydraulic_inlet_clogging_fraction: fraction,
-              };
-            }
-            return is;
-          });
-        }
-
-        return nextFrame;
-      });
-    });
-
-    // Update metrics
-    setMetrics((prev) => {
-      if (!prev) return prev;
-      const additionalFloodM3 = fraction >= 0.35 ? fraction * 220 : 0;
-      return {
-        ...prev,
-        total_flooding_volume_m3: Math.max(
-          prev.total_flooding_volume_m3,
-          additionalFloodM3
-        ),
-        flooded_node_count:
-          fraction >= 0.5 ? Math.max(2, prev.flooded_node_count) : prev.flooded_node_count,
-        surcharge_duration_s:
-          fraction >= 0.25
-            ? Math.max(3200, prev.surcharge_duration_s)
-            : prev.surcharge_duration_s,
-      };
-    });
+    setCustomBlockages(prev => ({...prev, [assetId]: fraction}));
+    if (assetId === 'INLET-D07') handleSelectHypothesis(fraction);
+    setIsPlaying(false);
   };
 
   // Workflow mode switch (Idle vs Diagnose vs Anticipate)
@@ -461,13 +385,13 @@ export function App() {
     // Engine mode: switching workflow resets playback, so the Live storm stops too.
     if (engineMode) stopLive();
     if (newMode === 'idle') {
-      // Idle mode: calm clear weather, field patrol inspection active, live telemetry streaming
+      // Idle mode: calm clear weather.
       setRainEnabled(false);
-      if (!engineMode) handleLoadVerifiedRun('synthetic_80mmh_60min');
+      if (mode === 'mock') handleLoadVerifiedRun('synthetic_80mmh_60min');
     } else if (newMode === 'diagnose') {
       // Historical diagnosis: focus on INLET-D07 restriction under baseline event
       setRainEnabled(true);
-      if (!engineMode) {
+      if (mode === 'mock') {
         handleLoadVerifiedRun('synthetic_80mmh_60min');
         setSelectedDebrisId('demo_inlet_40pct');
       }
@@ -475,7 +399,7 @@ export function App() {
     } else {
       // Forward anticipation: projected 120 mm/h monsoon storm with antecedent blockage
       setRainEnabled(true);
-      if (!engineMode) {
+      if (mode === 'mock') {
         handleLoadVerifiedRun('synthetic_120mmh_60min');
         setSelectedDebrisId('demo_inlet_40pct');
       }
@@ -483,86 +407,12 @@ export function App() {
     }
   };
 
-  // Field Inspector & Asset Focus Handlers
-  const handleSelectInspector = (inspector: FieldInspector) => {
-    setSelectedInspectorId(inspector.id);
-    handleSelectInspectorAsset(inspector.assignedAssetId);
-  };
-
-  const handleSelectInspectorAsset = (targetId: string) => {
-    if (targetId.startsWith('INLET')) {
-      const inlet = inlets.find((i) => i.inlet_id === targetId);
-      if (inlet) setSelectedAsset({ type: 'inlet', id: inlet.inlet_id, data: inlet });
-    } else if (targetId.startsWith('PIPE')) {
-      const pipe = conduits.find((c) => c.conduit_id === targetId);
-      if (pipe) setSelectedAsset({ type: 'conduit', id: pipe.conduit_id, data: pipe });
-    } else {
-      const node = nodes.find((n) => n.node_id === targetId);
-      if (node) setSelectedAsset({ type: 'node', id: node.node_id, data: node });
-    }
-  };
-
-  // J4: Handle applying an intervention candidate
-  const handleApplyIntervention = async (interventionId: string) => {
-    if (engineMode) {
-      if (isRunning && !live.on) {
-        setApiError('A simulation is still running; apply the option when it finishes.');
-        return;
-      }
-      const ids = idsForOption(interventionId);
-      engineSource.setInterventions(ids);
-      setAppliedOptionId(interventionId);
-      try {
-        const a = await apiClient.getTownshipAssets('taman_kyra_demo');
-        setNodes(a.nodes);
-        setConduits(a.conduits);
-      } catch (err: unknown) {
-        setApiError(err instanceof Error ? err.message : String(err));
-        return;
-      }
-      setIsInterventionDashboardOpen(false);
-      if (live.on) live.patch(ids, interventionId);
-      else void handleRunSimulation();
-      return;
-    }
-    if (interventionId === 'clean_inlet') {
-      setDebrisRestrictionFraction(0.0);
-      setSelectedDebrisId('demo_inlet_clean');
-      handleLoadVerifiedRun(selectedStormId);
-    } else if (interventionId === 'baseline') {
-      setDebrisRestrictionFraction(0.4);
-      setSelectedDebrisId('demo_inlet_40pct');
-      handleLoadVerifiedRun(selectedStormId);
-      // Reset conduit diameter
-      setConduits((prev) =>
-        prev.map((c) =>
-          c.conduit_id === 'PIPE-P07' ? { ...c, diameter_m: 0.6 } : c
-        )
-      );
-    } else if (interventionId === 'upsize_conduit') {
-      setDebrisRestrictionFraction(0.4);
-      setSelectedDebrisId('demo_inlet_40pct');
-      // Upsize PIPE-P07 from 600mm to 750mm
-      setConduits((prev) =>
-        prev.map((c) =>
-          c.conduit_id === 'PIPE-P07' ? { ...c, diameter_m: 0.75 } : c
-        )
-      );
-    } else if (interventionId === 'combined') {
-      setDebrisRestrictionFraction(0.0);
-      setSelectedDebrisId('demo_inlet_clean');
-      setConduits((prev) =>
-        prev.map((c) =>
-          c.conduit_id === 'PIPE-P07' ? { ...c, diameter_m: 0.75 } : c
-        )
-      );
-      handleLoadVerifiedRun(selectedStormId);
-    }
-  };
+  const scenario = { mode, storm_id: selectedStormId, debris_id: selectedDebrisId, tailwater: selectedTailwater, model_version_id: bootstrap?.model_versions[0]?.model_version_id ?? 'taman_kyra_synthetic_v1' };
+  const resultsCurrent = resultScenario === scenarioKey(scenario) + JSON.stringify(engineMode ? engineSource.getInterventions() : []);
 
   const currentTimestamp = frames[currentFrameIndex]?.timestamp_s ?? 0;
   // Engine Live overrides what the scene shows, without touching his `frames` state.
-  const sceneFrame = liveActive ? live.frame : frames[currentFrameIndex] || null;
+  const sceneFrame = liveActive ? live.frame : resultsCurrent ? frames[currentFrameIndex] || null : null;
   const sceneTimestamp = liveActive ? live.t : currentTimestamp;
   const stormIntensity = engineMode
     ? rainIntensityAt(STORMS[selectedStormId as StormId] ?? STORMS.synthetic_80mmh_60min, sceneTimestamp)
@@ -573,36 +423,40 @@ export function App() {
     ? rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && stormIntensity > 0
     : rainEnabled && hasSimulationStarted && (isPlaying || isRunning) && currentTimestamp <= 3600;
   const shownError = liveActive && live.error ? live.error : apiError;
-  const engineOptions = useMemo(
-    () => (engineMode ? buildDashboardOptions(selectedStormId as StormId) : undefined),
-    [engineMode, selectedStormId]
-  );
-
   const handleSelectTab = (tab: 'dashboard' | 'map' | 'assets' | 'analytics' | 'reports') => {
+    setActiveTab(tab);
+    setStoryOpen(false);
+    setOperationsOpen(tab === 'dashboard');
+    if(tab === 'dashboard') {stopLive();setIsPlaying(false);}
     if (tab === 'dashboard') {
-      setIsInterventionDashboardOpen(false);
+      setWorkspaceView('priorities');
       setIsDebrisLabOpen(false);
       setSelectedAsset(null);
     } else if (tab === 'map') {
       setTwinViewMode('twin_highlight');
-      setIsInterventionDashboardOpen(false);
+      setWorkspaceView(null);
     } else if (tab === 'assets') {
+      setWorkspaceView(null);
       const j07 = nodes.find((n) => n.node_id === 'NODE-J07') || nodes[0];
       if (j07) {
         setSelectedAsset({ type: 'node', id: j07.node_id, data: j07 });
       }
     } else if (tab === 'analytics' || tab === 'reports') {
-      setIsInterventionDashboardOpen(true);
+      setWorkspaceView(tab === 'reports' ? 'proposals' : 'compare');
     }
   };
 
   const handleSearch = (query: string) => {
     const q = query.trim().toUpperCase();
     if (!q) return;
+    setWorkspaceView(null);
+    setActiveTab('assets');
+    setStoryOpen(false);
+    setOperationsOpen(false);
 
     // Search nodes (including MH-0421 alias for NODE-J07)
     const foundNode = nodes.find(
-      (n) => n.node_id.toUpperCase().includes(q) || (q.includes('0421') && n.node_id === 'NODE-J07')
+      (n) => n.node_id.toUpperCase().includes(q) || assetLocation(n.node_id).toUpperCase().includes(q) || (q.includes('0421') && n.node_id === 'NODE-J07')
     );
     if (foundNode) {
       setSelectedAsset({ type: 'node', id: foundNode.node_id, data: foundNode });
@@ -611,7 +465,7 @@ export function App() {
 
     // Search inlets
     const foundInlet = inlets.find(
-      (i) => i.inlet_id.toUpperCase().includes(q) || (q.includes('D07') && i.inlet_id === 'INLET-D07')
+      (i) => i.inlet_id.toUpperCase().includes(q) || assetLocation(i.inlet_id).toUpperCase().includes(q) || (q.includes('D07') && i.inlet_id === 'INLET-D07')
     );
     if (foundInlet) {
       setSelectedAsset({ type: 'inlet', id: foundInlet.inlet_id, data: foundInlet });
@@ -619,21 +473,32 @@ export function App() {
     }
 
     // Search conduits
-    const foundConduit = conduits.find((c) => c.conduit_id.toUpperCase().includes(q));
+    const foundConduit = conduits.find((c) => c.conduit_id.toUpperCase().includes(q) || assetLocation(c.conduit_id).toUpperCase().includes(q));
     if (foundConduit) {
       setSelectedAsset({ type: 'conduit', id: foundConduit.conduit_id, data: foundConduit });
     }
   };
 
+  const problemScope:ProblemScope={mode,township_id:bootstrap?.township_id??'taman_kyra_demo',model_version_id:scenario.model_version_id,api_base_url:apiClient.getBaseUrl()};
+  const openDemo=()=>{if(!engineMode)handleToggleMode('engine');stopLive();setIsPlaying(false);setOperationsOpen(false);setStoryOpen(true);setActiveTab('dashboard');};
+  const prepareHandoff=(handoff:MaintenanceHandoff)=>{
+    setStoryHandoff(handoff);
+    const inlet=inlets.find(a=>a.inlet_id===handoff.asset_id);const conduit=conduits.find(a=>a.conduit_id===handoff.asset_id);const node=nodes.find(a=>a.node_id===handoff.asset_id);
+    if(inlet)setSelectedAsset({type:'inlet',id:handoff.asset_id,data:inlet});
+    else if(conduit)setSelectedAsset({type:'conduit',id:handoff.asset_id,data:conduit});
+    else if(node)setSelectedAsset({type:'node',id:handoff.asset_id,data:node});
+    setStoryOpen(false);setOperationsOpen(false);setWorkspaceView('proposals');setActiveTab('reports');
+  };
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-100 select-none">
       {/* Top Header & Status Indicators */}
       <StatusHeader
         mode={mode}
+        activeTab={activeTab}
         onToggleMode={handleToggleMode}
         appMode={appMode}
         onChangeAppMode={handleSwitchAppMode}
-        onOpenInterventions={() => setIsInterventionDashboardOpen(true)}
+        onOpenInterventions={() => { setStoryOpen(false); setOperationsOpen(false); setWorkspaceView('compare'); setActiveTab('analytics'); }}
         onSelectTab={handleSelectTab}
         onSearch={handleSearch}
         health={health}
@@ -643,13 +508,13 @@ export function App() {
       />
 
       {/* Main 3D WebGL Digital Twin Canvas */}
-      <SceneViewer
+      {!storyOpen && !operationsOpen && <SceneViewer
         nodes={nodes}
         inlets={inlets}
         conduits={conduits}
         currentFrame={sceneFrame}
         selectedAssetId={selectedAsset?.id}
-        onSelectAsset={(asset) => setSelectedAsset(asset)}
+        onSelectAsset={(asset) => {setSelectedAsset(asset);setWorkspaceView(null);setActiveTab('assets');}}
         showUndergroundOnly={twinViewMode === 'underground_only'}
         twinViewMode={twinViewMode}
         onChangeTwinViewMode={(m) => setTwinViewMode(m)}
@@ -665,19 +530,16 @@ export function App() {
         onOpenDebrisLab={engineMode ? undefined : () => setIsDebrisLabOpen(true)}
         isDebrisLabOpen={isDebrisLabOpen}
         appMode={appMode}
-        onSelectInspector={handleSelectInspector}
-        selectedInspectorId={selectedInspectorId}
-        showInspectors={!engineMode}
         engineDepth={liveActive ? live.depth : engineMode ? engineSource.surfaceAt(engineRunId, currentTimestamp) : undefined}
-      />
+      />}
 
       {/* Selected Asset Details Drawer with Live Site Photos, CCTV, and Blockage Slider */}
-      <AssetDetailModal
+      {!storyOpen && !operationsOpen && !workspaceView && <AssetDetailModal
         selectedAsset={selectedAsset}
         onClose={() => setSelectedAsset(null)}
         inspections={inspections}
         onOpenInspect={(assetId) => setInspectingAssetId(assetId)}
-        onOpenInterventions={() => setIsInterventionDashboardOpen(true)}
+        onOpenInterventions={() => { setWorkspaceView('compare'); setActiveTab('analytics'); }}
         currentFrame={sceneFrame}
         blockageFraction={
           selectedAsset
@@ -686,18 +548,11 @@ export function App() {
         }
         onUpdateBlockage={handleUpdateBlockage}
         hideBlockageTuning={engineMode}
-      />
-
-      {/* Real-time Field Telemetry Stream (Intelligent non-overlapping layout) */}
-      <LiveTelemetryTicker
-        onSelectInspectorAsset={handleSelectInspectorAsset}
-        isIdleMode={appMode === 'idle'}
-        isAssetSelected={selectedAsset !== null}
-      />
+      />}
 
       {/* Simulation HUD (Timeline, Storm/Debris Selectors, Metrics, Legend) */}
-      {bootstrap && (
-        <SimulationHUD
+      {bootstrap && !storyOpen && !operationsOpen && !workspaceView && (
+        <div className={`map-hud ${selectedAsset ? 'asset-open' : ''}`}><SimulationHUD
           storms={bootstrap.storms}
           selectedStormId={selectedStormId}
           onSelectStorm={(id) => {
@@ -718,7 +573,7 @@ export function App() {
           }}
           onRunSimulation={handleRunSimulation}
           onLoadVerifiedRun={engineMode ? () => {} : handleLoadVerifiedRun}
-          hideVerifiedRun={engineMode}
+          hideVerifiedRun={mode !== 'mock'}
           engineStorms={engineMode ? bootstrap.storms.map((st) => ({ id: st.storm_id, label: st.name })) : undefined}
           intensityMmh={engineMode ? stormIntensity : undefined}
           liveAvailable={engineMode}
@@ -738,9 +593,9 @@ export function App() {
           onTogglePlay={handleTogglePlay}
           onResetSimulation={handleResetSimulation}
           frames={frames}
-          currentFrameIndex={currentFrameIndex}
+        currentFrameIndex={currentFrameIndex}
           onSeekFrame={(idx) => setCurrentFrameIndex(idx)}
-          metrics={metrics}
+          metrics={resultsCurrent ? metrics : null}
           undergroundOnly={twinViewMode === 'underground_only'}
           onToggleUnderground={() =>
             setTwinViewMode((prev) => (prev === 'underground_only' ? 'twin_highlight' : 'underground_only'))
@@ -756,17 +611,17 @@ export function App() {
             engineMode
               ? appliedOptionId === 'baseline'
                 ? 'Baseline'
-                : engineOptions?.find((o) => o.id === appliedOptionId)?.title.replace(/^Option \d+: /, '') ?? appliedOptionId
+                : OPTIONS.find((o) => o.id === appliedOptionId)?.title ?? appliedOptionId
               : undefined
           }
           onOpenInspect={() => setInspectingAssetId('NODE-J07')}
           appMode={appMode}
           onChangeAppMode={handleSwitchAppMode}
-        />
+        /></div>
       )}
 
       {/* J3: Virtual Debris Lab (Close-up modal for INLET-D07) */}
-      {!engineMode && isDebrisLabOpen && (
+      {!storyOpen && !operationsOpen && !engineMode && isDebrisLabOpen && (
         <VirtualDebrisLab
           inletId="INLET-D07"
           onClose={() => setIsDebrisLabOpen(false)}
@@ -781,7 +636,7 @@ export function App() {
       )}
 
       {/* Field Inspection Logging Modal */}
-      {!engineMode && inspectingAssetId && (
+      {inspectingAssetId && (
         <InspectionModal
           assetId={inspectingAssetId}
           onClose={() => setInspectingAssetId(null)}
@@ -789,19 +644,69 @@ export function App() {
         />
       )}
 
-      {/* J4: Interventions Comparison Dashboard & Proposed Action Plan Modal */}
-      {isInterventionDashboardOpen && (
-        <InterventionDashboard
-          onClose={() => setIsInterventionDashboardOpen(false)}
-          onApplyIntervention={handleApplyIntervention}
-          inspections={inspections}
-          engineOptions={engineOptions}
-          engineStormLabel={STORMS[selectedStormId as StormId]?.label}
-          applyDisabled={engineMode && isRunning && !live.on}
-        />
-      )}
+      <OperationsDashboard key={scopeKey(problemScope)} visible={operationsOpen} scope={problemScope} nodes={nodes} inlets={inlets} conduits={conduits} inspections={inspections}
+        modelVerified={bootstrap?.model_versions.find(m=>m.model_version_id===scenario.model_version_id)?.is_verified_site_model===true} assetsLoading={loading} dataError={apiError}
+        onDemo={openDemo} onMaintenance={()=>{setOperationsOpen(false);setStoryOpen(false);setWorkspaceView('priorities');setActiveTab('dashboard');}}
+        onLocate={asset=>{stopLive();setIsPlaying(false);setSelectedAsset(asset);setOperationsOpen(false);setStoryOpen(false);setWorkspaceView(null);setActiveTab('assets');}}
+        onInspect={setInspectingAssetId} onPrepare={prepareHandoff}/>
+      <GuidedStory visible={storyOpen && engineMode} scenario={scenario} bootstrap={bootstrap} inspections={inspections}
+        onChangeScenario={(field,value)=>{stopLive();setIsPlaying(false);if(field==='storm_id')setSelectedStormId(value);else if(field==='debris_id')setSelectedDebrisId(value);else setSelectedTailwater(value);}}
+        onMaintenance={()=>{setStoryOpen(false);setOperationsOpen(true);setWorkspaceView(null);setActiveTab('dashboard');}}
+        onInspect={()=>setInspectingAssetId('INLET-D07')}
+        onPrepare={prepareHandoff}/>
+      <MaintenanceWorkspace view={storyOpen || operationsOpen ? null : workspaceView} onView={setWorkspaceView} nodes={nodes} inlets={inlets} conduits={conduits}
+        handoff={storyHandoff} onOpenStory={openDemo}
+        inspections={inspections} selectedAsset={selectedAsset} onSelectAsset={setSelectedAsset}
+        onInspect={setInspectingAssetId} scenario={scenario} bootstrap={bootstrap} previewBusy={isRunning}
+        onPreview={async (optionId, runId) => {
+          if(isRunning) throw new Error('Wait for the current map simulation to finish.');
+          stopLive(); setIsPlaying(false); setResultScenario(null);
+          if(engineMode) {
+            const option=OPTIONS.find(o=>o.id===optionId); if(!option) throw new Error('Unknown option.');
+            engineSource.setInterventions(option.interventions); setAppliedOptionId(optionId);
+            const a=await apiClient.getTownshipAssets('taman_kyra_demo'); setNodes(a.nodes);setConduits(a.conduits);
+            setSelectedAsset(previous => {
+              if(!previous) return null;
+              const data=previous.type === 'node' ? a.nodes.find(n=>n.node_id===previous.id) : previous.type === 'inlet' ? a.inlets.find(i=>i.inlet_id===previous.id) : a.conduits.find(c=>c.conduit_id===previous.id);
+              return data ? {...previous,data} : null;
+            });
+            setWorkspaceView(null);setActiveTab('map');void handleRunSimulation();
+          } else if(mode === 'api' && runId) {
+            setAppliedOptionId(optionId);
+            const [run, f, m, b]=await Promise.all([apiClient.getSimulation(runId),apiClient.getSimulationFrames(runId),apiClient.getSimulationMetrics(runId),apiClient.getBootstrap()]);
+            const candidateAssets=run.input_snapshot?.assets as TownshipAssetsResponse|undefined;
+            if(candidateAssets){setNodes(candidateAssets.nodes);setInlets(candidateAssets.inlets);setConduits(candidateAssets.conduits);setSelectedAsset(previous=>{
+              if(!previous)return null;
+              const data=previous.type==='node'?candidateAssets.nodes.find(n=>n.node_id===previous.id):previous.type==='inlet'?candidateAssets.inlets.find(i=>i.inlet_id===previous.id):candidateAssets.conduits.find(p=>p.conduit_id===previous.id);
+              return data?{...previous,data}:null;
+            });}
+            const debris=run.debris_scenario_id ?? selectedDebrisId;
+            setSelectedDebrisId(debris);setBootstrap(b);setFrames(f.frames);setMetrics(m);setCurrentFrameIndex(0);
+            setResultScenario(scenarioKey({...scenario,debris_id:debris})+'[]');setHasSimulationStarted(true);
+            setWorkspaceView(null);setActiveTab('map');
+          }
+        }}
+        onScenarioChange={(field, value) => {
+          setIsPlaying(false); setHasSimulationStarted(false); stopLive();
+          if(field === 'storm_id') setSelectedStormId(value);
+          else if(field === 'debris_id') setSelectedDebrisId(value);
+          else setSelectedTailwater(value);
+        }}/>
+      {!storyOpen && !operationsOpen && <div className="data-provenance">
+        <b>Illustrative dataset | uncalibrated site model</b>
+        <span>{mode === 'engine' ? 'Simulation: FloodOps browser engine' : mode === 'api' ? 'Simulation: EPA SWMM API' : 'Offline demo replay'}</span>
+        <span>Evidence: {inspections.length ? `${inspections.filter(i=>i.source_type==='observed').length} observed / ${inspections.length} records` : 'Missing'}</span>
+        <span>Costs: user estimates / quotes</span>
+        {metrics && <span>Displayed results: {metrics.engine} | {metrics.run_id} {resultsCurrent ? '' : '(outdated settings)'}</span>}
+        {metrics && resultsCurrent && <span>Action: {OPTIONS.find(option=>option.id===appliedOptionId)?.title??appliedOptionId}</span>}
+      </div>}
+
     </div>
   );
 }
 
+export function App() {
+  const [demo,setDemo]=useState(false);
+  return demo ? <><LegacyApp/><button className="site-return-button" onClick={()=>setDemo(false)}>Back to uploaded projects</button></> : <SitePortal onDemo={()=>setDemo(true)}/>;
+}
 export default App;

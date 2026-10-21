@@ -23,10 +23,12 @@ export function ViewRig({
   is2d,
   controlsRef,
   onMetresPerPixel,
+  damping = true,
 }: {
   is2d: boolean;
   controlsRef: MutableRefObject<any>;
   onMetresPerPixel: (mpp: number) => void;
+  damping?: boolean;
 }) {
   const size = useThree((s) => s.size);
   const get = useThree((s) => s.get);
@@ -145,7 +147,7 @@ export function ViewRig({
       ref={controlsRef}
       makeDefault
       enabled={phase === '3d'}
-      enableDamping
+      enableDamping={damping}
       dampingFactor={0.05}
       maxPolarAngle={Math.PI / 2 - 0.05}
       minDistance={10}

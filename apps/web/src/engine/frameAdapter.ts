@@ -104,7 +104,10 @@ export function toTeamMetrics(
     total_flooding_volume_m3: Math.round(floodVol * 10) / 10,
     flooded_node_count: flooded.size,
     surcharge_duration_s: surchargedFrames * frameEveryS,
-    metric_definitions: { total_flooding_volume_m3: 'peak surface water volume on cells ≥ 0.15 m deep (excl. pond/canal)' },
+    metric_definitions: {
+      total_flooding_volume_m3: 'Sum of individual cell peak water volumes where depth reaches ≥15 cm; not a simultaneous peak (pond/canal excluded)',
+      surcharge_duration_s: 'Approximate time any selected trunk pipe reaches ≥99.9% of model flow capacity, sampled from output frames; not pressure-based surcharge',
+    },
     peak_flow_m3s: p07Peak,
     inlet_volumes: null,
     j07_peak_depth_m: m.peakSagDepth,

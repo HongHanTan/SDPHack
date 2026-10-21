@@ -1,0 +1,6 @@
+node_id,node_type,x,y,ground_elevation_m,invert_elevation_m,outfall_type
+MH-A,junction,0,90,15.316,13.4,
+MH-B,junction,70,100,15.464,13.6,
+MH-C,junction,35,35,14.621,12.8,
+MH-D,junction,35,-25,13.901,12,
+OUT-RIVER,outfall,35,-100,13.001,10.9,FREE

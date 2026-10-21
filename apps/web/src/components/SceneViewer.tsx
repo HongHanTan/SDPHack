@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Grid, Text, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
@@ -19,12 +19,13 @@ import { XrayBloom } from '../view/XrayBloom';
 import { ViewRig } from '../view/ViewRig';
 import { ScaleBar } from '../view/ScaleBarOverlay';
 import { SceneLook } from '../view/SceneLook';
-import { FieldInspectorsManager } from './FieldInspectorsManager';
 import { TownshipEnvironment } from './TownshipEnvironment';
 import { EngineWater } from '../engine/EngineWater';
 import { RainEffect } from './RainEffect';
 import { NetworkHighlightOverlay } from './NetworkHighlightOverlay';
-import { FieldInspector } from '../types';
+import { LinkedCamera, type CameraLink } from '../story/LinkedCamera';
+import { RoadStudyOverlay } from '../story/RoadStudyOverlay';
+import type { RoadStudy } from '../story/roadStudy';
 
 // Bloom (X-ray) renders at Hud priority 1; the gizmo must come after it or it vanishes.
 function ViewGizmo() {
@@ -43,6 +44,9 @@ export function toThreeCoords(pos: Position3D): [number, number, number] {
 }
 
 interface SceneViewerProps {
+  presentation?: boolean;
+  cameraLink?: CameraLink;
+  roadStudy?: RoadStudy;
   nodes: AssetNode[];
   inlets: AssetInlet[];
   conduits: AssetConduit[];
@@ -60,12 +64,8 @@ interface SceneViewerProps {
   onOpenDebrisLab?: () => void;
   isDebrisLabOpen?: boolean;
   appMode?: AppMode;
-  onSelectInspector?: (inspector: FieldInspector) => void;
-  selectedInspectorId?: string | null;
   /** Engine mode: depth grid for the current frame (consumed by the engine water surface). */
   engineDepth?: Float32Array | null;
-  /** Engine mode hides the scripted field-inspector patrol. Default true. */
-  showInspectors?: boolean;
   /** X-ray look toggle (legacy viewer port). Absent handler: no X-ray button. */
   xray?: boolean;
   onToggleXray?: () => void;
@@ -385,6 +385,9 @@ const InletMesh: React.FC<{
 };
 
 export const SceneViewer: React.FC<SceneViewerProps> = ({
+  presentation = false,
+  cameraLink,
+  roadStudy,
   nodes,
   inlets,
   conduits,
@@ -402,10 +405,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   onOpenDebrisLab,
   isDebrisLabOpen: _isDebrisLabOpen = false,
   appMode = 'diagnose',
-  onSelectInspector,
-  selectedInspectorId,
   engineDepth,
-  showInspectors,
   xray = false,
   onToggleXray,
   viewDim = '3d',
@@ -445,6 +445,22 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
     nodes.forEach((n) => map.set(n.node_id, n));
     return map;
   }, [nodes]);
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls || !selectedAssetId || presentation) return;
+    const node = nodes.find(n => n.node_id === selectedAssetId);
+    const inlet = inlets.find(i => i.inlet_id === selectedAssetId);
+    const conduit = conduits.find(c => c.conduit_id === selectedAssetId);
+    const from = conduit ? nodeMap.get(conduit.from_node_id) : null;
+    const to = conduit ? nodeMap.get(conduit.to_node_id) : null;
+    const pos = node?.position_m ?? inlet?.position_m ?? (from && to ? { x: (from.position_m.x + to.position_m.x) / 2, y: (from.position_m.y + to.position_m.y) / 2, z: (from.ground_elevation_m + to.ground_elevation_m) / 2 } : null);
+    if (!pos) return;
+    const [x, y, z] = toThreeCoords(pos);
+    controls.target.set(x, y, z);
+    controls.object.position.set(x + (is2d ? 0 : 20), y + 45, z + (is2d ? 0.01 : 40));
+    controls.update();
+  }, [selectedAssetId, nodes, inlets, conduits, nodeMap, is2d, presentation]);
 
   // Frame state maps
   const pipeStateMap = useMemo(() => {
@@ -493,7 +509,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
   return (
     <div className="w-full h-full relative bg-slate-100">
       {/* Top Floating View & Preset Quick Control Bar */}
-      <div className="absolute top-18 left-1/2 -translate-x-1/2 z-10 flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200/90 text-[11px] text-slate-700 shadow-md">
+      {!presentation && <div className={`scene-tools ${selectedAssetId ? 'with-selection' : ''} absolute z-10 flex flex-wrap items-center justify-center gap-2 p-1.5 rounded-2xl bg-white/95 backdrop-blur-xl border border-slate-200/90 text-[11px] text-slate-700 shadow-md`}>
         {/* 1. Twin View Modes (Matching user mockup) */}
         <div className="flex items-center rounded-xl bg-slate-100 p-0.5 border border-slate-200">
           <button
@@ -641,11 +657,12 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
             </button>
           </>
         )}
-      </div>
+      </div>}
 
       <Canvas
         camera={{ position: [60, 90, 130], fov: 45, near: 0.1, far: 1000 }}
-        shadows
+        shadows={!presentation}
+        dpr={presentation ? [1, 1.25] : [1, 2]}
       >
         <ViewLookProvider xray={xray} is2d={is2d}>
         <color attach="background" args={['#f1f5f9']} />
@@ -655,11 +672,12 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
         <directionalLight ref={fillLightRef} position={[-80, 60, -60]} intensity={0.8} color="#93c5fd" />
         <SceneLook ambient={ambientRef} keyLight={keyLightRef} fill={fillLightRef} />
 
-        <ViewRig is2d={is2d} controlsRef={controlsRef} onMetresPerPixel={setMetresPerPixel} />
+        <ViewRig is2d={is2d} controlsRef={controlsRef} onMetresPerPixel={setMetresPerPixel} damping={!presentation} />
+        {cameraLink && <LinkedCamera controlsRef={controlsRef} link={cameraLink} />}
 
         {/* Spatial Metric Reference Grid */}
         <Grid
-          visible={!xray}
+          visible={!xray && !presentation}
           args={[260, 260]}
           cellSize={10}
           cellThickness={0.5}
@@ -699,6 +717,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           engineMode={engineDepth !== undefined}
         />
         {engineDepth !== undefined && <EngineWater depth={engineDepth} />}
+        {roadStudy && <RoadStudyOverlay study={roadStudy}/>}
 
         {/* Glowing Surface Road Flow Ribbons & 3D Glowing Junction Markers (Mockup View) */}
         <NetworkHighlightOverlay
@@ -717,7 +736,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
             <NodeMesh
               key={node.node_id}
               node={node}
-              status={state?.status || 'normal'}
+              status={state?.status || 'unknown'}
               depthM={state?.depth || 0}
               isSelected={selectedAssetId === node.node_id}
               onClick={() => onSelectAsset({ type: 'node', id: node.node_id, data: node })}
@@ -741,7 +760,7 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
               conduit={conduit}
               fromNode={fromNode}
               toNode={toNode}
-              status={state?.status || 'normal'}
+              status={state?.status || 'unknown'}
               flowM3s={state?.flow || 0}
               isSelected={selectedAssetId === conduit.conduit_id}
               onClick={() => onSelectAsset({ type: 'conduit', id: conduit.conduit_id, data: conduit })}
@@ -776,33 +795,8 @@ export const SceneViewer: React.FC<SceneViewerProps> = ({
           );
         })}
 
-        {/* Real-Time Assigned Field Inspectors Patrol Team (Azman, Siti, Muthu, Kevin) */}
-        {showInspectors !== false && (
-          <FieldInspectorsManager
-            appMode={appMode}
-            selectedInspectorId={selectedInspectorId}
-            onSelectInspector={(inspector) => {
-              if (onSelectInspector) {
-                onSelectInspector(inspector);
-              } else {
-                // Default selection of assigned asset
-                if (inspector.assignedAssetId.startsWith('INLET')) {
-                  const inlet = inlets.find((i) => i.inlet_id === inspector.assignedAssetId);
-                  if (inlet) onSelectAsset({ type: 'inlet', id: inlet.inlet_id, data: inlet });
-                } else if (inspector.assignedAssetId.startsWith('PIPE')) {
-                  const pipe = conduits.find((c) => c.conduit_id === inspector.assignedAssetId);
-                  if (pipe) onSelectAsset({ type: 'conduit', id: pipe.conduit_id, data: pipe });
-                } else {
-                  const node = nodes.find((n) => n.node_id === inspector.assignedAssetId);
-                  if (node) onSelectAsset({ type: 'node', id: node.node_id, data: node });
-                }
-              }
-            }}
-          />
-        )}
-
         {/* Axis Orientation Gizmo */}
-        <ViewGizmo />
+        {!presentation && <ViewGizmo />}
         <XrayBloom />
         </ViewLookProvider>
       </Canvas>

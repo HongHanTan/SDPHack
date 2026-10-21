@@ -1,0 +1,77 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "North approach",
+        "width_m": 9
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            0,
+            140
+          ],
+          [
+            0,
+            90
+          ],
+          [
+            35,
+            35
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "East approach",
+        "width_m": 9
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            100,
+            140
+          ],
+          [
+            70,
+            100
+          ],
+          [
+            35,
+            35
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "River road",
+        "width_m": 10
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            35,
+            35
+          ],
+          [
+            35,
+            -25
+          ],
+          [
+            35,
+            -100
+          ]
+        ]
+      }
+    }
+  ]
+}

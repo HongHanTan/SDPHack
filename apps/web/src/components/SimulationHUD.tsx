@@ -217,7 +217,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
       {/* 1. LEFT COLUMN: Unified Non-Overlapping Operations Card   */}
       {/* ======================================================== */}
       {isLeftCollapsed ? (
-        <div className="absolute top-20 left-6 z-20 pointer-events-auto">
+        <div className="absolute top-28 left-6 z-20 pointer-events-auto">
           <button
             onClick={() => setIsLeftCollapsed(false)}
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/95 backdrop-blur-xl border border-slate-200 text-slate-800 shadow-md text-xs font-semibold hover:bg-slate-50 transition cursor-pointer"
@@ -228,7 +228,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
           </button>
         </div>
       ) : (
-        <div className="absolute top-20 left-6 z-20 w-80 max-h-[calc(100vh-6.5rem)] flex flex-col bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-xl overflow-hidden pointer-events-auto select-none animate-in fade-in">
+        <div className="absolute top-28 left-6 z-20 w-80 max-h-[calc(100vh-6.5rem)] flex flex-col bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-2xl shadow-xl overflow-hidden pointer-events-auto select-none animate-in fade-in">
           {/* Card Navigation Tabs */}
           <div className="flex items-center justify-between p-1.5 border-b border-slate-200 bg-slate-50/90">
             <div className="flex items-center gap-1 flex-1">
@@ -364,7 +364,7 @@ export const SimulationHUD: React.FC<SimulationHUDProps> = ({
                           : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      Idle Patrol
+                      Idle
                     </button>
                     <button
                       onClick={() => onChangeAppMode?.('diagnose')}

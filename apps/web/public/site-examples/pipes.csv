@@ -1,0 +1,5 @@
+conduit_id,from_node_id,to_node_id,diameter_m,length_m,manning_n
+LINK-A,MH-A,MH-C,0.45,65,0.013
+LINK-B,MH-B,MH-C,0.45,75,0.013
+LINK-TRUNK,MH-C,MH-D,0.3,60,0.013
+LINK-OUT,MH-D,OUT-RIVER,0.75,75,0.013

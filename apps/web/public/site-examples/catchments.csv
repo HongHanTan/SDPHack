@@ -1,0 +1,5 @@
+subcatchment_id,outlet_node_id,area_ha,impervious_percent,width_m,slope_percent
+AREA-A,MH-A,2,75,100,1
+AREA-B,MH-B,2,75,100,1
+AREA-C,MH-C,1.5,75,100,1
+AREA-D,MH-D,0.5,75,100,1
