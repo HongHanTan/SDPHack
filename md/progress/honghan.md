@@ -181,3 +181,12 @@ Plan: `docs/superpowers/plans/2026-10-23-team-ui-engine.md`
 | P10-0 | Merge tay branch (his portal, workspace, operations, story); remove scratch files | ✅ done (42e03c7, f5e65ee) |
 | P10-1 | Converter: SWMM .inp + layout + height grid → floodops-site-v1 bundle | ✅ done (4629b74, 9a3e446) — Tay's parser: map and simulation ready, no blocking issues |
 | P10-2 | Portal accepts the SWMM package; docs | ✅ done (2336257, fixes 21d56a4) — final review: ready for main |
+
+## Phase 11: Tay's portal on our engine (no Python API), three files only
+| Task | Description | Status |
+|---|---|---|
+| P11-1 | Engine: uploaded-rainfall storm, pipe-diameter variants | ✅ done (8f2f269, fix c96ff83: one shared rainfall reader) |
+| P11-2 | Local site API: projects, runs and records in this browser (IndexedDB) | ✅ done (44e39ca, review fixes 93c33ba) |
+| P11-3 | Three-file upload on the portal; engine wording; docs | ✅ done (2d18864) — review approved; leftover: stale UPLOAD_FIRST_WALKTHROUGH doc |
+| P11-4 | Street water from the engine on the site map | ✅ done (631a641) |
+| P11-5 | Final review + fixes (Operations scope, README, run progress, runner memory, water visibility) | ✅ done (bfea6bb) |
