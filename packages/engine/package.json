@@ -14,8 +14,8 @@
     "./worker/*": "./src/worker/*.ts"
   },
   "scripts": {
-    "test": "vitest run --exclude tests/story.test.ts --exclude tests/effects.drift.test.ts --exclude tests/swmm.crosscheck.test.ts --exclude tests/samplePackage.equivalence.test.ts --exclude tests/fixActions.simulation.test.ts",
-    "story": "vitest run tests/story.test.ts tests/effects.drift.test.ts tests/swmm.crosscheck.test.ts tests/samplePackage.equivalence.test.ts tests/fixActions.simulation.test.ts",
+    "test": "vitest run --exclude tests/story.test.ts --exclude tests/effects.drift.test.ts --exclude tests/swmm.crosscheck.test.ts --exclude tests/samplePackage.equivalence.test.ts --exclude tests/fixActions.simulation.test.ts --exclude tests/demoZones.slow.test.ts",
+    "story": "vitest run tests/story.test.ts tests/effects.drift.test.ts tests/swmm.crosscheck.test.ts tests/samplePackage.equivalence.test.ts tests/fixActions.simulation.test.ts tests/demoZones.slow.test.ts",
     "effects": "tsx scripts/effects.ts",
     "tune": "tsx scripts/tune.ts",
     "dashboard": "tsx scripts/computeDashboard.ts",
