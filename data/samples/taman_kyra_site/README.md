@@ -7,7 +7,7 @@ The coordinates are illustrative projected metres (built-in coordinates + 412000
 |---|---|
 | `taman_kyra.inp` | EPA SWMM 5 model of the drainage network: Tay Zheheng's illustrative model, with its coordinates moved into the sample coordinate system |
 | `taman_kyra_p07_750.inp` | The same model with PIPE-P07 upsized from Ø600 to Ø750 |
-| `taman_kyra_layout.geojson` | Buildings, roads, trees, pond, canal, inlets and the J07 hotspot, from TEH JIA JIE's scene layout |
+| `taman_kyra_layout.geojson` | Buildings, roads, trees, pond, canal, inlets and the J07 hotspot, from TEH JIA JIE's scene layout. Every building has `height_m: 7`, an illustrative synthetic height (not a survey value) |
 | `taman_kyra_ground.asc` | Ground heights, 2 m grid (ESRI ASCII grid) |
 
 ## Demo

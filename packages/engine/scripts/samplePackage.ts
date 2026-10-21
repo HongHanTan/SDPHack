@@ -3,8 +3,13 @@ import { LAYOUT } from '../src/scenario/layout';
 import { buildTerrain } from '../src/scenario/terrain';
 import { cellIn, siteToLocal, TAMAN_KYRA } from '../src/scenario/site';
 
+/** Where the sample package is written (relative to the repo root): the data copy and the copy the web app serves. */
+export const SAMPLE_DIRS = ['data/samples/taman_kyra_site', 'apps/web/public/site-examples/taman-kyra-swmm'] as const;
+
 /** Illustrative projected coordinates (metres) for the sample package: not a real location. */
 export const SAMPLE_OFFSET = { x: 412000, y: 336000 };
+/** Illustrative synthetic building height (m) written on every sample building: not a survey value. */
+export const SAMPLE_BUILDING_HEIGHT_M = 7;
 const r3 = (v: number) => Math.round(v * 1000) / 1000;
 const X = (x: number) => r3(x + SAMPLE_OFFSET.x);
 const Y = (y: number) => r3(y + SAMPLE_OFFSET.y);
@@ -52,7 +57,7 @@ function geojson(): string {
     const corner = (su: number, sv: number) => [X(h.x + su * w * Math.cos(a) - sv * d * Math.sin(a)), Y(h.y + su * w * Math.sin(a) + sv * d * Math.cos(a))];
     const ring = [corner(-1, -1), corner(1, -1), corner(1, 1), corner(-1, 1), corner(-1, -1)];
     const { id, x: _x, y: _y, rotationDeg: _r, scale: _s, ...rest } = h;
-    add('building', { type: 'Polygon', coordinates: [ring] }, { id, rotation_deg: h.rotationDeg, ...rest });
+    add('building', { type: 'Polygon', coordinates: [ring] }, { id, rotation_deg: h.rotationDeg, ...rest, height_m: SAMPLE_BUILDING_HEIGHT_M });
   }
   for (const t of LAYOUT.trees) add('tree', { type: 'Point', coordinates: [X(t.x), Y(t.y)] }, { scale: t.scale });
   for (const p of TAMAN_KYRA.ponds) add('pond', { type: 'Point', coordinates: [X(p.x), Y(p.y)] }, { id: p.id, radius_m: p.radius, water_level_m: p.waterLevel, bed_m: p.bedZ });
@@ -104,7 +109,7 @@ The coordinates are illustrative projected metres (built-in coordinates + ${SAMP
 |---|---|
 | \`taman_kyra.inp\` | EPA SWMM 5 model of the drainage network: Tay Zheheng's illustrative model, with its coordinates moved into the sample coordinate system |
 | \`taman_kyra_p07_750.inp\` | The same model with PIPE-P07 upsized from Ø600 to Ø750 |
-| \`taman_kyra_layout.geojson\` | Buildings, roads, trees, pond, canal, inlets and the J07 hotspot, from TEH JIA JIE's scene layout |
+| \`taman_kyra_layout.geojson\` | Buildings, roads, trees, pond, canal, inlets and the J07 hotspot, from TEH JIA JIE's scene layout. Every building has \`height_m: ${SAMPLE_BUILDING_HEIGHT_M}\`, an illustrative synthetic height (not a survey value) |
 | \`taman_kyra_ground.asc\` | Ground heights, 2 m grid (ESRI ASCII grid) |
 
 ## Demo
