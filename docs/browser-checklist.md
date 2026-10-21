@@ -58,7 +58,7 @@ Run `npm run dev`, open http://localhost:5173.
 41. Mock and SWMM API modes: both toggles work; with both off the team's original views are unchanged.
 
 ## Site import — `npm run dev:web` (engine mode)
-Note: items 42–53 describe the engine-mode Import site page, which was replaced by Tay's upload portal; see items 54–56.
+Note: items 42–53 describe the engine-mode Import site page, which was replaced by Tay's upload portal; see items 57–59.
 
 42. Open the app (engine mode): the Import site page appears first → choose `data/samples/taman_kyra_site/taman_kyra.inp`, `taman_kyra_layout.geojson`, `taman_kyra_ground.asc` → Check files: no errors; summary shows 9 nodes, 8 pipes, 4 inlets, 35 buildings, grid 125 × 145 at 2 m, moved by (−412000, −336000) m → Generate city: the township looks like the built-in one (roads, houses, pond, canal) and the HUD hotspot reads NODE-J07.
 43. Run 80 mm/h: water gathers at J07, P07 turns red — same as the built-in run.
@@ -72,6 +72,9 @@ Note: items 42–53 describe the engine-mode Import site page, which was replace
 51. Fresh load in engine mode shows the Import site page, not the dashboard; "Use built-in demo township (Taman Kyra)" opens the dashboard with the original scene.
 52. After Generate city with Watch on, the header shows "👁 Watching 3 files"; saving an edited .inp updates the city on the dashboard and the chip's time; a broken save shows the red banner and keeps the city; ✕ on the chip stops watching.
 53. Header 📂 Import site returns to the Import site page with Back to dashboard; Mock/SWMM API start on the dashboard as before.
-54. Portal: choose taman_kyra.inp + taman_kyra_layout.geojson + taman_kyra_ground.asc → a "SWMM package converted" card lists originals, counts and what was left out (trees, pond, canal, hotspot, roundabout) → Check my files: map and simulation ready.
-55. Build my township → Compare actions → Run uploaded baseline → test PIPE-P07 at 0.75 m: the network flooding loss drops.
-56. A building without height_m in a custom layout is omitted with a note; an .inp mixed with nodes.csv shows the "either … or" error. CSV/JSON uploads behave as before.
+54. (Retired: replaced by items 57–59.) Portal: choose taman_kyra.inp + taman_kyra_layout.geojson + taman_kyra_ground.asc → a "SWMM package converted" card lists originals, counts and what was left out (trees, pond, canal, hotspot, roundabout) → Check my files: map and simulation ready.
+55. (Retired: replaced by items 57–59.) Build my township → Compare actions → Run uploaded baseline → test PIPE-P07 at 0.75 m: the network flooding loss drops.
+56. (Retired: replaced by items 57–59.) A building without height_m in a custom layout is omitted with a note; an .inp mixed with nodes.csv shows the "either … or" error. CSV/JSON uploads behave as before.
+57. Upload screen shows three slots (SWMM model, Layout, Height grid); only the matching file type can be chosen in each; Check my files works with no API running.
+58. Build my township shows Tay's map from the three files; Compare actions runs the baseline in the browser (progress shown), then PIPE-P07 at 0.75: the street flood volume drops.
+59. Reload the page: the project is listed under Your saved projects and opens with its retained runs; inspections and proposals persist.

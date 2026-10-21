@@ -11,9 +11,9 @@ The coordinates are illustrative projected metres (built-in coordinates + 412000
 | `taman_kyra_ground.asc` | Ground heights, 2 m grid (ESRI ASCII grid) |
 
 ## Demo
-1. Start the app with the local API running on port 8000 (see md/UPLOAD_FIRST_WALKTHROUGH.md) and open the upload portal: **Choose your site files** → pick the three files `taman_kyra.inp`, `taman_kyra_layout.geojson` and `taman_kyra_ground.asc`. They are converted to a site bundle in your browser.
+1. Open the app → choose the three files in their slots (`taman_kyra.inp`, `taman_kyra_layout.geojson`, `taman_kyra_ground.asc`) → Check my files → Build my township → Compare actions.
 2. **Check my files**: expect 9 nodes, 8 pipes, 4 catchments, 18,125 terrain points, the roads and 35 buildings, with map and simulation ready.
 3. **Build my township**.
-4. **Compare actions**: run the baseline, then test PIPE-P07 at 0.75 m (the same change as `taman_kyra_p07_750.inp`): the network flooding loss drops.
+4. **Compare actions**: run the baseline, then test PIPE-P07 at 0.75 m (the same change as `taman_kyra_p07_750.inp`): the street flood volume drops.
 
 Regenerate these files with `npm -w @floodops/engine run sample`.
