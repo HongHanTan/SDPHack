@@ -190,3 +190,12 @@ Plan: `docs/superpowers/plans/2026-10-23-team-ui-engine.md`
 | P11-3 | Three-file upload on the portal; engine wording; docs | ✅ done (2d18864) — review approved; leftover: stale UPLOAD_FIRST_WALKTHROUGH doc |
 | P11-4 | Street water from the engine on the site map | ✅ done (631a641) |
 | P11-5 | Final review + fixes (Operations scope, README, run progress, runner memory, water visibility) | ✅ done (bfea6bb) |
+
+## Phase 12: Automated fix finder (option A, no LLM)
+| Task | Description | Status |
+|---|---|---|
+| P12-1 | Engine fix actions: upsize, relief pipe, storage, extra inlet | ✅ done (33b2d29, fix 19318f5) |
+| P12-2 | Engine diagnose, candidate generation, ranking | ✅ done (77f95c7, follow-ups 54bb7e2) |
+| P12-3 | Analysis in the local site API (worker pool, streaming log) | ✅ done (d393ab8, proposals fix d256f4a) |
+| P12-4 | Automatic analysis, playback-timed map pins, OK to side-by-side | ✅ done (8f21935) |
+| P12-5 | Final review + fixes (clickable pins, J07 wording and fallback fix, abort race, timing text, memory) | ✅ done (4b4bb1b) |
