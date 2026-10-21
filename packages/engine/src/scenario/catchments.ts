@@ -62,7 +62,7 @@ export function buildCatchments(grid: Grid, blockage: Record<string, number> = {
     const want = Math.round((s.areaHa * 1e4) / (grid.dx * grid.dx));
     const cells = polyCells[k] ?? lists[k].sort((a, b) => a.d - b.d || a.c - b.c).slice(0, want).map((e) => e.c);
     return { id: s.id, node: s.outletNodeId, cells: Int32Array.from(cells), directFraction: s.imperviousPercent / 100, lagS: CATCHMENT.lagS,
-      captureCurve: site.captureCurve,
+      captureCurve: s.captureScale && s.captureScale !== 1 ? site.captureCurve.map(([q, c]) => [q, c * s.captureScale!] as [number, number]) : site.captureCurve,
       captureLoss: blockage[site.assets.inlets.find((i) => i.node_id === s.outletNodeId)?.inlet_id ?? ''] ?? 0,
     };
   });

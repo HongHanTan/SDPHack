@@ -13,7 +13,7 @@ export interface SiteLayout {
 export interface SitePond { id: string; x: number; y: number; radius: number; bedZ: number; waterLevel: number }
 /** A straight river/canal reach: rectangle centred at (cx, cy), `length` along angleDeg (from east). */
 export interface SiteRiver { id: string; cx: number; cy: number; length: number; width: number; angleDeg: number; bedZ: number }
-export interface SiteSubcatchment { id: string; outletNodeId: string; areaHa: number; imperviousPercent: number; polygon?: Array<[number, number]> }
+export interface SiteSubcatchment { id: string; outletNodeId: string; areaHa: number; imperviousPercent: number; polygon?: Array<[number, number]>; /** Multiplier on the captured flow of the capture curve (default 1). */ captureScale?: number }
 
 /** Everything the engine needs to build a township. Plain data (structured-cloneable) so it can be posted to workers. */
 export interface SiteSpec {

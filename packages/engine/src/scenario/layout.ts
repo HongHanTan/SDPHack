@@ -21,6 +21,8 @@ export interface AssetNode {
   invert_elevation_m: number;
   ground_elevation_m: number;
   max_depth_m: number;
+  /** Optional plan area (m²) of a storage chamber at this node; default is the manhole area. */
+  storage_area_m2?: number;
 }
 export interface AssetInlet { inlet_id: string; node_id: string; position_m: { x: number; y: number; z: number }; grate_area_m2: number }
 export interface AssetConduit { conduit_id: string; from_node_id: string; to_node_id: string; diameter_m: number; length_m: number; manning_n: number }
