@@ -1,15 +1,15 @@
 # Township FloodOps
 
 > **Evidence-backed drainage maintenance planning for township operations.**
-> Upload a catchment's site and drainage data, identify missing inputs, build its 3D map, test a pipe option with native EPA SWMM, and prepare an evidence-linked investigation draft. Imported files remain uncalibrated until checked against the real site.
+> Upload a catchment's site and drainage data, identify missing inputs, build its 3D map, test a pipe option on the FloodOps engine in your browser, and prepare an evidence-linked investigation draft. Imported files remain uncalibrated until checked against the real site.
 
-The default page is now **upload-first**. It starts without a township scene. CSV, JSON and local metric geometry exports supply the actual coordinates, terrain grid, roads, buildings and network. Readiness checks distinguish a usable map from a runnable hydraulic model. Original file hashes, normalized model versions and native run snapshots remain traceable. [Exact upload walkthrough](md/UPLOAD_FIRST_WALKTHROUGH.md) · [sample files and specification](apps/web/public/site-examples/README.md).
+The app opens on the **site portal**. Upload three files in one projected metric reference: a SWMM `.inp` (required), a layout `.geojson` (optional; buildings with `height_m`, roads with `width_m`) and a height grid `.asc` (optional). Checking, building the map and the Compare actions run in the browser on the FloodOps engine (uncalibrated), including street water. Readiness checks distinguish a usable map from a runnable hydraulic model, and original file hashes and run snapshots stay traceable. No backend is needed for this flow. Sample: `data/samples/taman_kyra_site` (also downloadable from the portal) · [sample files and specification](apps/web/public/site-examples/README.md) · [legacy API-based upload walkthrough](md/UPLOAD_FIRST_WALKTHROUGH.md).
 
-Each imported project's **Operations** tab retains the problems register: record report sources, identify missing evidence, assign follow-up and prepare investigation drafts. Problems are browser-local and project/API-scoped. Imported models, inspections/media, native runs and Draft proposals are saved on the API. The pilot does not dispatch work or approve construction. The explicit **Open illustrative demo** button retains the earlier D07 browser story and illustrative catalog workflows.
+Each imported project's **Operations** tab retains the problems register: record report sources, identify missing evidence, assign follow-up and prepare investigation drafts. Projects, runs, inspections/media and Draft proposals are stored in this browser (IndexedDB). The pilot does not dispatch work or approve construction. The explicit **Open illustrative demo** button retains the earlier D07 browser story and illustrative catalog workflows.
 
-The demo now measures an explicit **road-only area and fixed road point**, excluding grates/manholes, with sampled depth, simultaneous affected area and duration. Executable analytic reference checks show calculation errors and limits. The SWMM API supports explicit conceptual cleaning, pipe and storage actions with retained input changes and matching-baseline checks. Neither engine establishes validated site flood depths. See the [calculation walkthrough, checked example values and limitations](md/CALCULATION_FOUNDATION.md).
+The demo now measures an explicit **road-only area and fixed road point**, excluding grates/manholes, with sampled depth, simultaneous affected area and duration. Executable analytic reference checks show calculation errors and limits. Tay's Python SWMM API (`services/api`, kept in the repo for the legacy API mode and its tests) supports explicit conceptual cleaning, pipe and storage actions with retained input changes and matching-baseline checks. Neither the FloodOps engine nor SWMM establishes validated site flood depths. See the [calculation walkthrough, checked example values and limitations](md/CALCULATION_FOUNDATION.md).
 
-Current API: **v1.5.0**, with additive `/api/site-projects` routes. Uploaded-site comparisons currently support circular pipe diameter changes and 1D network outputs. Native CAD/PDF/GeoTIFF extraction, field calibration and 2D street-flood mapping are not implemented. Earlier illustrative workflow: [guided D07 demo and maintenance workflow](md/MAINTENANCE_DEMO.md); [maintenance integration](contracts/MAINTENANCE_INTEGRATION.md).
+Uploaded-site comparisons support circular pipe diameter changes with 1D network outputs and the engine's street-water surface. Native CAD/PDF/GeoTIFF extraction and field calibration are not implemented. The legacy Python API (**v1.5.0**) still serves `/api/site-projects` routes. Earlier illustrative workflow: [guided D07 demo and maintenance workflow](md/MAINTENANCE_DEMO.md); [maintenance integration](contracts/MAINTENANCE_INTEGRATION.md).
 
 ---
 
@@ -40,8 +40,8 @@ npm run dev
 
 浏览器访问：`http://localhost:5173`。
 
-- The default upload workspace requires the updated FastAPI backend at `http://localhost:8000`; native calculations require the installed SWMM toolkit. See the backend setup below. The illustrative browser demo remains an explicit separate option.
-- The upload page includes API connection settings. Connection or native calculation errors are displayed without a mock fallback.
+- The default site portal runs entirely in the browser on the FloodOps engine; no backend is needed. Tay's FastAPI backend (`services/api`, with the SWMM toolkit) is only used by the legacy API mode and his tests (see the backend setup). The illustrative browser demo remains an explicit separate option.
+- Calculation errors are displayed without a mock fallback.
 - 详细说明请参见 [前端开发与运行指南 (md/FRONTEND_SETUP.md)](md/FRONTEND_SETUP.md)。
 
 ### 2. 评委与路演演示演练 (3-Minute Pitch Runbook)

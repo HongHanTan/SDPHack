@@ -15,7 +15,7 @@ export function SitePortal({onDemo}:{onDemo:()=>void}){
  const [preview,setPreview]=useState<SitePreview|null>(null),[dirty,setDirty]=useState(true);
  const [projects,setProjects]=useState<ProjectSummary[]>([]),[busy,setBusy]=useState(''),[error,setError]=useState(''),[connection,setConnection]=useState('');
  const epoch=useRef(0);
- const refresh=()=>{setConnection('');void siteRequest<{items:ProjectSummary[]}>('/api/site-projects').then(v=>setProjects(v.items)).catch(()=>setConnection('Saved projects could not be read from this browser.'))};
+ const refresh=()=>{setConnection('');void siteRequest<{items:ProjectSummary[]}>('/api/site-projects').then(v=>setProjects(v.items)).catch((e:unknown)=>setConnection(`Saved projects could not be read from this browser: ${e instanceof Error?e.message:String(e)}`))};
  useEffect(()=>{refresh();},[]);
  const change=()=>{epoch.current++;setDirty(true);setError('');};
  const payload=()=>({name,files:Object.fromEntries(Object.entries(files).map(([k,f])=>[k,{name:f.name,text:f.text}]))});

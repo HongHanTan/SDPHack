@@ -19,7 +19,7 @@ let shared: SimRunner | null = null;
 export function browserRunner(): EngineRunner {
   return {
     run: (...args) => {
-      shared ??= new SimRunner(() => new Worker(new URL('../../engine/workers/sim.worker.ts', import.meta.url), { type: 'module' }) as unknown as WorkerLike);
+      shared ??= new SimRunner(() => new Worker(new URL('../../engine/workers/sim.worker.ts', import.meta.url), { type: 'module' }) as unknown as WorkerLike, 1);
       return shared.run(...args);
     },
   };

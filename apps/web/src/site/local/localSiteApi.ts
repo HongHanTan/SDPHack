@@ -310,6 +310,9 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
         const r = await results(runId);
         const m = r.results.metrics;
         value = { run_id: runId, model_version_id: r.run.model_version_id, result_type: 'simulated', engine: ENGINE, engine_version: ENGINE_VERSION, is_verified_site_model: false, assumptions: m.assumptions, warnings: m.warnings, status_definitions: m.status_definitions, frames: r.results.frames } satisfies SimulationFramesResponse;
+      } else if (seg[3] === 'results') {
+        const r = await results(runId);
+        value = { frames: r.results.frames, metrics: r.results.metrics, depth: r.results.depth ?? null };
       } else if (seg[3] === 'metrics') value = (await results(runId)).results.metrics;
       else unknown();
     } else unknown();
@@ -320,13 +323,16 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
   const execute: LocalSiteApi['execute'] = async (projectId, body, onStatus, signal) => {
     if (signal.aborted) throw new Error('Calculation cancelled.');
     const { run_id, outcome } = await begin(projectId, body);
-    onStatus(`Calculating in this browser · ${run_id}`);
+    const t0 = Date.now();
+    const say = () => onStatus(`Calculating in this browser · ${run_id} · ${Math.round((Date.now() - t0) / 1000)} s (a run takes about 20–30 s)`);
+    say();
+    const tick = setInterval(say, 1000);
     const final = await new Promise<{ run: Run; results: RunResults | null }>((resolve, reject) => {
       const abort = () => reject(new Error('Calculation cancelled. It keeps running in this browser and will appear in Retained runs.'));
       if (signal.aborted) return abort();
       signal.addEventListener('abort', abort, { once: true });
       void outcome.then(resolve).finally(() => signal.removeEventListener('abort', abort));
-    });
+    }).finally(() => clearInterval(tick));
     if (final.run.status !== 'succeeded' || !final.results) fail(final.run.error?.message ?? 'Engine calculation failed.');
     return { run: final.run as SimulationRun, frames: final.results!.frames, metrics: final.results!.metrics, depth: final.results!.depth };
   };

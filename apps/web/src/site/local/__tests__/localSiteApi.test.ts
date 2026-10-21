@@ -218,7 +218,7 @@ describe('local site API — engine runs', () => {
     const pending = api.execute(project.project_id, { acknowledge_assumptions: true }, status, new AbortController().signal);
     (await call(0)).reject(new Error('boom'));
     await expect(pending).rejects.toThrow('boom');
-    expect(status).toHaveBeenCalledWith(expect.stringMatching(/^Calculating in this browser · run_[0-9a-f]{32}$/));
+    expect(status).toHaveBeenCalledWith(expect.stringMatching(/^Calculating in this browser · run_[0-9a-f]{32} · \d+ s \(a run takes about 20–30 s\)$/));
     const runs = await api.request<{ items: SimulationRun[] }>(`/api/site-projects/${project.project_id}/simulations`);
     expect(runs.items[0]).toMatchObject({ status: 'failed', error: { message: 'boom' } });
   });

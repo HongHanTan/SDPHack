@@ -35,7 +35,10 @@ export class SimRunner {
   private queue: Promise<unknown> = Promise.resolve();
   private worker: WorkerLike;
 
-  constructor(private readonly createWorker: () => WorkerLike) {
+  constructor(
+    private readonly createWorker: () => WorkerLike,
+    private readonly maxCache: number = MAX_CACHE,
+  ) {
     this.worker = createWorker();
   }
 
@@ -87,6 +90,6 @@ export class SimRunner {
 
   private remember(key: string, result: RunResult): void {
     this.cache.set(key, result);
-    while (this.cache.size > MAX_CACHE) this.cache.delete(this.cache.keys().next().value!);
+    while (this.cache.size > this.maxCache) this.cache.delete(this.cache.keys().next().value!);
   }
 }

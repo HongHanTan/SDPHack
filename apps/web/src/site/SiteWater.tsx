@@ -58,7 +58,7 @@ export function SiteWater({ site, depth, point }: { site: SiteSpec; depth: Float
     else smoothed.fill(0);
     for (let c = 0; c < n; c++) {
       const v = base.mask[c] ? smoothed[c] : 0;
-      pos.setY(c, v > WET ? base.groundY[c] + v + 0.03 : base.groundY[c] - 0.5);
+      pos.setY(c, v > WET ? base.groundY[c] + v + 0.1 : base.groundY[c] - 0.5);
       depthAttr.setX(c, v);
     }
     pos.needsUpdate = true;

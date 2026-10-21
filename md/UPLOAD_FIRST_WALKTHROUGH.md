@@ -1,3 +1,5 @@
+> **Legacy:** describes the earlier API-based multi-file upload. The app now uses the three-file, in-browser flow — see README.md.
+
 # Upload-first township workflow
 
 The operations manager starts with an actual drainage catchment and the files available for that catchment. The application constructs their site and identifies missing inputs before proposing a calculation.
