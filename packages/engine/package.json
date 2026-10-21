@@ -10,6 +10,7 @@
     "./scenario/dashboard.json": "./src/scenario/dashboard.json",
     "./scenario/*": "./src/scenario/*.ts",
     "./import/*": "./src/import/*.ts",
+    "./analysis/*": "./src/analysis/*.ts",
     "./worker/*": "./src/worker/*.ts"
   },
   "scripts": {
