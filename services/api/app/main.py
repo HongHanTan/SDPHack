@@ -22,6 +22,8 @@ from .schemas import (
     DebrisCreate, DebrisScenario, InspectionCreate, InspectionList, InspectionRecord, MediaRecord,
 )
 from .service import ApiProblem, ScenarioService
+from . import maintenance
+from .site_projects import router as site_projects_router
 
 ERROR_RESPONSES = {
     404:{"model":ErrorResponse,"description":"NOT_FOUND: unknown township, storm, run, inspection, media, created debris scenario or artifact."},
@@ -42,19 +44,21 @@ def create_app(data_dir: Path | None = None, *, run_timeout_s: float = 120, max_
         directory = data_dir or Path(os.environ.get("FLOODOPS_DATA_DIR",str(REPO_ROOT / "data/runtime/api")))
         application.state.scenarios = ScenarioService(directory,timeout_s=run_timeout_s,max_pending=max_pending)
         try:
+            maintenance.initialize(application.state.scenarios.store)
             yield
         finally:
             application.state.scenarios.close()
 
     application = FastAPI(
         title="Township FloodOps API",version=API_VERSION,lifespan=lifespan,
-        description="Synthetic uncalibrated network. Immutable storms, inspection/media provenance, debris mass accounting and asynchronous real SWMM runs are persisted in SQLite. Native finite inlet capture supports independent hydraulic loss hypotheses; retained direct-node baseline remains available. Poll run status before fetching results. High tailwater and interventions remain unsupported. One API worker per runtime directory.",
+        description="Upload-first site projects with source hashes, readiness checks, immutable imported models and native SWMM pipe comparisons. Uploaded files do not establish field calibration. The separate illustrative catalog retains immutable storms, inspections and conceptual intervention presets. Poll run status before fetching results. Idealised reference checks do not establish site or 2D surface validation. High tailwater remains unsupported for the illustrative catalog. One API worker per runtime directory.",
         responses=ERROR_RESPONSES,
     )
     application.add_middleware(CORSMiddleware,
         allow_origins=["http://localhost:5173","http://127.0.0.1:5173"],allow_credentials=False,
         allow_methods=["GET","POST"],allow_headers=["Content-Type"],
     )
+    application.include_router(site_projects_router)
 
     @application.exception_handler(ApiProblem)
     async def service_error(_request: Request,exc: ApiProblem):
@@ -82,6 +86,18 @@ def create_app(data_dir: Path | None = None, *, run_timeout_s: float = 120, max_
     def service(request: Request) -> ScenarioService:
         return request.app.state.scenarios
 
+    @application.get('/api/maintenance/proposals', tags=['maintenance'])
+    def proposals(request: Request):
+        return maintenance.list_proposals(service(request))
+
+    @application.post('/api/maintenance/proposals', status_code=201, tags=['maintenance'])
+    def proposal_create(payload: maintenance.ProposalCreate, request: Request):
+        return maintenance.create_proposal(service(request), payload)
+
+    @application.post('/api/maintenance/proposals/{proposal_id}/transition', tags=['maintenance'])
+    def proposal_transition(proposal_id: str, payload: maintenance.ProposalTransition, request: Request):
+        return maintenance.transition_proposal(service(request), proposal_id, payload)
+
     @application.get("/api/health",response_model=HealthResponse,tags=["catalog"])
     def health():
         return HealthResponse(api_version=API_VERSION,swmm=probe_engine(),capabilities=Capabilities())
@@ -89,6 +105,16 @@ def create_app(data_dir: Path | None = None, *, run_timeout_s: float = 120, max_
     @application.get("/api/bootstrap",response_model=BootstrapResponse,tags=["catalog"])
     def bootstrap(request: Request):
         return service(request).bootstrap()
+
+    @application.post('/api/validation/reference-checks',tags=['validation'])
+    def reference_checks(request:Request):
+        """Execute idealised native cases against analytic references; not field validation."""
+        from simulation.swmm.reference_checks import run_reference_checks
+        from uuid import uuid4
+        engine=probe_engine()
+        if not engine['available']:raise ApiProblem(503,'ENGINE_UNAVAILABLE',engine['message'])
+        result=run_reference_checks(service(request).directory/'reference-checks'/uuid4().hex)
+        return result
 
     @application.get("/api/townships/{township_id}/assets",response_model=AssetsResponse,tags=["catalog"])
     def assets(township_id: str):

@@ -1,0 +1,78 @@
+// Visible upload-first acceptance walkthrough. Synthetic example inputs only.
+process.env.PLAYWRIGHT_BROWSERS_PATH=require('node:path').resolve('tmp/playwright-browsers');
+const {chromium}=require('../../tmp/playwright-tools/node_modules/playwright');
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+(async()=>{
+ const out=path.resolve('output/site-onboarding-demo');fs.mkdirSync(out,{recursive:true});
+ const browser=await chromium.launch({headless:false,executablePath:path.join(process.env.LOCALAPPDATA,'ms-playwright/chromium-1187/chrome-win/chrome.exe'),args:['--window-size=1640,1040','--window-position=25,25']});
+ const context=await browser.newContext({viewport:{width:1600,height:900},recordVideo:{dir:out,size:{width:1600,height:900},fps:10},acceptDownloads:true});
+ const page=await context.newPage();page.setDefaultTimeout(60000);
+ const video=page.video(),errors=[],chapters=[],downloads=[],started=Date.now();
+ page.on('pageerror',e=>{errors.push(e.stack??String(e));console.error('PAGE ERROR',chapters.at(-1)?.title,e.stack??String(e));});
+ page.on('download',d=>downloads.push(d.saveAs(path.join(out,d.suggestedFilename()))));
+ const pause=ms=>page.waitForTimeout(ms),button=name=>page.getByRole('button',{name,exact:true});
+ const click=async l=>{await l.scrollIntoViewIfNeeded();await l.hover();await pause(300);await l.click();await pause(650);};
+ const fill=async(l,value)=>{await l.scrollIntoViewIfNeeded();await l.fill(value);await pause(500);};
+ const shot=async name=>{await page.screenshot({path:path.join(out,name+'.png')});console.log('SCREENSHOT',name);};
+ const mark=async(title,detail)=>{
+  chapters.push({seconds:(Date.now()-started)/1000,title,detail});console.log('STEP',title);
+  await page.evaluate(({title,detail})=>{let el=document.getElementById('upload-demo-caption');if(!el){el=document.createElement('div');el.id='upload-demo-caption';document.body.appendChild(el);}el.style.cssText='position:fixed;bottom:15px;right:20px;width:370px;z-index:2147483647;pointer-events:none;background:#172d42ed;border:1px solid #ffffff55;border-radius:10px;padding:14px 18px;color:#fff;font:13px/1.5 Arial,sans-serif;box-shadow:0 5px 20px #0003';el.replaceChildren();let b=document.createElement('strong');b.textContent=title;b.style.cssText='display:block;color:#fff;font-size:16px;margin-bottom:5px';el.appendChild(b);let p=document.createElement('span');p.textContent=detail;el.appendChild(p);},{title,detail});await pause(2300);
+ };
+ try{
+  await page.goto('http://localhost:5173',{waitUntil:'networkidle'});await page.bringToFront();
+  assert(await page.getByRole('heading',{name:'Build around your township.'}).isVisible());assert.equal(await page.locator('canvas').count(),0);
+  await mark('1. Start with the stakeholder’s site','The first page has no preloaded township, invented workers or rain. Choose the site files first.');await shot('01-empty-start');
+  await fill(page.getByRole('textbox',{name:/^Project name/}),'Riverside Estate drainage review');
+  await page.getByLabel('Upload site files',{exact:true}).setInputFiles(path.resolve('apps/web/public/site-examples/riverside-complete.site.json'));
+  await mark('2. Upload the source file','This fictional bundle supplies surveyed-style geometry, drainage tables and rainfall. Its provenance stays synthetic.');
+  await click(button('Check my files'));await page.getByText('Map inputs usable',{exact:true}).waitFor();
+  assert(await page.getByText('Required network inputs supplied; uncalibrated.',{exact:false}).isVisible());
+  await mark('3. Review what can be used','5 nodes, 4 pipes, 49 terrain points, 3 roads and 8 buildings. Input completeness is separate from field validation.');await shot('02-reviewed-inputs');
+  const built=page.waitForResponse(r=>r.url().endsWith('/api/site-projects')&&r.request().method()==='POST'&&r.status()===201);
+  await click(button('Build my township'));const project=await(await built).json();fs.writeFileSync(path.join(out,'project-summary.json'),JSON.stringify({project_id:project.project_id,counts:project.counts,model_hash:project.model_hash},null,2));
+  await page.getByRole('heading',{name:'Built from your files.'}).waitFor();await pause(1800);
+  assert.equal(project.counts.nodes,5);assert.equal(project.counts.pipes,4);assert.equal(project.counts.terrain,49);assert.equal(project.counts.buildings,8);
+  await mark('4. Build the matching 3D site','Terrain, roads, footprints and pipe connections come from this file. The sequence reveals imported layers.');await shot('03-built-site');
+  await click(button('X-ray drainage'));await pause(1000);await shot('04-surface-site');await click(button('Surface view'));
+  await click(page.locator('.site-asset-list button').filter({hasText:'MH-C'}));
+  assert(await page.locator('.site-selected').getByRole('heading',{name:'MH-C'}).isVisible());
+  await mark('5. Inspect an uploaded asset','MH-C uses the uploaded ID, position and elevations. No fixed D07 dataset is required.');await shot('05-selected-node');
+  await click(button('Compare actions'));await click(page.getByText(/Modelling assumptions \(/));
+  await mark('6. Review the model assumptions','Native SWMM models this 1D network. Soil defaults and direct catchment entry are disclosed before calculation.');
+  await page.getByRole('checkbox',{name:/I reviewed the assumptions/}).check();
+  await click(button('Run uploaded baseline'));await page.locator('.site-outcome').waitFor();
+  const baselineText=await page.locator('.site-outcome').innerText();assert.match(baselineText,/1,597\.115/);
+  await mark('7. Calculate the uploaded baseline','About 1,597 m³ leaves drainage nodes over the run. This is calculated by EPA SWMM, not a dashboard lookup.');await shot('06-native-baseline');
+  await page.getByRole('combobox',{name:/^Pipe to review/}).selectOption('LINK-TRUNK');
+  await fill(page.getByRole('spinbutton',{name:/^Proposed diameter/}),'0.60');
+  await click(button('Test this pipe change'));await button('Prepare pipe review').waitFor();
+  const candidateText=await page.locator('.site-outcome').innerText();assert.match(candidateText,/148\.722/);
+  await mark('8. Test one physical change','The uploaded LINK-TRUNK pipe changes from 0.30 m to 0.60 m. Same rainfall and site; loss is about 149 m³.');await shot('07-native-pipe-option');
+  await click(button("Jump to this node's sampled peak"));await click(page.getByRole('button',{name:'Play site playback',exact:true}));await pause(3000);await click(page.getByRole('button',{name:'Pause site playback',exact:true}));
+  await mark('9. Explain the result honestly','Node columns and this curve show depth above the pipe invert. Street flood depth and flooded houses are not inferred.');await shot('08-native-playback');
+  await click(button('Prepare pipe review'));await fill(page.getByRole('textbox',{name:/^Responsible person \/ team/}),'Township engineering team');
+  await click(button('Save project draft'));await page.getByRole('heading',{name:'Saved proposal'}).waitFor();
+  await mark('10. Save a reviewable action','The Draft links actual run IDs and original source hashes. Cost remains unknown. Engineering review comes before expenditure.');await shot('09-saved-draft');await click(button('Export proposal evidence'));
+  await click(button('Operations'));await click(button('Record a problem'));let form=page.getByRole('dialog');
+  await fill(form.getByRole('textbox',{name:/^Problem title/}),'Water reported near the trunk drain');await fill(form.getByRole('textbox',{name:/^Location/}),'Riverside example central road');
+  await form.getByRole('combobox',{name:/^Linked asset/}).selectOption('LINK-TRUNK');await fill(form.getByRole('textbox',{name:/^Source reference/}),'DEMO-REPORT-01');await fill(form.getByRole('textbox',{name:/^What was reported/}),'Practice complaint for the uploaded fictional catchment; no real event is claimed.');await fill(form.getByRole('textbox',{name:/^Responsible person/}),'Township engineering team');await click(form.getByRole('button',{name:'Save problem',exact:true}));
+  await page.getByRole('heading',{name:'Water reported near the trunk drain',level:2}).waitFor();
+  await mark('11. Track the real operating question','The register links the complaint to LINK-TRUNK and assigns investigation follow-up. Practice reports remain synthetic.');await shot('10-operations');
+  await click(button('Site map'));await click(page.locator('.site-asset-list button').filter({hasText:'GRATE-3'}));await click(button('Record inspection'));form=page.getByRole('dialog',{name:'Record inspection',exact:true});
+  await fill(form.getByRole('textbox',{name:'Inspector',exact:true}),'Demo inspector');await fill(form.getByRole('textbox',{name:/^Source reference/}),'DEMO-INSPECTION-01');await fill(form.getByRole('textbox',{name:/^Condition \/ notes/}),'Practice visual inspection only. Verify inlet condition on site.');await fill(form.getByRole('spinbutton',{name:/^Visible grate coverage/}),'20');await click(form.getByRole('button',{name:'Save inspection',exact:true}));await form.waitFor({state:'hidden'});
+  await click(button('Evidence & inputs'));await page.getByRole('heading',{name:'Saved inspections (1)'}).waitFor();
+  await mark('12. Retain the evidence chain','Source text, SHA-256, model version and synthetic inspection stay visible. Visual coverage does not secretly change pipe hydraulics.');await shot('11-source-evidence');await click(button('Export project evidence'));
+  await click(button('Projects'));await click(page.locator('.site-project-cards button').filter({hasText:'Riverside Estate drainage review'}).first());await click(button('Compare actions'));await click(page.getByText('Retained runs (2)',{exact:true}));assert.equal(await page.getByRole('button',{name:'Load result',exact:true}).count(),2);
+  await mark('13. Resume the saved project','The API retains the imported model and native runs. Problem follow-up remains scoped to this browser and project.');await shot('12-retained-runs');
+  await click(button('Projects'));await fill(page.getByRole('textbox',{name:/^Project name/}),'Riverside incomplete survey');await page.getByLabel('Upload site files',{exact:true}).setInputFiles(path.resolve('apps/web/public/site-examples/riverside-map-only.site.json'));await click(button('Check my files'));await page.getByText('Map inputs usable',{exact:true}).waitFor();
+  await mark('14. Show what happens when data is missing','This second file lacks MH-C invert, LINK-TRUNK diameter, catchments and rainfall. It can map, but cannot simulate.');await shot('13-incomplete-review');
+  await click(button('Build my township'));await page.getByRole('heading',{name:'Built from your files.'}).waitFor();await click(button('Compare actions'));assert(await button('Run uploaded baseline').isDisabled());await shot('14-incomplete-blocked');
+  await mark('15. A specific next data-collection task','The manager knows exactly what measurements are missing. The app does not invent the values or replace a failed calculation with mock output.');await click(button('Evidence & inputs'));await shot('15-missing-input-list');
+  await click(button('Projects'));
+  await context.storageState({path:path.join(out,'browser-state.json')});
+  assert.deepEqual(errors,[]);await Promise.all(downloads);
+  fs.writeFileSync(path.join(out,'acceptance.json'),JSON.stringify({passed:true,errors,project_id:project.project_id,baseline:baselineText,candidate:candidateText,chapters},null,2));
+ }catch(error){await shot('failure').catch(()=>{});fs.writeFileSync(path.join(out,'failure.json'),JSON.stringify({error:String(error),errors,url:page.url(),body:await page.locator('body').innerText().catch(()=>''),chapters},null,2));throw error;}
+ finally{fs.writeFileSync(path.join(out,'chapters.json'),JSON.stringify(chapters,null,2));await context.close();await video.saveAs(path.join(out,'FloodOps-upload-first.webm'));await browser.close();}
+ console.log('PASS upload-first walkthrough');
+})().catch(e=>{console.error(e);process.exitCode=1;});

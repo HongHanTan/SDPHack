@@ -1,0 +1,385 @@
+{
+  "run_id": "run_d33b5a3fb42248589ce6a2e452e88065",
+  "status": "succeeded",
+  "model_version_id": "uploaded_smoke",
+  "input_snapshot": {
+    "uploaded_site": true,
+    "project_id": "site_smoke",
+    "source_manifest": [
+      {
+        "name": "riverside-complete.site.json",
+        "sha256": "0bba84311f1428a03aaab8bfef9b89cddba1de95dac9139fd64a38ba0e531f4b",
+        "bytes": 12907,
+        "role": "bundle",
+        "headers": []
+      }
+    ],
+    "assets": {
+      "township_id": "site_smoke",
+      "model_version_id": "uploaded_smoke",
+      "source_type": "synthetic",
+      "is_verified_site_model": false,
+      "coordinate_system": "Example local survey grid, east/north metres",
+      "nodes": [
+        {
+          "node_id": "MH-A",
+          "node_type": "junction",
+          "x": 0.0,
+          "y": 90.0,
+          "ground_elevation_m": 15.316,
+          "invert_elevation_m": 13.4,
+          "water_level_m": null,
+          "position_m": {
+            "x": 0.0,
+            "y": 90.0,
+            "z": 13.4
+          },
+          "max_depth_m": 1.9160000000000004,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "MH-B",
+          "node_type": "junction",
+          "x": 70.0,
+          "y": 100.0,
+          "ground_elevation_m": 15.464,
+          "invert_elevation_m": 13.6,
+          "water_level_m": null,
+          "position_m": {
+            "x": 70.0,
+            "y": 100.0,
+            "z": 13.6
+          },
+          "max_depth_m": 1.8640000000000008,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "MH-C",
+          "node_type": "junction",
+          "x": 35.0,
+          "y": 35.0,
+          "ground_elevation_m": 14.621,
+          "invert_elevation_m": 12.8,
+          "water_level_m": null,
+          "position_m": {
+            "x": 35.0,
+            "y": 35.0,
+            "z": 12.8
+          },
+          "max_depth_m": 1.8209999999999997,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "MH-D",
+          "node_type": "junction",
+          "x": 35.0,
+          "y": -25.0,
+          "ground_elevation_m": 13.901,
+          "invert_elevation_m": 12.0,
+          "water_level_m": null,
+          "position_m": {
+            "x": 35.0,
+            "y": -25.0,
+            "z": 12.0
+          },
+          "max_depth_m": 1.9009999999999998,
+          "source_type": "synthetic"
+        },
+        {
+          "node_id": "OUT-RIVER",
+          "node_type": "outfall",
+          "x": 35.0,
+          "y": -100.0,
+          "ground_elevation_m": 13.001,
+          "invert_elevation_m": 10.9,
+          "outfall_type": "FREE",
+          "water_level_m": null,
+          "position_m": {
+            "x": 35.0,
+            "y": -100.0,
+            "z": 10.9
+          },
+          "max_depth_m": 2.100999999999999,
+          "source_type": "synthetic"
+        }
+      ],
+      "inlets": [
+        {
+          "inlet_id": "GRATE-1",
+          "node_id": "MH-A",
+          "x": 3.0,
+          "y": 90.0,
+          "ground_elevation_m": 15.316,
+          "grate_area_m2": 0.6,
+          "position_m": {
+            "x": 3.0,
+            "y": 90.0,
+            "z": 15.316
+          },
+          "source_type": "synthetic"
+        },
+        {
+          "inlet_id": "GRATE-2",
+          "node_id": "MH-B",
+          "x": 73.0,
+          "y": 100.0,
+          "ground_elevation_m": 15.464,
+          "grate_area_m2": 0.6,
+          "position_m": {
+            "x": 73.0,
+            "y": 100.0,
+            "z": 15.464
+          },
+          "source_type": "synthetic"
+        },
+        {
+          "inlet_id": "GRATE-3",
+          "node_id": "MH-C",
+          "x": 38.0,
+          "y": 35.0,
+          "ground_elevation_m": 14.621,
+          "grate_area_m2": 0.6,
+          "position_m": {
+            "x": 38.0,
+            "y": 35.0,
+            "z": 14.621
+          },
+          "source_type": "synthetic"
+        },
+        {
+          "inlet_id": "GRATE-4",
+          "node_id": "MH-D",
+          "x": 38.0,
+          "y": -25.0,
+          "ground_elevation_m": 13.901,
+          "grate_area_m2": 0.6,
+          "position_m": {
+            "x": 38.0,
+            "y": -25.0,
+            "z": 13.901
+          },
+          "source_type": "synthetic"
+        }
+      ],
+      "conduits": [
+        {
+          "conduit_id": "LINK-A",
+          "from_node_id": "MH-A",
+          "to_node_id": "MH-C",
+          "diameter_m": 0.45,
+          "length_m": 65.0,
+          "manning_n": 0.013
+        },
+        {
+          "conduit_id": "LINK-B",
+          "from_node_id": "MH-B",
+          "to_node_id": "MH-C",
+          "diameter_m": 0.45,
+          "length_m": 75.0,
+          "manning_n": 0.013
+        },
+        {
+          "conduit_id": "LINK-TRUNK",
+          "from_node_id": "MH-C",
+          "to_node_id": "MH-D",
+          "diameter_m": 0.6,
+          "length_m": 60.0,
+          "manning_n": 0.013
+        },
+        {
+          "conduit_id": "LINK-OUT",
+          "from_node_id": "MH-D",
+          "to_node_id": "OUT-RIVER",
+          "diameter_m": 0.75,
+          "length_m": 75.0,
+          "manning_n": 0.013
+        }
+      ],
+      "assumptions": [
+        "Catchment runoff enters the named junction directly. Inlet markers are geometry/evidence only; no measured inlet-capture relation is supplied.",
+        "Pipes are circular and connect at node inverts with zero offsets.",
+        "A 60-minute dry drainage period follows the uploaded rainfall.",
+        "Native SWMM is a 1D drainage-network calculation. Node depth is measured from the pipe invert; no street depth or flood extent is inferred.",
+        "Uploaded provenance is retained; file completeness is not field calibration or engineering approval.",
+        "Source reference: FLOODOPS-UPLOAD-EXAMPLE-01; fictional geometry and hydrology, not site evidence"
+      ]
+    },
+    "hydrology": {
+      "surface_parameters": {
+        "n_impervious": 0.015,
+        "n_pervious": 0.15,
+        "storage_impervious_mm": 1.0,
+        "storage_pervious_mm": 4.0,
+        "zero_storage_impervious_percent": 25.0
+      },
+      "horton_parameters": {
+        "max_infiltration_mmh": 75.0,
+        "min_infiltration_mmh": 5.0,
+        "decay_per_hour": 4.0,
+        "drying_time_days": 7.0,
+        "max_infiltration_mm": 0.0
+      },
+      "subcatchments": [
+        {
+          "subcatchment_id": "AREA-A",
+          "outlet_node_id": "MH-A",
+          "area_ha": 2.0,
+          "impervious_percent": 75.0,
+          "width_m": 100.0,
+          "slope_percent": 1.0
+        },
+        {
+          "subcatchment_id": "AREA-B",
+          "outlet_node_id": "MH-B",
+          "area_ha": 2.0,
+          "impervious_percent": 75.0,
+          "width_m": 100.0,
+          "slope_percent": 1.0
+        },
+        {
+          "subcatchment_id": "AREA-C",
+          "outlet_node_id": "MH-C",
+          "area_ha": 1.5,
+          "impervious_percent": 75.0,
+          "width_m": 100.0,
+          "slope_percent": 1.0
+        },
+        {
+          "subcatchment_id": "AREA-D",
+          "outlet_node_id": "MH-D",
+          "area_ha": 0.5,
+          "impervious_percent": 75.0,
+          "width_m": 100.0,
+          "slope_percent": 1.0
+        }
+      ],
+      "assumptions": [
+        "Catchment runoff enters the named junction directly. Inlet markers are geometry/evidence only; no measured inlet-capture relation is supplied.",
+        "Pipes are circular and connect at node inverts with zero offsets.",
+        "A 60-minute dry drainage period follows the uploaded rainfall.",
+        "Native SWMM is a 1D drainage-network calculation. Node depth is measured from the pipe invert; no street depth or flood extent is inferred.",
+        "Uploaded provenance is retained; file completeness is not field calibration or engineering approval."
+      ],
+      "simulation_parameters": {
+        "start_date": "01/01/2026",
+        "report_step_s": 60,
+        "wet_step_s": 10,
+        "routing_step_s": 1,
+        "variable_step_factor": 0.75,
+        "minimum_step_s": 0.1,
+        "max_trials": 40,
+        "head_tolerance_m": 0.0005,
+        "drain_down_s": 3600
+      }
+    },
+    "storm": {
+      "storm_id": "uploaded_rainfall",
+      "source_type": "synthetic",
+      "parameters": {
+        "pattern": "time_series",
+        "duration_s": 3600,
+        "intensity_mmh": 50.0,
+        "interval_s": 300,
+        "series": [
+          {
+            "time_s": 0.0,
+            "intensity_mmh": 10.0
+          },
+          {
+            "time_s": 300.0,
+            "intensity_mmh": 30.0
+          },
+          {
+            "time_s": 600.0,
+            "intensity_mmh": 60.0
+          },
+          {
+            "time_s": 900.0,
+            "intensity_mmh": 100.0
+          },
+          {
+            "time_s": 1200.0,
+            "intensity_mmh": 120.0
+          },
+          {
+            "time_s": 1500.0,
+            "intensity_mmh": 100.0
+          },
+          {
+            "time_s": 1800.0,
+            "intensity_mmh": 80.0
+          },
+          {
+            "time_s": 2100.0,
+            "intensity_mmh": 50.0
+          },
+          {
+            "time_s": 2400.0,
+            "intensity_mmh": 30.0
+          },
+          {
+            "time_s": 2700.0,
+            "intensity_mmh": 15.0
+          },
+          {
+            "time_s": 3000.0,
+            "intensity_mmh": 5.0
+          },
+          {
+            "time_s": 3300.0,
+            "intensity_mmh": 0.0
+          }
+        ]
+      }
+    },
+    "tailwater": {
+      "parameters": {
+        "depth_above_outfall_invert_m": 0
+      }
+    },
+    "debris_scenario": {
+      "hydraulic_inlet_clogging_fraction": 0
+    },
+    "intervention": {
+      "changes": [
+        {
+          "asset_id": "LINK-TRUNK",
+          "field": "diameter_m",
+          "before": 0.3,
+          "after": 0.6
+        }
+      ]
+    },
+    "swmm_input": "[TITLE]\n; FloodOps synthetic 1D network; not a verified Taman Kyra model.\n\n[OPTIONS]\nFLOW_UNITS CMS\nINFILTRATION HORTON\nFLOW_ROUTING DYNWAVE\nSTART_DATE 01/01/2026\nSTART_TIME 00:00:00\nREPORT_START_DATE 01/01/2026\nREPORT_START_TIME 00:00:00\nEND_DATE 01/01/2026\nEND_TIME 02:00:00\nSWEEP_START 01/01\nSWEEP_END 12/31\nDRY_DAYS 0\nREPORT_STEP 00:01:00\nWET_STEP 00:00:10\nDRY_STEP 00:01:00\nROUTING_STEP 1\nALLOW_PONDING NO\nVARIABLE_STEP 0.75\nMINIMUM_STEP 0.1\nLENGTHENING_STEP 0\nSURCHARGE_METHOD EXTRAN\nNORMAL_FLOW_LIMITED BOTH\nTHREADS 1\nMAX_TRIALS 40\nHEAD_TOLERANCE 0.0005\n\n[EVAPORATION]\nCONSTANT 0\n\n[RAINGAGES]\nRAIN-G01 INTENSITY 0:05 1 TIMESERIES RAIN-TS\n\n[SUBCATCHMENTS]\nAREA-A RAIN-G01 MH-A 2.0 75.0 100.0 1.0 0\nAREA-B RAIN-G01 MH-B 2.0 75.0 100.0 1.0 0\nAREA-C RAIN-G01 MH-C 1.5 75.0 100.0 1.0 0\nAREA-D RAIN-G01 MH-D 0.5 75.0 100.0 1.0 0\n\n[SUBAREAS]\nAREA-A 0.015 0.15 1.0 4.0 25.0 OUTLET 100\nAREA-B 0.015 0.15 1.0 4.0 25.0 OUTLET 100\nAREA-C 0.015 0.15 1.0 4.0 25.0 OUTLET 100\nAREA-D 0.015 0.15 1.0 4.0 25.0 OUTLET 100\n\n[INFILTRATION]\nAREA-A 75.0 5.0 4.0 7.0 0.0\nAREA-B 75.0 5.0 4.0 7.0 0.0\nAREA-C 75.0 5.0 4.0 7.0 0.0\nAREA-D 75.0 5.0 4.0 7.0 0.0\n\n[JUNCTIONS]\nMH-A 13.4 1.9160000000000004 0 0 0\nMH-B 13.6 1.8640000000000008 0 0 0\nMH-C 12.8 1.8209999999999997 0 0 0\nMH-D 12.0 1.9009999999999998 0 0 0\n\n[OUTFALLS]\nOUT-RIVER 10.9 FREE NO\n\n[CONDUITS]\nLINK-A MH-A MH-C 65.0 0.013 0 0 0 0\nLINK-B MH-B MH-C 75.0 0.013 0 0 0 0\nLINK-TRUNK MH-C MH-D 60.0 0.013 0 0 0 0\nLINK-OUT MH-D OUT-RIVER 75.0 0.013 0 0 0 0\n\n[XSECTIONS]\nLINK-A CIRCULAR 0.45 0 0 0 1\nLINK-B CIRCULAR 0.45 0 0 0 1\nLINK-TRUNK CIRCULAR 0.6 0 0 0 1\nLINK-OUT CIRCULAR 0.75 0 0 0 1\n\n[TIMESERIES]\nRAIN-TS 01/01/2026 00:00:00 10.0\nRAIN-TS 01/01/2026 00:05:00 30.0\nRAIN-TS 01/01/2026 00:10:00 60.0\nRAIN-TS 01/01/2026 00:15:00 100.0\nRAIN-TS 01/01/2026 00:20:00 120.0\nRAIN-TS 01/01/2026 00:25:00 100.0\nRAIN-TS 01/01/2026 00:30:00 80.0\nRAIN-TS 01/01/2026 00:35:00 50.0\nRAIN-TS 01/01/2026 00:40:00 30.0\nRAIN-TS 01/01/2026 00:45:00 15.0\nRAIN-TS 01/01/2026 00:50:00 5.0\nRAIN-TS 01/01/2026 00:55:00 0.0\nRAIN-TS 01/01/2026 01:00:00 0\nRAIN-TS 01/01/2026 01:05:00 0\nRAIN-TS 01/01/2026 01:10:00 0\nRAIN-TS 01/01/2026 01:15:00 0\nRAIN-TS 01/01/2026 01:20:00 0\nRAIN-TS 01/01/2026 01:25:00 0\nRAIN-TS 01/01/2026 01:30:00 0\nRAIN-TS 01/01/2026 01:35:00 0\nRAIN-TS 01/01/2026 01:40:00 0\nRAIN-TS 01/01/2026 01:45:00 0\nRAIN-TS 01/01/2026 01:50:00 0\nRAIN-TS 01/01/2026 01:55:00 0\nRAIN-TS 01/01/2026 02:00:00 0\n\n[REPORT]\nINPUT NO\nCONTINUITY YES\nFLOWSTATS YES\nSUBCATCHMENTS ALL\nNODES ALL\nLINKS ALL\n\n[COORDINATES]\nMH-A 0.0 90.0\nMH-B 70.0 100.0\nMH-C 35.0 35.0\nMH-D 35.0 -25.0\nOUT-RIVER 35.0 -100.0\n"
+  },
+  "input_hash": "7f0c1be7be389c3f271943a9d48e31f6ec79ba8cc92a1a9c0e56d0668165f125",
+  "engine": "EPA SWMM",
+  "engine_version": "5.2.4",
+  "is_verified_site_model": false,
+  "assumptions": [
+    "Catchment runoff enters the named junction directly. Inlet markers are geometry/evidence only; no measured inlet-capture relation is supplied.",
+    "Pipes are circular and connect at node inverts with zero offsets.",
+    "A 60-minute dry drainage period follows the uploaded rainfall.",
+    "Native SWMM is a 1D drainage-network calculation. Node depth is measured from the pipe invert; no street depth or flood extent is inferred.",
+    "Uploaded provenance is retained; file completeness is not field calibration or engineering approval.",
+    "Source reference: FLOODOPS-UPLOAD-EXAMPLE-01; fictional geometry and hydrology, not site evidence",
+    "Catchment runoff enters the named junction directly. Inlet markers are geometry/evidence only; no measured inlet-capture relation is supplied.",
+    "Pipes are circular and connect at node inverts with zero offsets.",
+    "A 60-minute dry drainage period follows the uploaded rainfall.",
+    "Native SWMM is a 1D drainage-network calculation. Node depth is measured from the pipe invert; no street depth or flood extent is inferred.",
+    "Uploaded provenance is retained; file completeness is not field calibration or engineering approval."
+  ],
+  "warnings": [],
+  "error": null,
+  "evidence_references": [
+    "tmp/site-smoke/pipe/frames.json",
+    "tmp/site-smoke/pipe/inputs.json",
+    "tmp/site-smoke/pipe/metrics.json",
+    "tmp/site-smoke/pipe/model.inp",
+    "tmp/site-smoke/pipe/model.out",
+    "tmp/site-smoke/pipe/model.rpt",
+    "tmp/site-smoke/pipe/native.json",
+    "tmp/site-smoke/pipe/qa.json",
+    "tmp/site-smoke/pipe/worker.log"
+  ]
+}

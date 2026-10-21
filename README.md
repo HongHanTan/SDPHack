@@ -1,7 +1,15 @@
 # Township FloodOps
 
-> **3D Hydraulic Digital Twin for Urban Township Stormwater & Debris Management**  
-> An engineering platform that bridges field inspection evidence, EPA SWMM 5.2 hydraulic simulation, and interactive 3D twin visualization to diagnose surcharge bottlenecks, anticipate severe monsoon choke points, and evaluate proposed maintenance/capital interventions.
+> **Evidence-backed drainage maintenance planning for township operations.**
+> Upload a catchment's site and drainage data, identify missing inputs, build its 3D map, test a pipe option with native EPA SWMM, and prepare an evidence-linked investigation draft. Imported files remain uncalibrated until checked against the real site.
+
+The default page is now **upload-first**. It starts without a township scene. CSV, JSON and local metric geometry exports supply the actual coordinates, terrain grid, roads, buildings and network. Readiness checks distinguish a usable map from a runnable hydraulic model. Original file hashes, normalized model versions and native run snapshots remain traceable. [Exact upload walkthrough](md/UPLOAD_FIRST_WALKTHROUGH.md) · [sample files and specification](apps/web/public/site-examples/README.md).
+
+Each imported project's **Operations** tab retains the problems register: record report sources, identify missing evidence, assign follow-up and prepare investigation drafts. Problems are browser-local and project/API-scoped. Imported models, inspections/media, native runs and Draft proposals are saved on the API. The pilot does not dispatch work or approve construction. The explicit **Open illustrative demo** button retains the earlier D07 browser story and illustrative catalog workflows.
+
+The demo now measures an explicit **road-only area and fixed road point**, excluding grates/manholes, with sampled depth, simultaneous affected area and duration. Executable analytic reference checks show calculation errors and limits. The SWMM API supports explicit conceptual cleaning, pipe and storage actions with retained input changes and matching-baseline checks. Neither engine establishes validated site flood depths. See the [calculation walkthrough, checked example values and limitations](md/CALCULATION_FOUNDATION.md).
+
+Current API: **v1.5.0**, with additive `/api/site-projects` routes. Uploaded-site comparisons currently support circular pipe diameter changes and 1D network outputs. Native CAD/PDF/GeoTIFF extraction, field calibration and 2D street-flood mapping are not implemented. Earlier illustrative workflow: [guided D07 demo and maintenance workflow](md/MAINTENANCE_DEMO.md); [maintenance integration](contracts/MAINTENANCE_INTEGRATION.md).
 
 ---
 
@@ -32,8 +40,8 @@ npm run dev
 
 浏览器访问：`http://localhost:5173`。
 
-- 默认以 **开发 Mock 模式** 启动，无需安装配置 Python 或 SWMM 编译环境，即可完整体验 3D 住宅区街景视口、120 帧高解析度水力回放、巡检员现场打卡、杂物实验室与方案对比决策。
-- 顶部支持一键切换至 **Real API 模式** 对接本地 FastAPI 后端 (`http://localhost:8000`)。
+- The default upload workspace requires the updated FastAPI backend at `http://localhost:8000`; native calculations require the installed SWMM toolkit. See the backend setup below. The illustrative browser demo remains an explicit separate option.
+- The upload page includes API connection settings. Connection or native calculation errors are displayed without a mock fallback.
 - 详细说明请参见 [前端开发与运行指南 (md/FRONTEND_SETUP.md)](md/FRONTEND_SETUP.md)。
 
 ### 2. 评委与路演演示演练 (3-Minute Pitch Runbook)
@@ -65,7 +73,7 @@ This repository also contains a browser-based flood simulation engine written in
 
 ### Integration roadmap
 - Steps 1–3 are done: the histories are merged into this monorepo, the engine's township is rebuilt on the Taman Kyra network, and the `apps/web` 3D twin and dashboard are driven by the engine through adapters.
-- The team UI (`apps/web`) runs on the engine by default (Engine mode); Mock and SWMM API modes remain.
+- The team UI (`apps/web`) opens the upload-first project workspace. Its separate illustrative demo retains Engine, Mock and SWMM API modes.
 - `npm run dev:web` is the main way to run it.
 
 ### Run (from the repo root)
@@ -73,5 +81,5 @@ This repository also contains a browser-based flood simulation engine written in
     npm install
     npm test              # engine + legacy UI unit tests
     npm run dev:legacy    # engine UI at http://localhost:5173
-    npm run dev:web       # team UI on the engine (main app; Mock / SWMM API in the header)
+    npm run dev:web       # upload-first main app; illustrative demo is an explicit option
     npm run story         # slow demo-story and effect-drift checks (~15 min)

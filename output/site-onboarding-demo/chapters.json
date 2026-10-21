@@ -1,0 +1,77 @@
+[
+  {
+    "seconds": 1.459,
+    "title": "1. Start with the stakeholder’s site",
+    "detail": "The first page has no preloaded township, invented workers or rain. Choose the site files first."
+  },
+  {
+    "seconds": 4.553,
+    "title": "2. Upload the source file",
+    "detail": "This fictional bundle supplies surveyed-style geometry, drainage tables and rainfall. Its provenance stays synthetic."
+  },
+  {
+    "seconds": 7.998,
+    "title": "3. Review what can be used",
+    "detail": "5 nodes, 4 pipes, 49 terrain points, 3 roads and 8 buildings. Input completeness is separate from field validation."
+  },
+  {
+    "seconds": 15.242,
+    "title": "4. Build the matching 3D site",
+    "detail": "Terrain, roads, footprints and pipe connections come from this file. The sequence reveals imported layers."
+  },
+  {
+    "seconds": 22.361,
+    "title": "5. Inspect an uploaded asset",
+    "detail": "MH-C uses the uploaded ID, position and elevations. No fixed D07 dataset is required."
+  },
+  {
+    "seconds": 27.121,
+    "title": "6. Review the model assumptions",
+    "detail": "Native SWMM models this 1D network. Soil defaults and direct catchment entry are disclosed before calculation."
+  },
+  {
+    "seconds": 32.146,
+    "title": "7. Calculate the uploaded baseline",
+    "detail": "About 1,597 m³ leaves drainage nodes over the run. This is calculated by EPA SWMM, not a dashboard lookup."
+  },
+  {
+    "seconds": 39.001,
+    "title": "8. Test one physical change",
+    "detail": "The uploaded LINK-TRUNK pipe changes from 0.30 m to 0.60 m. Same rainfall and site; loss is about 149 m³."
+  },
+  {
+    "seconds": 48.332,
+    "title": "9. Explain the result honestly",
+    "detail": "Node columns and this curve show depth above the pipe invert. Street flood depth and flooded houses are not inferred."
+  },
+  {
+    "seconds": 53.569,
+    "title": "10. Save a reviewable action",
+    "detail": "The Draft links actual run IDs and original source hashes. Cost remains unknown. Engineering review comes before expenditure."
+  },
+  {
+    "seconds": 63.18,
+    "title": "11. Track the real operating question",
+    "detail": "The register links the complaint to LINK-TRUNK and assigns investigation follow-up. Practice reports remain synthetic."
+  },
+  {
+    "seconds": 73.695,
+    "title": "12. Retain the evidence chain",
+    "detail": "Source text, SHA-256, model version and synthetic inspection stay visible. Visual coverage does not secretly change pipe hydraulics."
+  },
+  {
+    "seconds": 81.775,
+    "title": "13. Resume the saved project",
+    "detail": "The API retains the imported model and native runs. Problem follow-up remains scoped to this browser and project."
+  },
+  {
+    "seconds": 87.047,
+    "title": "14. Show what happens when data is missing",
+    "detail": "This second file lacks MH-C invert, LINK-TRUNK diameter, catchments and rainfall. It can map, but cannot simulate."
+  },
+  {
+    "seconds": 93.666,
+    "title": "15. A specific next data-collection task",
+    "detail": "The manager knows exactly what measurements are missing. The app does not invent the values or replace a failed calculation with mock output."
+  }
+]

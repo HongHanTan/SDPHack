@@ -13,6 +13,7 @@ from simulation.swmm.engine import probe_engine
 from simulation.swmm.model import canonical_hash, read_json, resolve_inputs
 from simulation.swmm.runner import run_model, snapshot_inputs
 from simulation.swmm.inlets import CAPTURE_MODEL, configure_inlets
+from simulation.swmm.interventions import apply_interventions
 from simulation.debris.mass_balance import simulate_mass
 
 from .catalog import API_VERSION, REPO_ROOT, SEED_DIR, load_bootstrap
@@ -61,7 +62,7 @@ class ScenarioService:
         result.assumptions = [
             "Illustrative synthetic geography and uncalibrated hydrology; no verified site forecast or historical cause.",
             "Real SWMM executes asynchronously; query the returned run_id until succeeded or failed before fetching results.",
-            "T3 supports native finite inlet capture scenarios and append-only inspection/media evidence. Photo coverage and debris mass are independent of the constant hydraulic loss hypothesis. High tailwater remains unsupported.",
+            "Native finite inlet capture and explicit conceptual cleaning, pipe and storage interventions are supported. Photo coverage and debris mass do not determine hydraulic loss. Input changes are retained. High tailwater remains unsupported. Neither native reference checks nor browser calculations establish a validated street-depth map.",
             "Custom storms support constant 0..300 mm/h, 300..21600 seconds in 300-second increments, followed by 3600 seconds dry drainage.",
         ]
         return result
@@ -125,7 +126,7 @@ class ScenarioService:
         if payload.tailwater_case not in {b.tailwater_case for b in catalog.tailwater_cases}:
             raise ApiProblem(404,"NOT_FOUND","Unknown tailwater case.",{"tailwater_case":payload.tailwater_case})
         if payload.tailwater_case != "normal":
-            raise ApiProblem(422,"UNSUPPORTED_SCENARIO","Only normal tailwater is enabled in T2; the high boundary is not yet validated.")
+            raise ApiProblem(422,"UNSUPPORTED_SCENARIO","High tailwater remains unavailable pending numerical checks for that preset.")
         inputs = resolve_inputs(catalog.storms[0].storm_id, payload.tailwater_case)
         inputs["storm"] = storm
         inputs["request"] = payload.model_dump(mode="json")
@@ -133,6 +134,8 @@ class ScenarioService:
             inputs["debris_scenario"] = {**debris, "hydraulic_inlet_clogging_fraction":debris["parameters"]["hydraulic_inlet_clogging_fraction"]}
             configure_inlets(inputs,debris["parameters"]["inlet_id"],debris["parameters"]["hydraulic_inlet_clogging_fraction"])
         try:
+            if payload.intervention is not None:
+                inputs=apply_interventions(inputs,payload.intervention.actions)
             return snapshot_inputs(inputs)
         except ValueError as exc:
             raise ApiProblem(422,"UNSUPPORTED_SCENARIO",str(exc)) from exc

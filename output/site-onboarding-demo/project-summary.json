@@ -1,0 +1,14 @@
+{
+  "project_id": "site_34517b2eff154dc2bda9104f5e3fd0e9",
+  "counts": {
+    "nodes": 5,
+    "pipes": 4,
+    "inlets": 4,
+    "catchments": 4,
+    "rainfall": 12,
+    "terrain": 49,
+    "roads": 3,
+    "buildings": 8
+  },
+  "model_hash": "33840ba4c26727eea8c8d8e034831d6fc687f0f26aae4c52be93515ac6578f06"
+}

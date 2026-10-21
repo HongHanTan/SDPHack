@@ -153,7 +153,7 @@ def parse_results(directory: Path, inputs: dict, run_id: str) -> tuple[dict, dic
             "total_flooding_volume_m3":"Sum of SWMM native node volFlooded statistics, converted by the toolkit to m3 for this CMS model; includes all routing steps, not just displayed report samples.",
             "flooded_node_count":"Number of nodes with native accumulated flooding volume > 1e-6 m3 over the full simulation; brief events between report frames are included.",
             "surcharge_duration_s":"Time union over junction crown-exceedance flags sampled at each native routing-step endpoint, weighted by that step duration; overlaps count once, outfall excluded. At most 1 s routing step in the standard model.",
-            "frames":"Actual binary output samples at 60,120,...,7200 s. No fabricated t=0 frame or visual interpolation. A 60 s report sample can miss a routing-step peak.",
+            "frames":f"Actual binary output samples at {report_step},{2*report_step},...,{int(native['simulation_duration_s'])} s. No fabricated t=0 frame or visual interpolation. A {report_step} s report sample can miss a routing-step peak.",
         },
     }
     if inlet_elements:

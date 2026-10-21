@@ -46,11 +46,12 @@ def build_inp(inputs: dict) -> str:
     if duration <= 0 or duration % 300 or duration + options["drain_down_s"] >= 86400:
         raise ValueError("T1 constant storm must use positive 5-minute duration increments within one day")
     inlet_model = inputs.get("inlet_model")
-    if inputs["intervention"] is not None:
-        raise ValueError("Interventions are not implemented")
+    if inputs["intervention"] is not None and not inputs["intervention"].get("changes"):
+        raise ValueError("Interventions must be explicitly resolved before rendering")
     if inputs["debris_scenario"]["hydraulic_inlet_clogging_fraction"] != 0 and not inlet_model:
         raise ValueError("Restriction requires an explicit native inlet model")
-    if storm["pattern"] != "constant" or storm["intensity_mmh"] < 0:
+    site_series = bool(inputs.get('uploaded_site')) and storm['pattern'] == 'time_series'
+    if (storm["pattern"] != "constant" and not site_series) or storm["intensity_mmh"] < 0:
         raise ValueError("Only non-negative constant storms are supported")
     lines = ["[TITLE]", "; FloodOps synthetic 1D network; not a verified Taman Kyra model.", "", "[OPTIONS]"]
     fixed_options = {
@@ -81,11 +82,21 @@ def build_inp(inputs: dict) -> str:
     soil = hydrology["horton_parameters"]
     section("INFILTRATION", [[s["subcatchment_id"], soil["max_infiltration_mmh"], soil["min_infiltration_mmh"], soil["decay_per_hour"], soil["drying_time_days"], soil["max_infiltration_mm"]] for s in hydrology["subcatchments"]])
     section("JUNCTIONS", [[n["node_id"], n["invert_elevation_m"], n["max_depth_m"], 0, 0, 0] for n in assets["nodes"] if n["node_type"] == "junction"])
+    storage_nodes=[n for n in assets['nodes'] if n['node_type']=='storage']
+    if storage_nodes:
+        section('STORAGE',[[n['node_id'],n['invert_elevation_m'],n['max_depth_m'],n.get('initial_depth_m',0),'FUNCTIONAL',0,1,n['storage_area_m2'],0,0] for n in storage_nodes])
     depth = inputs["tailwater"]["parameters"]["depth_above_outfall_invert_m"]
-    section("OUTFALLS", [[n["node_id"], n["invert_elevation_m"], "FIXED", n["invert_elevation_m"] + depth, "NO"] for n in assets["nodes"] if n["node_type"] == "outfall"])
+    if inputs.get('uploaded_site'):
+        section('OUTFALLS',[[n['node_id'],n['invert_elevation_m'],*(['FREE','NO'] if n['outfall_type']=='FREE' else ['FIXED',n['water_level_m'],'NO'])] for n in assets['nodes'] if n['node_type']=='outfall'])
+    else:
+        section("OUTFALLS", [[n["node_id"], n["invert_elevation_m"], "FIXED", n["invert_elevation_m"] + depth, "NO"] for n in assets["nodes"] if n["node_type"] == "outfall"])
     section("CONDUITS", [[p["conduit_id"], p["from_node_id"], p["to_node_id"], p["length_m"], p["manning_n"], 0, 0, 0, 0] for p in assets["conduits"]])
     section("XSECTIONS", [[p["conduit_id"], "CIRCULAR", p["diameter_m"], 0, 0, 0, 1] for p in assets["conduits"]])
-    section("TIMESERIES", [["RAIN-TS", options["start_date"], clock(t), storm["intensity_mmh"] if t < duration else 0] for t in range(0, duration + options["drain_down_s"] + 1, 300)])
+    if site_series:
+        series={int(row['time_s']):row['intensity_mmh'] for row in storm['series']}
+        section('TIMESERIES', [['RAIN-TS',options['start_date'],clock(t),series.get(t,0)] for t in range(0,duration+options['drain_down_s']+1,300)])
+    else:
+        section("TIMESERIES", [["RAIN-TS", options["start_date"], clock(t), storm["intensity_mmh"] if t < duration else 0] for t in range(0, duration + options["drain_down_s"] + 1, 300)])
     section("REPORT", [["INPUT", "NO"], ["CONTINUITY", "YES"], ["FLOWSTATS", "YES"], ["SUBCATCHMENTS", "ALL"], ["NODES", "ALL"], ["LINKS", "ALL"]])
     section("COORDINATES", [[n["node_id"], n["position_m"]["x"], n["position_m"]["y"]] for n in assets["nodes"]])
     if inlet_model:

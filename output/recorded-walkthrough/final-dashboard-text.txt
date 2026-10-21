@@ -1,0 +1,117 @@
+TOWNSHIP OPERATIONS
+What needs follow-up?
+
+Start with a reported problem. Check the evidence. Give the next action an owner.
+
+Open browser demo
+Asset maintenance
+Record a problem
+Problem register: this browser only
+Dataset: taman_kyra_synthetic_v1
+Asset / inspection source: browser engine
+Illustrative assets / uncalibrated site model
+Open problems
+1
+Active investigation records
+Overdue actions
+0
+Due date earlier than today
+Needs inspection
+1
+No later observed asset inspection
+Unassigned
+0
+No responsible person / team
+Next action saved. No person or contractor has been contacted.
+Problems list
+1 of 1 records
+CSV
+Show
+Open problems
+Overdue actions
+Needs inspection
+Unassigned
+Repeat reports
+Closed
+All records
+Report source
+All sources
+Includes recorded report
+Includes synthetic demo
+Includes assumption
+Includes document reference
+
+Overdue actions first, then oldest initial report. This is a follow-up list, not a flood-risk ranking.
+
+Investigating
+Water reported near D07
+
+Example D07 street junction
+
+INLET-D07 | DEMO-C01
+1 entered report
+1 synthetic
+Engineering review
+Township engineering team | 2026-10-22
+No observed asset inspection since the latest report
+INVESTIGATION RECORD
+Water reported near D07
+
+Example D07 street junction
+
+Investigating
+INLET-D07
+1 entered report
+Revision 2
+What needs follow-up?
+No observed asset inspection since the latest report
+Locate asset
+Record inspection
+Add report
+Assign the next action
+Responsible person / team
+Due date
+Next action
+Inspect location
+Confirm asset information
+Obtain quote
+Engineering review
+Review after rain
+Prepare proposal
+Status
+Open
+Investigating
+Monitoring
+Closed
+Location, asset and existing reference
+Save changes
+Reports entered for this location
+
+Counts describe entered reports, not independently confirmed floods. Source labels remain attached to every entry.
+
+Synthetic demonstration
+10/21/2026, 3:20:00 PM
+
+Practice report: water collected near the D07 inlet after rain.
+
+Reported impact: Practice account of difficulty accessing a driveway.
+
+Source: DEMO-C01
+Asset inspection history
+
+Records belong to the linked asset. Check their date and notes to decide whether they address this incident.
+
+Synthetic demonstration
+10/21/2026, 3:23:41 PM - Demo Inspector
+
+Synthetic demo: leaves cover about 65% of the visible grate. Actual hydraulic restriction is unknown. Related problem: DEMO-C01.
+
+1 attachment(s). Open the asset evidence drawer to view files.
+Prepare the decision for review
+
+Use the recorded findings to request an inspection, quotation or engineering review. The proposal starts with no claimed modelled benefit or cost saving.
+
+Prepare investigation proposal
+Export evidence JSON
+Model and data limitations
+Record history and references

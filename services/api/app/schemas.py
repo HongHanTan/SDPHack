@@ -40,7 +40,10 @@ class Capabilities(WireModel):
     simulations: bool = True
     inspections: bool = True
     debris: bool = True
-    comparisons: bool = False
+    comparisons: bool = True
+    interventions: bool = True
+    maintenance_proposals: bool = True
+    site_imports: bool = True
 
 
 class HealthResponse(WireModel):
@@ -162,7 +165,7 @@ class TailwaterPreset(WireModel):
     name: str
     source_type: SourceType
     parameters: TailwaterParameters
-    swmm_supported: bool = Field(default=False, description="Only normal is enabled in T2; the high boundary remains an unvalidated input preset.")
+    swmm_supported: bool = Field(default=False, description="Only normal is enabled; high remains unavailable pending numerical checks for that preset.")
 
 
 class BootstrapResponse(WireModel):
@@ -176,12 +179,22 @@ class BootstrapResponse(WireModel):
     assumptions: list[str]
 
 
+class InterventionRequest(WireModel):
+    actions: list[Literal['desilt-d07','upsize-p07','storage-tank','lake-overflow']] = Field(min_length=1,max_length=4)
+
+    @model_validator(mode='after')
+    def unique_actions(self):
+        if len(set(self.actions))!=len(self.actions):raise ValueError('Intervention actions must be unique')
+        self.actions.sort()
+        return self
+
+
 class SimulationRequest(WireModel):
     model_version_id: Identifier
     storm_id: Identifier
     debris_scenario_id: Identifier
     tailwater_case: Identifier
-    intervention: None = Field(default=None, description="Reserved for T4; only null is currently supported.")
+    intervention: InterventionRequest | None = Field(default=None, description='Explicit conceptual preset actions. Every run resolves a fresh baseline and records the exact input changes.')
 
 
 class SimulationAccepted(WireModel):
