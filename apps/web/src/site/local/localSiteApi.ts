@@ -5,7 +5,7 @@ import type { InspectionMediaItem, InspectionRecord, SimulationFramesResponse, S
 import type { ProjectSummary, SiteProject, SiteProposal, SiteResult } from '../types';
 import { canonicalJson, inspectFiles, randomHex, readSources, sha256Hex } from './preview';
 import { browserRunner, runErrorMessage, runSite, type EngineRunner } from './runs';
-import { IndexedDbSiteStore, type DepthGrids, type SiteStore, type StoredProject, type StoredRun } from './store';
+import { IndexedDbSiteStore, type DepthGrids, type RunResults, type SiteStore, type StoredProject, type StoredRun } from './store';
 
 /** Runs kept per project; older ones are deleted. */
 export const MAX_RUNS_PER_PROJECT = 6;
@@ -23,8 +23,10 @@ type Change = { asset_id: string; before: number | null; after: number };
 export interface LocalSiteApi {
   request<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T>;
   execute(projectId: string, body: unknown, onStatus: (status: string) => void, signal: AbortSignal): Promise<SiteResult>;
-  /** Starts a run; `finished` resolves once its record is final (succeeded or failed) and runs are pruned. */
+  /** Starts a run; `finished` resolves (never rejects) once its record is final (succeeded or failed) and runs are pruned. */
   startRun(projectId: string, body: unknown): Promise<{ run_id: string; finished: Promise<void> }>;
+  /** Resolves when every run started by this page has finished. */
+  whenIdle(): Promise<void>;
   uploadMedia(projectId: string, inspectionId: string, file: Blob & { name?: string }): Promise<InspectionMediaItem>;
   /** An object URL for a stored attachment (revoke it when done). */
   mediaUrl(mediaId: string): Promise<string>;
@@ -42,6 +44,8 @@ const newestFirst = <T extends { created_at: string }>(items: T[]) => [...items]
 const fail = (message: string): never => {
   throw new Error(message);
 };
+export const RUN_NOT_RETAINED = 'This run is no longer retained in this browser (only the newest 6 runs per project are kept). Run it again before attaching it.';
+const INTERRUPTED_MESSAGE = 'The page was closed or reloaded before this calculation finished. Run it again.';
 const aborted = () => new DOMException('The request was cancelled.', 'AbortError');
 const summary = (p: StoredProject): ProjectSummary => ({ project_id: p.project_id, name: p.name, created_at: p.created_at, model_version_id: p.model_version_id, model_hash: p.model_hash, counts: p.counts, simulation_ready: p.simulation_ready });
 const publicProject = (p: StoredProject): SiteProject => {
@@ -72,26 +76,40 @@ function snapshotFor(project: SiteProject, change: Change | null) {
 }
 
 export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = browserRunner()): LocalSiteApi {
+  /** Runs still executing in this page (protected from pruning). */
   const active = new Set<string>();
+  /** Every run this page started; never cleared, so a run finishing here is never taken for an interrupted one. */
+  const startedHere = new Set<string>();
+  const outcomes = new Set<Promise<unknown>>();
 
   const project = async (id: string): Promise<StoredProject> => {
     if (!/^site_[0-9a-f]{32}$/.test(id)) fail('Unknown site project.');
     return (await store.getProject(id)) ?? fail('Unknown site project.');
   };
 
-  /** A run still marked running but not running in this page was interrupted (the page closed). */
+  /**
+   * A run marked running that this page did not start was interrupted (its page closed). The record is
+   * re-read just before writing, so a run that has finished meanwhile is returned as it is.
+   */
   const settle = async (r: StoredRun): Promise<StoredRun> => {
-    if (r.run.status !== 'running' || active.has(r.run.run_id)) return r;
-    const next: StoredRun = { ...r, run: { ...r.run, status: 'failed', error: { code: 'INTERRUPTED', message: 'The page was closed or reloaded before this calculation finished. Run it again.' } } };
+    if (r.run.status !== 'running' || startedHere.has(r.run.run_id)) return r;
+    const fresh = await store.getRun(r.run.run_id);
+    if (!fresh || fresh.run.status !== 'running' || startedHere.has(r.run.run_id)) return fresh ?? r;
+    const next: StoredRun = { ...fresh, run: { ...fresh.run, status: 'failed', error: { code: 'INTERRUPTED', message: INTERRUPTED_MESSAGE } } };
     await store.putRun(next);
     return next;
   };
   const getRun = async (id: string) => settle((await store.getRun(id)) ?? fail(`Unknown run ${id}.`));
   const listRuns = async (projectId: string) => newestFirst((await Promise.all((await store.listRuns(projectId)).map(settle))).map((r) => r.run));
 
+  /** Keeps the newest runs; a failure here never changes the outcome of the run that triggered it. */
   const prune = async (projectId: string) => {
-    const runs = newestFirst((await store.listRuns(projectId)).map((r) => r.run));
-    for (const r of runs.slice(MAX_RUNS_PER_PROJECT)) if (!active.has(r.run_id)) await store.deleteRun(r.run_id);
+    try {
+      const runs = newestFirst((await store.listRuns(projectId)).map((r) => r.run));
+      for (const r of runs.slice(MAX_RUNS_PER_PROJECT)) if (!active.has(r.run_id)) await store.deleteRun(r.run_id);
+    } catch (e) {
+      console.warn('Could not prune old local runs:', e);
+    }
   };
 
   const records = async <T>(kind: 'inspections' | 'proposals', projectId: string) => newestFirst((await store.listRecords(kind, projectId)).map(withoutId) as unknown as (T & { created_at: string })[]);
@@ -146,18 +164,21 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
     if (baselineId && candidateId) {
       const [base, cand] = await Promise.all([store.getRun(baselineId), store.getRun(candidateId)]);
       const invalid = 'Runs must be a baseline and intervention from this project.';
-      if (!base || !cand || base.projectId !== p.project_id || cand.projectId !== p.project_id) fail(invalid);
+      if (!base || !cand) fail(RUN_NOT_RETAINED);
+      if (base!.projectId !== p.project_id || cand!.projectId !== p.project_id) fail(invalid);
       const a = base!.run.input_snapshot as { intervention?: unknown };
       const c = cand!.run.input_snapshot as { intervention?: { changes: Change[] } | null };
       if (a.intervention !== null || !c.intervention) fail(invalid);
       const changes = c.intervention!.changes;
       if (changes.length !== 1 || changes[0].asset_id !== str('asset_id')) fail('Proposal target must match the candidate pipe.');
-      if (base!.run.status !== 'succeeded' || cand!.run.status !== 'succeeded' || !base!.metrics || !cand!.metrics) fail('Both attached runs must have finished successfully.');
+      if (base!.run.status !== 'succeeded' || cand!.run.status !== 'succeeded') fail('Both attached runs must have finished successfully.');
+      const [baseResults, candResults] = await Promise.all([store.getRunResults(baselineId), store.getRunResults(candidateId)]);
+      if (!baseResults || !candResults) fail(RUN_NOT_RETAINED);
       const [expected, reference] = await Promise.all([sha256Hex(canonicalJson(snapshotFor(p, changes[0]))), sha256Hex(canonicalJson(snapshotFor(p, null)))]);
       if (expected !== cand!.run.input_hash || reference !== base!.run.input_hash) fail('Candidate inputs do not match the declared change and project.');
       comparison = {
-        baseline: { run_id: base!.run.run_id, input_hash: base!.run.input_hash, metrics: base!.metrics },
-        candidate: { run_id: cand!.run.run_id, input_hash: cand!.run.input_hash, metrics: cand!.metrics },
+        baseline: { run_id: base!.run.run_id, input_hash: base!.run.input_hash, metrics: baseResults!.metrics },
+        candidate: { run_id: cand!.run.run_id, input_hash: cand!.run.input_hash, metrics: candResults!.metrics },
         changes,
       };
     }
@@ -174,7 +195,8 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
     return value;
   };
 
-  const startRun: LocalSiteApi['startRun'] = async (projectId, body) => {
+  /** Starts a run; `outcome` never rejects and resolves with the final record (and results when they were stored). */
+  const begin = async (projectId: string, body: unknown): Promise<{ run_id: string; outcome: Promise<{ run: Run; results: RunResults | null }> }> => {
     const p = await project(projectId);
     const b = (body ?? {}) as { acknowledge_assumptions?: unknown; pipe_id?: unknown; diameter_m?: unknown };
     if (b.acknowledge_assumptions !== true) fail('Review and acknowledge the disclosed modelling assumptions first.');
@@ -202,31 +224,51 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
       engine: ENGINE, engine_version: ENGINE_VERSION, is_verified_site_model: false, assumptions: p.assumptions, warnings: [], error: null,
       storm_id: 'uploaded_rainfall', debris_scenario_id: null, tailwater_case: 'normal', created_at: started,
     };
-    await store.putRun({ run, projectId: p.project_id, frames: [], metrics: null, depth: null });
+    startedHere.add(run.run_id);
     active.add(run.run_id);
-    const finished = (async () => {
-      let final: StoredRun;
+    await store.putRun({ run, projectId: p.project_id });
+    const failedRun = (code: string, message: string): Run => ({ ...run, status: 'failed', error: { code, message } });
+    const outcome = (async () => {
+      let final: { run: Run; results: RunResults | null };
       try {
         const out = await runSite(runner, run.run_id, site, rain.storm!);
-        const metrics = { ...out.metrics, model_version_id: p.model_version_id };
-        final = { run: { ...run, status: 'succeeded', warnings: metrics.warnings }, projectId: p.project_id, frames: out.frames, metrics, depth: out.depth };
+        const results: RunResults = { frames: out.frames, metrics: { ...out.metrics, model_version_id: p.model_version_id }, depth: out.depth };
+        final = { run: { ...run, status: 'succeeded', warnings: results.metrics.warnings }, results };
       } catch (e) {
-        final = { run: { ...run, status: 'failed', error: { code: 'ENGINE_ERROR', message: runErrorMessage(e) } }, projectId: p.project_id, frames: [], metrics: null, depth: null };
+        final = { run: failedRun('ENGINE_ERROR', runErrorMessage(e)), results: null };
       }
       try {
-        await store.putRun(final);
+        if (final.results) await store.putRunResults(run.run_id, final.results);
+        await store.putRun({ run: final.run, projectId: p.project_id });
+      } catch (e) {
+        // Usually a quota error: record a small failed run so it does not stay "running".
+        final = { run: failedRun('STORAGE_FULL', `The results could not be saved: this browser's storage for the site may be full (${e instanceof Error ? e.message : String(e)}). Delete old projects or free disk space, then run again.`), results: null };
+        try {
+          await store.putRun({ run: final.run, projectId: p.project_id });
+        } catch (again) {
+          console.warn('Could not record the failed local run:', again);
+        }
       } finally {
         active.delete(run.run_id);
       }
       await prune(p.project_id);
+      return final;
     })();
-    return { run_id: run.run_id, finished };
+    outcomes.add(outcome);
+    void outcome.finally(() => outcomes.delete(outcome));
+    return { run_id: run.run_id, outcome };
   };
 
-  const results = async (runId: string) => {
+  const startRun: LocalSiteApi['startRun'] = async (projectId, body) => {
+    const { run_id, outcome } = await begin(projectId, body);
+    return { run_id, finished: outcome.then(() => undefined) };
+  };
+
+  const results = async (runId: string): Promise<{ run: Run; results: RunResults }> => {
     const r = await getRun(runId);
-    if (r.run.status !== 'succeeded' || !r.metrics) fail(`Results are not ready for run ${runId} (${r.run.status}).`);
-    return r;
+    if (r.run.status !== 'succeeded') fail(`Results are not ready for run ${runId} (${r.run.status}).`);
+    const stored = (await store.getRunResults(runId)) ?? fail(RUN_NOT_RETAINED);
+    return { run: r.run, results: stored };
   };
 
   const request = async <T>(rawPath: string, body?: unknown, signal?: AbortSignal): Promise<T> => {
@@ -249,7 +291,13 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
         if (sub === 'sources' && !post) value = { name: p.name, files: (['inp', 'geojson', 'asc'] as const).flatMap((k) => (p.sources[k] ? [{ ...p.sources[k]!, role: { inp: 'swmm', geojson: 'layout', asc: 'height' }[k] }] : [])) };
         else if (sub === 'inspections') value = post ? await addInspection(p, body) : { items: await records('inspections', p.project_id) };
         else if (sub === 'proposals') value = post ? await addProposal(p, body) : { items: await records('proposals', p.project_id) };
-        else if (sub === 'simulations') value = post ? { run_id: (await startRun(p.project_id, body)).run_id, status: 'running' } : { items: await listRuns(p.project_id) };
+        else if (sub === 'simulations') {
+          if (post) {
+            const started = await startRun(p.project_id, body);
+            started.finished.catch(() => {});
+            value = { run_id: started.run_id, status: 'running' };
+          } else value = { items: await listRuns(p.project_id) };
+        }
         else unknown();
       }
     } else if (seg[0] === 'api' && seg[1] === 'simulations' && seg[2] && !post && seg.length <= 4) {
@@ -257,9 +305,9 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
       if (seg[3] === undefined) value = (await getRun(runId)).run;
       else if (seg[3] === 'frames') {
         const r = await results(runId);
-        const m = r.metrics!;
-        value = { run_id: runId, model_version_id: r.run.model_version_id, result_type: 'simulated', engine: ENGINE, engine_version: ENGINE_VERSION, is_verified_site_model: false, assumptions: m.assumptions, warnings: m.warnings, status_definitions: m.status_definitions, frames: r.frames } satisfies SimulationFramesResponse;
-      } else if (seg[3] === 'metrics') value = (await results(runId)).metrics;
+        const m = r.results.metrics;
+        value = { run_id: runId, model_version_id: r.run.model_version_id, result_type: 'simulated', engine: ENGINE, engine_version: ENGINE_VERSION, is_verified_site_model: false, assumptions: m.assumptions, warnings: m.warnings, status_definitions: m.status_definitions, frames: r.results.frames } satisfies SimulationFramesResponse;
+      } else if (seg[3] === 'metrics') value = (await results(runId)).results.metrics;
       else unknown();
     } else unknown();
     if (signal?.aborted) throw aborted();
@@ -268,17 +316,16 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
 
   const execute: LocalSiteApi['execute'] = async (projectId, body, onStatus, signal) => {
     if (signal.aborted) throw new Error('Calculation cancelled.');
-    const { run_id, finished } = await startRun(projectId, body);
+    const { run_id, outcome } = await begin(projectId, body);
     onStatus(`Calculating in this browser · ${run_id}`);
-    await new Promise<void>((resolve, reject) => {
+    const final = await new Promise<{ run: Run; results: RunResults | null }>((resolve, reject) => {
       const abort = () => reject(new Error('Calculation cancelled. It keeps running in this browser and will appear in Retained runs.'));
       if (signal.aborted) return abort();
       signal.addEventListener('abort', abort, { once: true });
-      finished.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+      void outcome.then(resolve).finally(() => signal.removeEventListener('abort', abort));
     });
-    const r = (await store.getRun(run_id)) ?? fail(`Run ${run_id} is no longer stored.`);
-    if (r.run.status !== 'succeeded' || !r.metrics) fail(r.run.error?.message ?? 'Engine calculation failed.');
-    return { run: r.run as SimulationRun, frames: r.frames, metrics: r.metrics! };
+    if (final.run.status !== 'succeeded' || !final.results) fail(final.run.error?.message ?? 'Engine calculation failed.');
+    return { run: final.run as SimulationRun, frames: final.results!.frames, metrics: final.results!.metrics };
   };
 
   const uploadMedia: LocalSiteApi['uploadMedia'] = async (projectId, inspectionId, file) => {
@@ -313,7 +360,10 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
     startRun,
     uploadMedia,
     mediaUrl: async (mediaId) => URL.createObjectURL((await store.getMedia(mediaId)) ?? fail('This attachment is not stored in this browser.')),
-    runDepth: async (runId) => (await store.getRun(runId))?.depth ?? null,
+    runDepth: async (runId) => (await store.getRunResults(runId))?.depth ?? null,
+    whenIdle: async () => {
+      while (outcomes.size) await Promise.all([...outcomes]);
+    },
   };
 }
 

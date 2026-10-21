@@ -7,9 +7,9 @@ import { buildScenario, type ScenarioOptions } from '@floodops/engine/scenario/i
 import type { Frame, Metrics } from '@floodops/engine/sim/types';
 import type { InspectionRecord, SimulationFramesResponse, SimulationMetricsResponse, SimulationRun } from '../../../types';
 import type { ProjectSummary, SitePreview, SiteProject, SiteProposal } from '../../types';
-import { createLocalSiteApi, MAX_RUNS_PER_PROJECT } from '../localSiteApi';
+import { createLocalSiteApi, MAX_RUNS_PER_PROJECT, RUN_NOT_RETAINED } from '../localSiteApi';
 import { depthAt, type EngineRunner } from '../runs';
-import { MemorySiteStore } from '../store';
+import { MemorySiteStore, type RunResults, type StoredRun } from '../store';
 
 const dir = join(__dirname, '../../../../public/site-examples/taman-kyra-swmm');
 const read = (name: string) => ({ name, text: readFileSync(join(dir, name), 'utf8') });
@@ -34,9 +34,43 @@ function fakeResult(n = 5): RunResult {
 
 /** A runner whose runs finish when the test says so. */
 function controlledRunner() {
-  const calls: { opts: ScenarioOptions; resolve: (r: RunResult) => void; reject: (e: Error) => void }[] = [];
-  const runner: EngineRunner = { run: (_ids, _storm, _f, _c, opts) => new Promise<RunResult>((resolve, reject) => calls.push({ opts, resolve, reject })) };
-  return { runner, calls };
+  type Call = { opts: ScenarioOptions; resolve: (r: RunResult) => void; reject: (e: Error) => void };
+  const calls: Call[] = [];
+  const waiting: ((c: Call) => void)[] = [];
+  const runner: EngineRunner = {
+    run: (_ids, _storm, _f, _c, opts) =>
+      new Promise<RunResult>((resolve, reject) => {
+        const c = { opts, resolve, reject };
+        calls.push(c);
+        waiting.shift()?.(c);
+      }),
+  };
+  /** Resolves with call `n` (0-based) once the engine has been asked to run it. */
+  const call = (n: number) => (calls[n] ? Promise.resolve(calls[n]) : new Promise<Call>((r) => waiting.push(r)));
+  return { runner, calls, call };
+}
+
+/** The next `listRuns` call (only) reads, signals `reading`, then waits for the gate to open. */
+class GatedListStore extends MemorySiteStore {
+  private gate: Promise<void> | null = null;
+  reading: Promise<void> = Promise.resolve();
+  private didRead: () => void = () => {};
+  arm(): () => void {
+    let open = () => {};
+    this.gate = new Promise<void>((r) => (open = r));
+    this.reading = new Promise<void>((r) => (this.didRead = r));
+    return open;
+  }
+  async listRuns(projectId: string): Promise<StoredRun[]> {
+    const rows = await super.listRuns(projectId);
+    const gate = this.gate;
+    this.gate = null;
+    if (gate) {
+      this.didRead();
+      await gate;
+    }
+    return rows;
+  }
 }
 const instantRunner = (): EngineRunner => ({ run: async () => fakeResult() });
 
@@ -149,17 +183,17 @@ describe('local site API — inspections and proposals', () => {
 
 describe('local site API — engine runs', () => {
   it('stores a run as running, then succeeded, with team frames, metrics and depth grids', async () => {
-    const { runner, calls } = controlledRunner();
+    const { runner, calls, call } = controlledRunner();
     const { api, path } = await withProject(runner);
     const { run_id } = await api.request<{ run_id: string; status: string }>(path + '/simulations', { acknowledge_assumptions: true });
-    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    await call(0);
     expect((await api.request<SimulationRun>(`/api/simulations/${run_id}`)).status).toBe('running');
     await expect(api.request(`/api/simulations/${run_id}/metrics`)).rejects.toThrow(/not ready/);
     expect(calls[0].opts.storm?.id).toBe('uploaded_rainfall');
     expect(calls[0].opts.storm?.intensity).toHaveLength(25);
     expect(calls[0].opts.blockage).toEqual({});
     calls[0].resolve(fakeResult(5));
-    await vi.waitFor(async () => expect((await api.request<SimulationRun>(`/api/simulations/${run_id}`)).status).toBe('succeeded'));
+    await api.whenIdle();
     const run = await api.request<SimulationRun>(`/api/simulations/${run_id}`);
     expect(run).toMatchObject({ engine: 'FloodOps TS engine', is_verified_site_model: false, error: null, input_snapshot: { intervention: null } });
     expect(run.input_hash).toMatch(/^[0-9a-f]{64}$/);
@@ -178,12 +212,11 @@ describe('local site API — engine runs', () => {
   });
 
   it('records a failed run with its message', async () => {
-    const { runner, calls } = controlledRunner();
+    const { runner, call } = controlledRunner();
     const { api, project } = await withProject(runner);
     const status = vi.fn();
     const pending = api.execute(project.project_id, { acknowledge_assumptions: true }, status, new AbortController().signal);
-    await vi.waitFor(() => expect(calls).toHaveLength(1));
-    calls[0].reject(new Error('boom'));
+    (await call(0)).reject(new Error('boom'));
     await expect(pending).rejects.toThrow('boom');
     expect(status).toHaveBeenCalledWith(expect.stringMatching(/^Calculating in this browser · run_[0-9a-f]{32}$/));
     const runs = await api.request<{ items: SimulationRun[] }>(`/api/site-projects/${project.project_id}/simulations`);
@@ -217,22 +250,83 @@ describe('local site API — engine runs', () => {
     const { api, project, path } = await withProject();
     const ids: string[] = [];
     for (let i = 0; i < MAX_RUNS_PER_PROJECT + 1; i++) ids.push((await api.execute(project.project_id, { acknowledge_assumptions: true }, () => {}, new AbortController().signal)).run.run_id);
-    await vi.waitFor(async () => expect((await api.request<{ items: SimulationRun[] }>(path + '/simulations')).items).toHaveLength(MAX_RUNS_PER_PROJECT));
     const kept = (await api.request<{ items: SimulationRun[] }>(path + '/simulations')).items.map((r) => r.run_id);
     expect(kept).toEqual(ids.slice(1).reverse());
     await expect(api.request(`/api/simulations/${ids[0]}`)).rejects.toThrow(/Unknown run/);
+    expect(await api.runDepth(ids[0])).toBeNull();
+    const draft = { asset_id: 'PIPE-P07', scope: 'Upsize', owner: 'Eng', justification: 'Model', estimate_myr: null, estimate_source: '' };
+    await expect(api.request(path + '/proposals', { ...draft, baseline_run_id: ids[0], candidate_run_id: ids[1] })).rejects.toThrow(RUN_NOT_RETAINED);
   });
 
   it('stops waiting when cancelled; the run continues and is kept', async () => {
-    const { runner, calls } = controlledRunner();
+    const { runner, call } = controlledRunner();
     const { api, project, path } = await withProject(runner);
     const controller = new AbortController();
     const pending = api.execute(project.project_id, { acknowledge_assumptions: true }, () => {}, controller.signal);
-    await vi.waitFor(() => expect(calls).toHaveLength(1));
+    const c = await call(0);
     controller.abort();
     await expect(pending).rejects.toThrow(/cancelled/);
-    calls[0].resolve(fakeResult());
-    await vi.waitFor(async () => expect((await api.request<{ items: SimulationRun[] }>(path + '/simulations')).items[0].status).toBe('succeeded'));
+    expect((await api.request<{ items: SimulationRun[] }>(path + '/simulations')).items[0].status).toBe('running');
+    c.resolve(fakeResult());
+    await api.whenIdle();
+    expect((await api.request<{ items: SimulationRun[] }>(path + '/simulations')).items[0].status).toBe('succeeded');
+  });
+
+  for (const lister of ['this page', 'another page'] as const) {
+    it(`never marks a run INTERRUPTED when ${lister} lists it while it finishes`, async () => {
+      const store = new GatedListStore();
+      const { runner, call } = controlledRunner();
+      const api = createLocalSiteApi(store, runner);
+      const project = await api.request<SiteProject>('/api/site-projects', body);
+      const path = `/api/site-projects/${project.project_id}`;
+      const { run_id } = await api.request<{ run_id: string }>(path + '/simulations', { acknowledge_assumptions: true });
+      const c = await call(0);
+      const reader = lister === 'this page' ? api : createLocalSiteApi(store, runner);
+      const open = store.arm();
+      const listing = reader.request<{ items: SimulationRun[] }>(path + '/simulations');
+      await store.reading; // the listing has read the run while it was still running
+      c.resolve(fakeResult());
+      await api.whenIdle(); // the run is now stored as succeeded
+      open();
+      await listing;
+      expect((await api.request<SimulationRun>(`/api/simulations/${run_id}`)).status).toBe('succeeded');
+      expect((await reader.request<SimulationRun>(`/api/simulations/${run_id}`)).status).toBe('succeeded');
+      expect((await api.request<SimulationMetricsResponse>(`/api/simulations/${run_id}/metrics`)).run_id).toBe(run_id);
+    });
+  }
+
+  it('records a small failed run when the results cannot be stored', async () => {
+    class FullStore extends MemorySiteStore {
+      async putRunResults(_id: string, _r: RunResults): Promise<void> {
+        throw new DOMException('Quota exceeded', 'QuotaExceededError');
+      }
+    }
+    const api = createLocalSiteApi(new FullStore(), instantRunner());
+    const project = await api.request<SiteProject>('/api/site-projects', body);
+    await expect(api.execute(project.project_id, { acknowledge_assumptions: true }, () => {}, new AbortController().signal)).rejects.toThrow(/storage .*may be full/);
+    const [run] = (await api.request<{ items: SimulationRun[] }>(`/api/site-projects/${project.project_id}/simulations`)).items;
+    expect(run).toMatchObject({ status: 'failed', error: { code: 'STORAGE_FULL' } });
+    expect(await api.runDepth(run.run_id)).toBeNull();
+    // A background POST run with the same failure settles without an unhandled rejection.
+    await api.request(`/api/site-projects/${project.project_id}/simulations`, { acknowledge_assumptions: true });
+    await api.whenIdle();
+  });
+
+  it('reports a run as succeeded even if pruning fails', async () => {
+    class NoDelete extends MemorySiteStore {
+      async deleteRun(): Promise<void> {
+        throw new Error('delete failed');
+      }
+    }
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const api = createLocalSiteApi(new NoDelete(), instantRunner());
+    const project = await api.request<SiteProject>('/api/site-projects', body);
+    for (let i = 0; i <= MAX_RUNS_PER_PROJECT; i++) {
+      const r = await api.execute(project.project_id, { acknowledge_assumptions: true }, () => {}, new AbortController().signal);
+      expect(r.run.status).toBe('succeeded');
+    }
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('marks a run left running by a closed page as interrupted', async () => {
