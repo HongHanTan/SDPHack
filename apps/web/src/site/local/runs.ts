@@ -35,12 +35,18 @@ export function analysisPoolSize(hardwareConcurrency: number | undefined): numbe
   return Math.min(ANALYSIS_POOL_MAX, Math.max(1, Math.floor(hc) - 1));
 }
 
+/** How many engine workers the browser's fix analysis uses on this device. */
+export const browserAnalysisWorkers = () => analysisPoolSize(typeof navigator === 'undefined' ? undefined : navigator.hardwareConcurrency);
+
 let pool: EngineRunner[] | null = null;
-/** The fix-analysis worker pool (each `SimRunner` caches 1 result), created on first use and then reused. */
+/**
+ * The fix-analysis worker pool, created on first use and then reused. Its `SimRunner`s cache nothing: every candidate is
+ * a different scenario, and the analysis keeps the results it needs itself.
+ */
 export function browserRunnerPool(): EngineRunner[] {
-  pool ??= Array.from({ length: analysisPoolSize(typeof navigator === 'undefined' ? undefined : navigator.hardwareConcurrency) }, () => {
+  pool ??= Array.from({ length: browserAnalysisWorkers() }, () => {
     let r: SimRunner | null = null;
-    return { run: (...args) => (r ??= new SimRunner(createWorker, 1)).run(...args) } satisfies EngineRunner;
+    return { run: (...args) => (r ??= new SimRunner(createWorker, 0)).run(...args) } satisfies EngineRunner;
   });
   return pool;
 }

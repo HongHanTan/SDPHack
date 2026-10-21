@@ -36,6 +36,8 @@ export interface Problem {
   kind: 'bottleneck' | 'ponding';
   assetId: string;
   onsetS: number;
+  /** Ponding only: what set the onset — the node's first `flooding` status, or the hotspot street depth reaching 0.15 m. */
+  onsetBy?: 'flooding' | 'depth';
   location: { x: number; y: number };
 }
 export interface Diagnosis {
@@ -125,13 +127,15 @@ export function diagnose(
   const worst = flooding.find((n) => n.nodeId === hotspot)
     ?? [...flooding].sort((a, b) => b.floodingFrames - a.floodingFrames)[0];
 
-  // Ponding onset per node: first flooding frame; the hotspot also counts street depth ≥ 0.15 m.
-  const pondOnset = new Map<string, number>();
-  for (const n of flooding) pondOnset.set(n.nodeId, n.floodOnsetS!);
+  // Ponding onset per node: first flooding frame; the hotspot also counts street depth ≥ 0.15 m (whichever is earlier;
+  // on a tie the flooding status is named).
+  const pondOnset = new Map<string, { s: number; by: 'flooding' | 'depth' }>();
+  for (const n of flooding) pondOnset.set(n.nodeId, { s: n.floodOnsetS!, by: 'flooding' });
   const series = options.hotspotStreetDepthM;
   if (series) {
     const i = frames.findIndex((_, k) => (series[k] ?? 0) >= PONDING_DEPTH_M);
-    if (i >= 0) pondOnset.set(hotspot, Math.min(pondOnset.get(hotspot) ?? Infinity, frames[i].timestamp_s));
+    const prev = pondOnset.get(hotspot);
+    if (i >= 0 && (!prev || frames[i].timestamp_s < prev.s)) pondOnset.set(hotspot, { s: frames[i].timestamp_s, by: 'depth' });
   }
 
   // Priority: top bottleneck, hotspot ponding, second bottleneck, other ponding nodes (most flooding frames first).
@@ -139,7 +143,7 @@ export function diagnose(
     id: `bottleneck:${p.pipeId}`, kind: 'bottleneck', assetId: p.pipeId, onsetS: p.onsetS!, location: pipeMid(site, p.pipeId),
   });
   const pondingProblem = (nodeId: string): Problem => ({
-    id: `ponding:${nodeId}`, kind: 'ponding', assetId: nodeId, onsetS: pondOnset.get(nodeId)!, location: nodePos(site, nodeId),
+    id: `ponding:${nodeId}`, kind: 'ponding', assetId: nodeId, onsetS: pondOnset.get(nodeId)!.s, onsetBy: pondOnset.get(nodeId)!.by, location: nodePos(site, nodeId),
   });
   const pool: Problem[] = [];
   if (bottlenecks[0]) pool.push(bottleneckProblem(bottlenecks[0]));
@@ -271,6 +275,36 @@ export function bestFixPerProblem<T extends CandidateResult>(ranked: ReadonlyArr
   return best;
 }
 
+/** A problem's fix: its own best-ranked improving fix, or (`sharedFrom` set) one tied to another problem that also helps here. */
+export interface ProblemFix<T extends CandidateResult> { result: T; sharedFrom?: string }
+
+/** The asset in a problem id ("bottleneck:PIPE-P07" → "PIPE-P07"). */
+export const problemAsset = (problemId: string) => problemId.slice(problemId.indexOf(':') + 1);
+
+/**
+ * The fix to show for each problem. A problem with its own improving fix gets the best-ranked one. Otherwise it falls
+ * back to the best-ranked improving fix that lowers that problem's peak: for ponding at the hotspot, the hotspot peak
+ * must drop by ≥ 0.01 m (no such fix → no entry); outcomes carry no other per-node or per-pipe peak, so any other
+ * problem takes the best improving fix overall. A missing entry means NO_IMPROVING_FIX_TEXT.
+ */
+export function fixPerProblem<T extends CandidateResult>(
+  problems: ReadonlyArray<Problem>, ranked: ReadonlyArray<T>, baseline: Outcome, hotspotNodeId: string,
+): Record<string, ProblemFix<T>> {
+  const own = bestFixPerProblem(ranked);
+  const out: Record<string, ProblemFix<T>> = {};
+  for (const p of problems) {
+    if (own[p.id]) {
+      out[p.id] = { result: own[p.id] };
+      continue;
+    }
+    const other = p.kind === 'ponding' && p.assetId === hotspotNodeId
+      ? ranked.find((r) => baseline.hotspotPeakM - r.outcome.hotspotPeakM >= 0.01 - EPS)
+      : ranked[0];
+    if (other) out[p.id] = { result: other, sharedFrom: other.problemId };
+  }
+  return out;
+}
+
 const m2 = (d: number) => d.toFixed(2);
 const vol = (v: number) => String(Math.round(v));
 const mmss = (s: number) => {
@@ -308,8 +342,10 @@ export const logLines = {
   },
   noImprovingFix: () => NO_IMPROVING_FIX_TEXT,
   problem(p: Problem): string {
-    const what = p.kind === 'bottleneck' ? 'full' : `water ${m2(PONDING_DEPTH_M)} m`;
+    const what = p.kind === 'bottleneck' ? 'full' : p.onsetBy === 'flooding' ? 'overflowing' : `water ${m2(PONDING_DEPTH_M)} m`;
     return `⚠ ${kindName(p)}: ${p.assetId} ${what} at ${mmss(p.onsetS)}`;
   },
+  /** A fix tied to another problem that also helps this one. */
+  fixedByOther: (sharedFromProblemId: string, label: string) => `Fixed by the ${problemAsset(sharedFromProblemId)} fix: ${label}`,
   problemPending: (p: Problem, i: number, n: number) => `⚠ ${kindName(p)} detected — testing fixes… (${i}/${n})`,
 };

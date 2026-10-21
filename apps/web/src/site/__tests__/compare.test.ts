@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SimulationFrame, SimulationMetricsResponse, SimulationRun } from '../../types';
-import { candidateTitle, comparisonItems, curvePoints, direction, frameAtTime, frameIndexAtTime, hasIntervention, nodeDepthSeries, runFixAsset, runFixLabel } from '../compare';
+import { candidateTitle, comparisonItems, curvePoints, direction, frameAtTime, frameIndexAtTime, hasIntervention, nodeDepthSeries, reviewButtonText, runFixAsset, runFixLabel } from '../compare';
 
 const frame = (t: number, depth = 0): SimulationFrame => ({ timestamp_s: t, pipe_states: [], node_states: [{ node_id: 'J1', depth_m: depth, flooding_rate_m3s: 0, surcharge_flag: false, status: 'normal' }], inlet_states: [] });
 const frames = [0, 30, 60, 90].map((t) => frame(t, t / 100));
@@ -68,5 +68,15 @@ describe('depth curves', () => {
     expect(s.d).toEqual([0, 0.3, 0.6, 0.9]);
     const pts = curvePoints({ t: [0, 90], d: [0, 0.9] }, 0, 180, 0.9).split(' ');
     expect(pts).toEqual(['20,85', '350,20']);
+  });
+});
+
+describe('reviewButtonText', () => {
+  const run = (intervention: unknown) => ({ input_snapshot: { intervention } }) as unknown as SimulationRun;
+  it('says work review for storage, inlet and relief fixes, pipe review otherwise', () => {
+    for (const kind of ['storage', 'inlet', 'relief']) expect(reviewButtonText(run({ kind, label: 'x', asset_id: 'N', changes: [] }))).toBe('Prepare work review');
+    expect(reviewButtonText(run({ kind: 'upsize', label: 'x', asset_id: 'P', changes: [] }))).toBe('Prepare pipe review');
+    expect(reviewButtonText(run({ changes: [{ asset_id: 'P', before: 0.6, after: 0.75 }] }))).toBe('Prepare pipe review');
+    expect(reviewButtonText(undefined)).toBe('Prepare pipe review');
   });
 });

@@ -322,6 +322,26 @@ describe('local site API — automated fix analysis', () => {
     await expect(api.acceptFix(id, first.ranked[0].resultKey)).rejects.toThrow(/no longer kept/);
   });
 
+  it('an analysis cancelled while reading its project never replaces a newer analysis', async () => {
+    const { api, id, store } = await setup();
+    const read = store.getProject.bind(store);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    store.getProject = vi.fn(async (pid: string) => {
+      store.getProject = read; // only the first read waits
+      await gate;
+      return read(pid);
+    });
+    const old = new AbortController();
+    const stale = api.analyse(id, () => {}, old.signal);
+    old.abort();
+    const newer = await api.analyse(id, () => {}, new AbortController().signal);
+    release();
+    await expect(stale).rejects.toMatchObject({ name: 'AbortError' });
+    const run = await api.acceptFix(id, newer.ranked[0].resultKey);
+    expect(run.run_id).toBe(newer.ranked[0].resultKey);
+  });
+
   it('never runs more candidates at once than the pool cap, even with more runners', async () => {
     const big = await setup(5);
     await big.api.analyse(big.id, () => {}, new AbortController().signal);

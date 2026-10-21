@@ -1,6 +1,6 @@
 // Pure helpers for the automated fix analysis pins (spec 2026-10-21 automated fix finder, §9): which problem pins are
 // visible at a playback time, and what each pin says. Every number comes from a simulation run during the analysis.
-import { bestFixPerProblem, diagnose, logLines, NO_IMPROVING_FIX_TEXT, type CandidateResult, type Diagnosis, type Outcome, type Problem } from '@floodops/engine/analysis/fixFinder';
+import { diagnose, fixPerProblem, logLines, NO_IMPROVING_FIX_TEXT, type CandidateResult, type Diagnosis, type Outcome, type Problem } from '@floodops/engine/analysis/fixFinder';
 import { hotspotCell } from '@floodops/engine/scenario/index';
 import type { SiteSpec } from '@floodops/engine/scenario/site';
 import type { SimulationMetricsResponse } from '../types';
@@ -34,11 +34,14 @@ export type AnalysisPhase = 'running' | 'done' | 'stopped' | 'failed';
 
 export interface PinRow { label: string; before: string; after: string }
 export interface PinView {
-  /** "⚠ Bottleneck: PIPE-P07 full at 12:30", or the pending "⚠ Bottleneck detected — testing fixes… (i/n)". */
+  /** "⚠ Bottleneck: PIPE-P07 full at 12:30", "⚠ Ponding: NODE-J07 overflowing at 14:00", or the pending "⚠ Bottleneck detected — testing fixes… (i/n)". */
   heading: string;
   pending: boolean;
-  /** The suggested fix, when one improved on the baseline. */
-  fix?: { label: string; rows: PinRow[]; cost: string; resultKey: string };
+  /**
+   * The suggested fix, when one improved on the baseline. `text` is "Suggested fix: {label}", or "Fixed by the
+   * {asset} fix: {label}" when the fix was tested for another problem and also lowers this one.
+   */
+  fix?: { label: string; text: string; rows: PinRow[]; cost: string; resultKey: string };
   /** Shown instead of a fix: no improving fix, or the analysis stopped / failed. */
   note?: string;
 }
@@ -72,10 +75,12 @@ export function pinView(
   if (state.phase === 'stopped') return { heading, pending: false, note: 'Automated analysis stopped before a fix was found.' };
   if (state.phase === 'failed' || !state.diagnosis) return { heading, pending: false, note: 'Automated analysis failed; no fix to suggest.' };
   const d = state.diagnosis;
-  const best = bestFixPerProblem(state.ranked ?? [])[problem.id];
-  if (!best) return { heading, pending: false, note: NO_IMPROVING_FIX_TEXT };
   const before: Outcome = { homesFlooded: d.homesFlooded, floodVolumeM3: d.floodVolumeM3, hotspotPeakM: d.hotspotPeakM };
-  return { heading, pending: false, fix: { label: best.label, rows: outcomeRows(before, best.outcome, d.hotspotNodeId), cost: indicativeCost(best.costRM), resultKey: best.resultKey } };
+  const pick = fixPerProblem([problem], state.ranked ?? [], before, d.hotspotNodeId)[problem.id];
+  if (!pick) return { heading, pending: false, note: NO_IMPROVING_FIX_TEXT };
+  const best = pick.result;
+  const text = pick.sharedFrom ? logLines.fixedByOther(pick.sharedFrom, best.label) : `Suggested fix: ${best.label}`;
+  return { heading, pending: false, fix: { label: best.label, text, rows: outcomeRows(before, best.outcome, d.hotspotNodeId), cost: indicativeCost(best.costRM), resultKey: best.resultKey } };
 }
 
 /** The ground height (team metres) for a pin at a plan position: the nearest node's ground level. */

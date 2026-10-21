@@ -49,7 +49,7 @@ export type AnalysisEvent =
   | { type: 'log'; text: string }
   | { type: 'progress'; done: number; total: number }
   | { type: 'candidate'; index: number; fix: FixAction; label: string; costRM: number; metrics: SimulationMetricsResponse; improved: boolean };
-/** An improving fix; its simulated run is kept in memory under `resultKey` until accepted or discarded. */
+/** An improving fix; its simulated run is kept in memory under `resultKey` until accepted or discarded (no-effect runs are not kept). */
 export interface RankedFix extends CandidateResult {
   location: { x: number; y: number };
   metrics: SimulationMetricsResponse;
@@ -493,6 +493,8 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
   const analyse: LocalSiteApi['analyse'] = async (projectId, onEvent, signal, baselineRunId) => {
     if (signal.aborted) throw aborted();
     const p = await project(projectId);
+    // A newer analysis may have registered while this one waited for the project: never replace it once aborted.
+    if (signal.aborted) throw aborted();
     const session = { results: new Map<string, KeptFix>() };
     analyses.set(p.project_id, session);
     const emit = (e: AnalysisEvent) => {
@@ -548,6 +550,8 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
           const m = kept.metrics as SimulationMetricsResponse & { j07_peak_depth_m: number; homes_flooded: number };
           const outcome: Outcome = { homesFlooded: m.homes_flooded, floodVolumeM3: m.total_flooding_volume_m3, hotspotPeakM: m.j07_peak_depth_m };
           const improved = isImprovement(before, outcome);
+          // Only improving fixes can be accepted; drop a no-effect run's frames and depth grids straight away.
+          if (!improved) session.results.delete(runId);
           simulated[i] = { fix: c.fix, problemId: c.problemId, label: c.label, costRM: c.costRM, outcome, location: c.location, metrics: kept.metrics, resultKey: runId };
           log(logLines.result(c.label, diagnosis.hotspotNodeId, outcome, improved));
           emit({ type: 'candidate', index: i, fix: c.fix, label: c.label, costRM: c.costRM, metrics: kept.metrics, improved });

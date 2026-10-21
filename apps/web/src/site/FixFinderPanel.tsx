@@ -8,6 +8,7 @@ import type { Diagnosis } from '@floodops/engine/analysis/fixFinder';
 import type { SimulationFramesResponse, SimulationMetricsResponse } from '../types';
 import type { AnalysisEvent, AnalysisResult } from './local/localSiteApi';
 import type { DepthGrids } from './local/store';
+import { browserAnalysisWorkers } from './local/runs';
 import { siteAcceptFix, siteAnalyse, siteDiscardAnalysis, siteRequest } from './api';
 import { hasIntervention } from './compare';
 import { indicativeCost, pinView, previewDiagnosis, visibleProblems, type AnalysisPhase } from './fixPinText';
@@ -131,8 +132,12 @@ export function useFixAnalysis({ projectId, baseline, site, active, onAccepted, 
 
 const fmt = (v: number | undefined, digits: number, unit: string) => (typeof v === 'number' && Number.isFinite(v) ? `${v.toFixed(digits)}${unit}` : '–');
 
+/** The running-analysis hint: measured 25–61 s per candidate on the sample package; "in parallel" only with more than one worker. */
+export const timingHint = (workers: number) =>
+  `About 30–60 s per candidate${workers > 1 ? `; up to ${workers} run in parallel` : ''}. Problem pins appear on the map as the baseline plays.`;
+
 /** Sidebar status ("Analysing fixes… i/n") and the collapsible "Analysis details" with the log and every tested fix. */
-export function FixFinderPanel({ analysis, hasBaseline }: { analysis: FixAnalysis; hasBaseline: boolean }) {
+export function FixFinderPanel({ analysis, hasBaseline, workers = browserAnalysisWorkers() }: { analysis: FixAnalysis; hasBaseline: boolean; workers?: number }) {
   const { phase, progress, log, tested, result, error, startedAt, finishedAt } = analysis;
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -154,7 +159,7 @@ export function FixFinderPanel({ analysis, hasBaseline }: { analysis: FixAnalysi
     {phase === 'running' && <div className="site-fix-status"><LoaderCircle size={15} className="site-spin"/>
       <b>Analysing fixes… {progress ? `${progress.done}/${progress.total}` : ''}</b><span>{elapsed} s</span>
       <button onClick={analysis.stop} aria-label="Stop the automated analysis"><Square size={12}/> Stop</button>
-      <small>About 20–30 s per candidate; candidates run in parallel. Problem pins appear on the map as the baseline plays.</small></div>}
+      <small>{timingHint(workers)}</small></div>}
     {phase === 'done' && <div className="site-fix-status done"><b>{result && result.ranked.length ? `Analysis finished: ${result.ranked.length} of ${tested.length} tested fixes reduce flooding.` : problems ? 'Analysis finished: no tested fix reduced flooding.' : 'Analysis finished: no flooding found; nothing to fix.'}</b><span>{elapsed} s</span>
       {problems > 0 && <small>Play the baseline: a pin pops up where each problem starts, with the suggested fix.</small>}</div>}
     {phase === 'stopped' && <div className="site-fix-status"><b>Automated analysis stopped.</b><button onClick={analysis.restart}><RotateCcw size={12}/> Run again</button></div>}

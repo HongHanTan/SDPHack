@@ -7,7 +7,7 @@ import { groundAt, indicativeCost, outcomeRows, pinView, previewDiagnosis, visib
 import type { SiteResult } from '../types';
 
 const pipe: Problem = { id: 'bottleneck:PIPE-P07', kind: 'bottleneck', assetId: 'PIPE-P07', onsetS: 750, location: { x: 10, y: 20 } };
-const pond: Problem = { id: 'ponding:NODE-J07', kind: 'ponding', assetId: 'NODE-J07', onsetS: 1500, location: { x: 30, y: 40 } };
+const pond: Problem = { id: 'ponding:NODE-J07', kind: 'ponding', assetId: 'NODE-J07', onsetS: 1500, onsetBy: 'depth', location: { x: 30, y: 40 } };
 const diagnosis = { hotspotNodeId: 'NODE-J07', hotspotPeakM: 0.52, homesFlooded: 4, floodVolumeM3: 1234.4, problems: [pipe, pond] } as unknown as Diagnosis;
 const fix = (problemId: string, label: string, homes: number, key: string): CandidateResult & { resultKey: string } => ({
   fix: { kind: 'upsize', pipeId: 'PIPE-P07', diameterM: 0.75 }, problemId, label, costRM: 112499.6, resultKey: key,
@@ -38,7 +38,7 @@ describe('pinView', () => {
     expect(v.heading).toBe('⚠ Bottleneck: PIPE-P07 full at 12:30');
     expect(v.pending).toBe(false);
     expect(v.fix).toEqual({
-      label: 'Upsize PIPE-P07 to Ø750 mm', resultKey: 'k1', cost: 'about RM 112,500 (indicative)',
+      label: 'Upsize PIPE-P07 to Ø750 mm', text: 'Suggested fix: Upsize PIPE-P07 to Ø750 mm', resultKey: 'k1', cost: 'about RM 112,500 (indicative)',
       rows: [
         { label: 'Homes flooded', before: '4', after: '2' },
         { label: 'Street flood volume', before: '1,234 m³', after: '410 m³' },
@@ -46,6 +46,15 @@ describe('pinView', () => {
       ],
     });
     expect(pinView(pond, { phase: 'done', progress: null, diagnosis, ranked }).heading).toBe('⚠ Ponding: NODE-J07 water 0.15 m at 25:00');
+    expect(pinView({ ...pond, onsetBy: 'flooding' }, { phase: 'done', progress: null, diagnosis, ranked }).heading).toBe('⚠ Ponding: NODE-J07 overflowing at 25:00');
+  });
+  it("falls back to another problem's fix that lowers the hotspot peak, and says so", () => {
+    const ranked = [fix(pipe.id, 'Upsize PIPE-P07 to Ø750 mm', 2, 'k1')];
+    const v = pinView(pond, { phase: 'done', progress: null, diagnosis, ranked });
+    expect(v.note).toBeUndefined();
+    expect(v.fix).toMatchObject({ text: 'Fixed by the PIPE-P07 fix: Upsize PIPE-P07 to Ø750 mm', resultKey: 'k1' });
+    const flat = { ...ranked[0], outcome: { ...ranked[0].outcome, hotspotPeakM: 0.52 } };
+    expect(pinView(pond, { phase: 'done', progress: null, diagnosis, ranked: [flat] }).note).toBe(NO_IMPROVING_FIX_TEXT);
   });
   it('says no tested fix helped, or that the analysis stopped or failed', () => {
     expect(pinView(pond, { phase: 'done', progress: null, diagnosis, ranked: [] }).note).toBe(NO_IMPROVING_FIX_TEXT);

@@ -91,6 +91,15 @@ describe('SimRunner', () => {
     expect(runner.isCached(keys[6][0], keys[6][1])).toBe(true);
   });
 
+  it('keeps nothing with maxCache 0', async () => {
+    const w = new FakeWorker();
+    const runner = new SimRunner(() => w, 0);
+    await runner.run(['desilt-d07'], 'synthetic_80mmh_60min');
+    expect(runner.isCached(['desilt-d07'], 'synthetic_80mmh_60min')).toBe(false);
+    await runner.run(['desilt-d07'], 'synthetic_80mmh_60min');
+    expect(w.posted).toHaveLength(2);
+  });
+
   it('keys the cache by scenario options', async () => {
     const w = new FakeWorker();
     const runner = new SimRunner(() => w);

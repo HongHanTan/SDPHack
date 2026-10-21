@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bestFixPerProblem,
   diagnose,
+  fixPerProblem,
   generateCandidates,
   logLines,
   NO_IMPROVING_FIX_TEXT,
@@ -55,7 +56,7 @@ describe('diagnose', () => {
   it('lists problems with onset and location, ordered by onset', () => {
     expect(d.problems).toEqual([
       { id: 'bottleneck:PIPE-P07', kind: 'bottleneck', assetId: 'PIPE-P07', onsetS: 600, location: { x: 40, y: -25 } },
-      { id: 'ponding:NODE-J07', kind: 'ponding', assetId: 'NODE-J07', onsetS: 840, location: { x: 40, y: 0 } },
+      { id: 'ponding:NODE-J07', kind: 'ponding', assetId: 'NODE-J07', onsetS: 840, onsetBy: 'flooding', location: { x: 40, y: 0 } },
       { id: 'bottleneck:PIPE-P05', kind: 'bottleneck', assetId: 'PIPE-P05', onsetS: 1080, location: { x: 60, y: 20 } },
     ]);
   });
@@ -64,12 +65,20 @@ describe('diagnose', () => {
     const depth = stormFrames.map((_, i) => (i >= 12 ? 0.15 + i * 0.001 : 0.05));
     const p = diagnose(stormFrames, metrics, S, { hotspotStreetDepthM: depth }).problems.find((x) => x.kind === 'ponding')!;
     expect(p.onsetS).toBe(720);
+    expect(p.onsetBy).toBe('depth');
+    expect(logLines.problem(p)).toBe('⚠ Ponding: NODE-J07 water 0.15 m at 12:00');
+  });
+
+  it('keeps the flooding onset when the street depth reaches 0.15 m later', () => {
+    const depth = stormFrames.map((_, i) => (i >= 16 ? 0.2 : 0.05));
+    const p = diagnose(stormFrames, metrics, S, { hotspotStreetDepthM: depth }).problems.find((x) => x.kind === 'ponding')!;
+    expect([p.onsetS, p.onsetBy]).toEqual([840, 'flooding']);
   });
 
   it('a street depth ≥ 0.15 m at the hotspot is a ponding problem even without a flooding node', () => {
     const f = frames(() => 0.5, () => false);
     const d2 = diagnose(f, metrics, S, { hotspotStreetDepthM: f.map((_, i) => (i >= 20 ? 0.2 : 0)) });
-    expect(d2.problems).toEqual([{ id: 'ponding:NODE-J07', kind: 'ponding', assetId: 'NODE-J07', onsetS: 1200, location: { x: 40, y: 0 } }]);
+    expect(d2.problems).toEqual([{ id: 'ponding:NODE-J07', kind: 'ponding', assetId: 'NODE-J07', onsetS: 1200, onsetBy: 'depth', location: { x: 40, y: 0 } }]);
   });
 
   it('keeps at most 3 problems', () => {
@@ -214,6 +223,37 @@ describe('bestFixPerProblem', () => {
   });
 });
 
+describe('fixPerProblem', () => {
+  const p07 = { id: 'bottleneck:PIPE-P07', kind: 'bottleneck', assetId: 'PIPE-P07', onsetS: 600, location: { x: 0, y: 0 } } as const;
+  const j07 = { id: 'ponding:NODE-J07', kind: 'ponding', assetId: 'NODE-J07', onsetS: 840, onsetBy: 'flooding', location: { x: 0, y: 0 } } as const;
+  const j05 = { id: 'ponding:NODE-J05', kind: 'ponding', assetId: 'NODE-J05', onsetS: 900, onsetBy: 'flooding', location: { x: 0, y: 0 } } as const;
+
+  it("uses each problem's own best fix when it has one", () => {
+    const { ranked } = rankResults(baseline, [storage, up675, inletA, relief, up750]);
+    expect(fixPerProblem([p07, j07], ranked, baseline, 'NODE-J07')).toEqual({ [p07.id]: { result: relief }, [j07.id]: { result: inletA } });
+  });
+
+  it('falls back to the best-ranked fix that lowers the hotspot peak, and says which problem it was for', () => {
+    const flatPeak = r({ kind: 'storage', nodeId: 'NODE-J05', volumeM3: 900 }, 'bottleneck:PIPE-P07', 0, 100, 0.415, 10); // best rank, hotspot peak barely moves
+    const { ranked } = rankResults(baseline, [flatPeak, up675, inletA]);
+    const noInlet = ranked.filter((x) => x !== inletA);
+    const got = fixPerProblem([p07, j07], noInlet, baseline, 'NODE-J07');
+    expect(got[j07.id]).toEqual({ result: up675, sharedFrom: p07.id });
+    expect(logLines.fixedByOther(got[j07.id].sharedFrom!, 'Upsize PIPE-P07 to Ø675')).toBe('Fixed by the PIPE-P07 fix: Upsize PIPE-P07 to Ø675');
+  });
+
+  it('has no hotspot entry when no improving fix lowers the hotspot peak', () => {
+    const flatPeak = r({ kind: 'storage', nodeId: 'NODE-J05', volumeM3: 900 }, 'bottleneck:PIPE-P07', 0, 100, 0.415, 10);
+    expect(fixPerProblem([p07, j07], [flatPeak], baseline, 'NODE-J07')).toEqual({ [p07.id]: { result: flatPeak } });
+  });
+
+  it('another node falls back to the best improving fix overall (outcomes carry no per-node peak)', () => {
+    const { ranked } = rankResults(baseline, [up675, relief]);
+    expect(fixPerProblem([j05], ranked, baseline, 'NODE-J07')).toEqual({ [j05.id]: { result: relief, sharedFrom: p07.id } });
+    expect(fixPerProblem([j05], [], baseline, 'NODE-J07')).toEqual({});
+  });
+});
+
 describe('logLines', () => {
   const d = diagnose(stormFrames, metrics, S);
 
@@ -239,7 +279,7 @@ describe('logLines', () => {
 
   it('formats the problem pin lines', () => {
     expect(logLines.problem(d.problems[0])).toBe('⚠ Bottleneck: PIPE-P07 full at 10:00');
-    expect(logLines.problem(d.problems[1])).toBe('⚠ Ponding: NODE-J07 water 0.15 m at 14:00');
+    expect(logLines.problem(d.problems[1])).toBe('⚠ Ponding: NODE-J07 overflowing at 14:00');
     expect(logLines.problemPending(d.problems[0], 2, 5)).toBe('⚠ Bottleneck detected — testing fixes… (2/5)');
   });
 });

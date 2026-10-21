@@ -88,7 +88,9 @@ export class SimRunner {
     });
   }
 
+  /** `maxCache` 0 keeps nothing (each run is simulated afresh and its result is only returned). */
   private remember(key: string, result: RunResult): void {
+    if (this.maxCache <= 0) return;
     this.cache.set(key, result);
     while (this.cache.size > this.maxCache) this.cache.delete(this.cache.keys().next().value!);
   }

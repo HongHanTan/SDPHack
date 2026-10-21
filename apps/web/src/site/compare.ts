@@ -32,6 +32,12 @@ export function runFixLabel(run?: SimulationRun): string | undefined {
   return typeof label === 'string' && label.trim() ? label : undefined;
 }
 
+/** The review button for a candidate: storage, inlet and relief fix runs are works, not a pipe change. */
+export function reviewButtonText(run?: SimulationRun): string {
+  const kind = (run?.input_snapshot as { intervention?: { kind?: unknown } | null } | undefined)?.intervention?.kind;
+  return kind === 'storage' || kind === 'inlet' || kind === 'relief' ? 'Prepare work review' : 'Prepare pipe review';
+}
+
 /** The target asset an analysed fix run records (`input_snapshot.intervention.asset_id`), if any. */
 export function runFixAsset(run?: SimulationRun): string | undefined {
   const id = (run?.input_snapshot as { intervention?: { asset_id?: unknown } | null } | undefined)?.intervention?.asset_id;
