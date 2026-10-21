@@ -1,4 +1,4 @@
-import type { Scenario } from '../sim/types';
+import type { Scenario, Storm } from '../sim/types';
 import { BASELINE_BLOCKAGE, SIM, THRESHOLDS, type TailwaterCase } from './config';
 import { applyInterventions, findNode, type InterventionId, type Township } from './interventions';
 import { buildCatchments } from './catchments';
@@ -22,6 +22,8 @@ export interface ScenarioOptions {
   catchments?: boolean; // default true: SWMM-style catchment loading (spec section 14)
   /** Township to build; default the built-in Taman Kyra. */
   site?: SiteSpec;
+  /** Rainfall to use instead of the built-in storm for `stormId` (e.g. read from an uploaded .inp). */
+  storm?: Storm;
 }
 
 /** Indicative placeholder rate for user-drawn pipes, RM per metre per metre of diameter. */
@@ -81,7 +83,7 @@ export function buildScenario(
   return {
     grid,
     network,
-    storm: STORMS[stormId],
+    storm: opts.storm ?? STORMS[stormId],
     river: { times: [0], levels: [site.tailwater[opts.tailwater ?? 'normal']] },
     dt: SIM.dt,
     recessionS: SIM.recessionS,
@@ -99,6 +101,12 @@ export function effectiveBlockage(ids: readonly InterventionId[], opts: Scenario
   return b;
 }
 
+function fnv1a(s: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
+  return h.toString(16);
+}
+
 export function scenarioKey(
   ids: readonly InterventionId[],
   stormId: StormId,
@@ -106,5 +114,5 @@ export function scenarioKey(
   opts: ScenarioOptions = {},
 ): string {
   const pipes = custom.map((c) => `${c.from}>${c.to}@${c.diameter}`).join(',');
-  return `${(opts.site ?? TAMAN_KYRA).key}|${stormId}|${opts.tailwater ?? 'normal'}|${blockageKey(opts.blockage ?? ((opts.site ?? TAMAN_KYRA).builtIn ? BASELINE_BLOCKAGE : {}))}|${[...ids].sort().join(',')}|${pipes}` + '|' + (opts.catchments === false ? 'nocatch' : 'catch');
+  return `${(opts.site ?? TAMAN_KYRA).key}|${stormId}|${opts.tailwater ?? 'normal'}|${blockageKey(opts.blockage ?? ((opts.site ?? TAMAN_KYRA).builtIn ? BASELINE_BLOCKAGE : {}))}|${[...ids].sort().join(',')}|${pipes}` + '|' + (opts.catchments === false ? 'nocatch' : 'catch') + (opts.storm ? `|storm=${fnv1a(JSON.stringify(opts.storm))}` : '');
 }
