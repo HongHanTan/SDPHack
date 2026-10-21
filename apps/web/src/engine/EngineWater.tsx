@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { smoothDepth, WET } from '@floodops/engine/client/smoothDepth';
 import { baseTownship } from '@floodops/engine/scenario/index';
-import { siteToTeam, type SiteSpec } from '@floodops/engine/scenario/site';
+import { siteToTeam, TAMAN_KYRA, type SiteSpec } from '@floodops/engine/scenario/site';
 import { LandUse } from '@floodops/engine/sim/types';
 import { useViewLook } from '../view/ViewLookContext';
 import { blendTheme, blendThemeInto } from '../view/xrayTheme';
@@ -11,7 +11,7 @@ import { groundSampler } from './visualGround';
 import { createWaterMaterial } from './waterMaterial';
 
 /** Engine water surface over Jiajie's scene: height = visual ground + simulated depth (pond and canal excluded). */
-export function EngineWater({ depth, site }: { depth: Float32Array | null; site: SiteSpec }) {
+export function EngineWater({ depth, site = TAMAN_KYRA }: { depth: Float32Array | null; site?: SiteSpec }) {
   const grid = useMemo(() => baseTownship(site.builtIn ? undefined : {}, site).grid, [site]);
   const { nx, ny, dx } = grid;
   const n = nx * ny;

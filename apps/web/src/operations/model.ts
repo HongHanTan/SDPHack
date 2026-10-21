@@ -68,5 +68,5 @@ export function sortProblems(problems: Problem[], now = Date.now()) {
   const firstReport=(p:Problem)=>Math.min(...p.reports.map(r=>Date.parse(r.occurred_at)));
   return [...problems].sort((a,b)=>Number(a.status==='Closed')-Number(b.status==='Closed') || Number(overdue(b))-Number(overdue(a)) || firstReport(a)-firstReport(b) || a.problem_id.localeCompare(b.problem_id));
 }
-export const reportSourceLabel = (source:SourceType) => ({observed:'Recorded report',synthetic:'Synthetic demonstration',assumed:'Assumption',literature_derived:'Document reference'}[source]);
+export const reportSourceLabel = (source:SourceType) => ({observed:'Recorded report',synthetic:'Synthetic demonstration',assumed:'Assumption',literature_derived:'Document reference',imported:'Imported site file'}[source]);
 export const problemReference = (problem: Problem) => `Problem reference: ${problem.problem_id}.`;
