@@ -75,7 +75,7 @@ interface SceneViewerProps {
 }
 
 // 3D Node Mesh with physical chamber drop from ground down to invert
-const NodeMesh: React.FC<{
+export const NodeMesh: React.FC<{
   node: AssetNode;
   status: NodeStatus;
   depthM?: number;
@@ -202,7 +202,7 @@ const NodeMesh: React.FC<{
 };
 
 // 3D Conduit / Pipe connecting from-node invert to to-node invert
-const ConduitMesh: React.FC<{
+export const ConduitMesh: React.FC<{
   conduit: AssetConduit;
   fromNode?: AssetNode;
   toNode?: AssetNode;
@@ -310,7 +310,7 @@ const ConduitMesh: React.FC<{
 };
 
 // 3D Inlet Mesh (Grate located at ground level)
-const InletMesh: React.FC<{
+export const InletMesh: React.FC<{
   inlet: AssetInlet;
   associatedNode?: AssetNode;
   cloggingFraction?: number;
