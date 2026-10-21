@@ -10,7 +10,7 @@ import '../story/story.css';
 import { SiteCityScene } from './SiteCityScene';
 import { rainingAt } from './siteCity';
 import { depthAt } from './local/runs';
-import { candidateTitle, comparisonItems, frameAtTime, runChange, type ComparisonItem } from './compare';
+import { candidateTitle, comparisonItems, frameAtTime, runChange, runFixLabel, type ComparisonItem } from './compare';
 import type { SiteResult } from './types';
 
 interface PaneProps {
@@ -47,7 +47,8 @@ export function SiteSideBySide({ baseline, candidate, timeS, site, cameraLink, .
   selected: string | null; onSelect: (id: string) => void; storm: Storm | null; playing: boolean;
 }) {
   const items = useMemo(() => comparisonItems(baseline.metrics, candidate.metrics, site.hotspotNodeId), [baseline, candidate, site.hotspotNodeId]);
-  const pipe = runChange(candidate.run)?.asset_id ?? 'the selected pipe';
+  const fix = runFixLabel(candidate.run);
+  const change = fix ? `the only change is the fix from the automated analysis (${fix})` : `only ${runChange(candidate.run)?.asset_id ?? 'the selected pipe'} changes`;
   return <div className="site-compare">
     <div className="story-scenes split">
       <ComparePane title="BEFORE · Uploaded baseline" result={baseline} timeS={timeS} site={site} cameraLink={cameraLink} {...shared}/>
@@ -55,7 +56,7 @@ export function SiteSideBySide({ baseline, candidate, timeS, site, cameraLink, .
     </div>
     <div className="story-comparison-strip site-compare-strip">
       {items.map((item) => <Item key={item.key} item={item}/>)}
-      <small>Same uploaded rainfall and inputs; only {pipe} changes. Uncalibrated engine results. Drag either view to move both cameras.</small>
+      <small>Same uploaded rainfall and inputs; {change}. Uncalibrated engine results. Drag either view to move both cameras.</small>
     </div>
   </div>;
 }

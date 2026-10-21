@@ -17,6 +17,7 @@ import { SiteEnvironment } from './SiteEnvironment';
 import { siteFrame } from './siteFrame';
 import { cityCamera, fogScale, rainPlacement } from './siteCity';
 import { LinkedCamera, type CameraLink } from '../story/LinkedCamera';
+import { FixPins, type MapPin } from './FixPins';
 
 /** Links already posed at a site's overview (keyed by site), so a remount keeps the shared user view. */
 const posedLinks = new WeakMap<CameraLink, string>();
@@ -36,6 +37,8 @@ export interface SiteCitySceneProps {
   rainMmh?: number;
   /** Shared camera (side-by-side compare): both panes follow either pane's orbit. Starts at this site's overview. */
   cameraLink?: CameraLink;
+  /** Automated fix analysis pins (team coordinates), drawn as cards on the map. */
+  pins?: readonly MapPin[];
 }
 
 /** SceneLook sets the shared fog distances for the built-in site; stretch them for larger sites. */
@@ -53,7 +56,7 @@ function FogScale({ k }: { k: number }) {
   return null;
 }
 
-export function SiteCityScene({ site, phase, xray, selected, onSelect, frame, depth, raining, rainMmh, cameraLink }: SiteCitySceneProps) {
+export function SiteCityScene({ site, phase, xray, selected, onSelect, frame, depth, raining, rainMmh, cameraLink, pins }: SiteCitySceneProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const f = useMemo(() => siteFrame(site), [site.key]);
   const cam = useMemo(() => cityCamera(f), [f]);
@@ -158,6 +161,7 @@ export function SiteCityScene({ site, phase, xray, selected, onSelect, frame, de
             ))}
           </>
         )}
+        {pins && pins.length > 0 && <FixPins site={site} pins={pins} />}
         <XrayBloom />
       </ViewLookProvider>
     </Canvas>

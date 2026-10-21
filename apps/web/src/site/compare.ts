@@ -26,8 +26,28 @@ export function runChange(run?: SimulationRun): PipeChange | undefined {
   return snap?.intervention?.changes?.[0];
 }
 
-/** Right-pane title, e.g. "AFTER · P07 Ø750 mm". */
+/** The automated analysis's fix label recorded with a run (`input_snapshot.intervention.label`), if any. */
+export function runFixLabel(run?: SimulationRun): string | undefined {
+  const label = (run?.input_snapshot as { intervention?: { label?: unknown } | null } | undefined)?.intervention?.label;
+  return typeof label === 'string' && label.trim() ? label : undefined;
+}
+
+/** The target asset an analysed fix run records (`input_snapshot.intervention.asset_id`), if any. */
+export function runFixAsset(run?: SimulationRun): string | undefined {
+  const id = (run?.input_snapshot as { intervention?: { asset_id?: unknown } | null } | undefined)?.intervention?.asset_id;
+  return typeof id === 'string' && id ? id : undefined;
+}
+
+/** True when a run changes something relative to the baseline (a pipe option or an analysed fix). */
+export function hasIntervention(run?: SimulationRun): boolean {
+  const iv = (run?.input_snapshot as { intervention?: unknown } | undefined)?.intervention;
+  return iv !== null && iv !== undefined;
+}
+
+/** Right-pane title: the fix label when the run came from the automated analysis, else e.g. "AFTER · P07 Ø750 mm". */
 export function candidateTitle(run?: SimulationRun): string {
+  const label = runFixLabel(run);
+  if (label) return `AFTER · ${label}`;
   const c = runChange(run);
   if (!c || !Number.isFinite(c.after)) return 'AFTER · Pipe option';
   return `AFTER · ${c.asset_id} Ø${Math.round(c.after * 1000)} mm`;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SimulationFrame, SimulationMetricsResponse, SimulationRun } from '../../types';
-import { candidateTitle, comparisonItems, curvePoints, direction, frameAtTime, frameIndexAtTime, nodeDepthSeries } from '../compare';
+import { candidateTitle, comparisonItems, curvePoints, direction, frameAtTime, frameIndexAtTime, hasIntervention, nodeDepthSeries, runFixAsset, runFixLabel } from '../compare';
 
 const frame = (t: number, depth = 0): SimulationFrame => ({ timestamp_s: t, pipe_states: [], node_states: [{ node_id: 'J1', depth_m: depth, flooding_rate_m3s: 0, surcharge_flag: false, status: 'normal' }], inlet_states: [] });
 const frames = [0, 30, 60, 90].map((t) => frame(t, t / 100));
@@ -42,6 +42,19 @@ describe('candidateTitle', () => {
   it('names the changed pipe and its new diameter in mm', () => {
     expect(candidateTitle(run({ intervention: { changes: [{ asset_id: 'PIPE-P07', after: 0.75 }] } }))).toBe('AFTER · PIPE-P07 Ø750 mm');
     expect(candidateTitle(run({ intervention: { changes: [{ asset_id: 'C2', after: 0.6000000001 }] } }))).toBe('AFTER · C2 Ø600 mm');
+  });
+  it('uses the automated analysis fix label when the run has one', () => {
+    const fixRun = run({ intervention: { kind: 'storage', label: 'Storage 300 m³ at NODE-J05', asset_id: 'NODE-J05', changes: [] } });
+    expect(candidateTitle(fixRun)).toBe('AFTER · Storage 300 m³ at NODE-J05');
+    expect(runFixLabel(fixRun)).toBe('Storage 300 m³ at NODE-J05');
+    expect(runFixAsset(fixRun)).toBe('NODE-J05');
+    expect(candidateTitle(run({ intervention: { label: '', changes: [{ asset_id: 'C2', after: 0.6 }] } }))).toBe('AFTER · C2 Ø600 mm');
+  });
+  it('tells baseline runs (null intervention) from changed runs', () => {
+    expect(hasIntervention(run({ intervention: null }))).toBe(false);
+    expect(hasIntervention(run({ intervention: { changes: [] } }))).toBe(true);
+    expect(runFixLabel(run({ intervention: null }))).toBeUndefined();
+    expect(runFixAsset(run({ intervention: { changes: [] } }))).toBeUndefined();
   });
   it('falls back when the snapshot has no change', () => {
     expect(candidateTitle(run({}))).toBe('AFTER · Pipe option');
