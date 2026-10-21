@@ -1,11 +1,14 @@
 import { buildSiteFromFiles } from '@floodops/engine/import/buildSite';
 import { stormFromInp } from '@floodops/engine/import/stormFromInp';
+import { diagnose, generateCandidates, isImprovement, logLines, rankResults, type CandidateResult, type Diagnosis, type Outcome } from '@floodops/engine/analysis/fixFinder';
+import { buildScenario } from '@floodops/engine/scenario/index';
+import { applyFix, fixCostRM, fixLabel, fixLocation, type FixAction } from '@floodops/engine/scenario/fixActions';
 import type { SiteSpec } from '@floodops/engine/scenario/site';
 import { withPipeDiameter } from '@floodops/engine/scenario/siteVariants';
-import type { InspectionMediaItem, InspectionRecord, SimulationFramesResponse, SimulationRun } from '../../types';
+import type { InspectionMediaItem, InspectionRecord, SimulationFramesResponse, SimulationMetricsResponse, SimulationRun } from '../../types';
 import type { ProjectSummary, SiteProject, SiteProposal, SiteResult } from '../types';
 import { canonicalJson, inspectFiles, randomHex, readSources, sha256Hex } from './preview';
-import { browserRunner, runErrorMessage, runSite, type EngineRunner } from './runs';
+import { browserRunner, browserRunnerPool, depthAt, runErrorMessage, runPooled, runSite, type EngineRunner } from './runs';
 import { IndexedDbSiteStore, type DepthGrids, type RunResults, type SiteStore, type StoredProject, type StoredRun } from './store';
 
 /** Runs kept per project; older ones are deleted. */
@@ -20,6 +23,28 @@ const DEBRIS = ['leaf_litter', 'sediment', 'plastic', 'mixed', 'none'];
 
 type Run = StoredRun['run'];
 type Change = { asset_id: string; before: number | null; after: number };
+/** What a run changed relative to the baseline (`kind` and `label` only for fixes from the automated analysis). */
+type Intervention = { kind?: FixAction['kind']; label?: string; changes: Change[] };
+
+/** Streamed while the automated fix analysis runs (spec §6, §9). */
+export type AnalysisEvent =
+  | { type: 'log'; text: string }
+  | { type: 'progress'; done: number; total: number }
+  | { type: 'candidate'; index: number; fix: FixAction; label: string; costRM: number; metrics: SimulationMetricsResponse; improved: boolean };
+/** An improving fix; its simulated run is kept in memory under `resultKey` until accepted or discarded. */
+export interface RankedFix extends CandidateResult {
+  location: { x: number; y: number };
+  metrics: SimulationMetricsResponse;
+  resultKey: string;
+}
+export interface AnalysisResult {
+  baselineRunId: string;
+  diagnosis: Diagnosis;
+  /** Every improving fix, best first (the UI shows the top 3; `bestFixPerProblem` picks one per problem). */
+  ranked: RankedFix[];
+  /** Labels of the simulated fixes that did not improve on the baseline. */
+  noEffect: string[];
+}
 
 export interface LocalSiteApi {
   request<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T>;
@@ -35,6 +60,17 @@ export interface LocalSiteApi {
   runDepth(runId: string): Promise<DepthGrids | null>;
   /** The engine site built from a project's stored files (projects are immutable, so built once per project). */
   siteSpec(projectId: string): Promise<SiteSpec>;
+  /**
+   * Automated fix analysis: diagnoses the baseline (`baselineRunId`, else the newest stored baseline, else a new
+   * baseline run saved like any other), then simulates candidate fixes on the worker pool and ranks them. Results stay
+   * in memory until `acceptFix` or `discardAnalysis`; a new analysis of the project replaces them. Rejects with an
+   * AbortError when `signal` aborts (no new candidate starts after that).
+   */
+  analyse(projectId: string, onEvent: (e: AnalysisEvent) => void, signal: AbortSignal, baselineRunId?: string): Promise<AnalysisResult>;
+  /** Saves an analysed fix's run (already simulated; nothing runs again) and returns it; accepting it again returns the same run. */
+  acceptFix(projectId: string, resultKey: string): Promise<SimulationRun>;
+  /** Drops the project's in-memory analysis results. */
+  discardAnalysis(projectId: string): void;
 }
 
 let last = 0;
@@ -64,7 +100,7 @@ const withoutId = (rec: unknown) => {
 };
 
 /** The inputs a run depends on; its canonical SHA-256 is the run's `input_hash`. */
-function snapshotFor(project: SiteProject, change: Change | null) {
+function snapshotFor(project: SiteProject, intervention: Intervention | null) {
   return {
     project_id: project.project_id,
     model_version_id: project.model_version_id,
@@ -74,11 +110,18 @@ function snapshotFor(project: SiteProject, change: Change | null) {
     engine_version: ENGINE_VERSION,
     rainfall: project.site.rainfall,
     blockage: {},
-    intervention: change ? { changes: [change] } : null,
+    intervention,
   };
 }
 
-export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = browserRunner()): LocalSiteApi {
+/** The asset changes a fix makes, where a before/after value is meaningful (none for storage and inlets). */
+function changesOf(fix: FixAction, site: SiteSpec): Change[] {
+  if (fix.kind === 'upsize') return [{ asset_id: fix.pipeId, before: site.assets.conduits.find((c) => c.conduit_id === fix.pipeId)?.diameter_m ?? null, after: fix.diameterM }];
+  if (fix.kind === 'relief') return [{ asset_id: `RELIEF-${fix.fromNode}-${fix.toNode}`, before: null, after: fix.diameterM }];
+  return [];
+}
+
+export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = browserRunner(), analysisPool: () => EngineRunner[] = browserRunnerPool): LocalSiteApi {
   /** Runs still executing in this page (protected from pruning). */
   const active = new Set<string>();
   /** Every run this page started; never cleared, so a run finishing here is never taken for an interrupted one. */
@@ -177,7 +220,7 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
       if (base!.run.status !== 'succeeded' || cand!.run.status !== 'succeeded') fail('Both attached runs must have finished successfully.');
       const [baseResults, candResults] = await Promise.all([store.getRunResults(baselineId), store.getRunResults(candidateId)]);
       if (!baseResults || !candResults) fail(RUN_NOT_RETAINED);
-      const [expected, reference] = await Promise.all([sha256Hex(canonicalJson(snapshotFor(p, changes[0]))), sha256Hex(canonicalJson(snapshotFor(p, null)))]);
+      const [expected, reference] = await Promise.all([sha256Hex(canonicalJson(snapshotFor(p, { changes: [changes[0]] }))), sha256Hex(canonicalJson(snapshotFor(p, null)))]);
       if (expected !== cand!.run.input_hash || reference !== base!.run.input_hash) fail('Candidate inputs do not match the declared change and project.');
       comparison = {
         baseline: { run_id: base!.run.run_id, input_hash: base!.run.input_hash, metrics: baseResults!.metrics },
@@ -220,7 +263,7 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
       site = withPipeDiameter(site, pipeId, diameter as number);
       change = { asset_id: pipeId, before: before!.diameter_m, after: diameter as number };
     }
-    const snapshot = snapshotFor(p, change);
+    const snapshot = snapshotFor(p, change ? { changes: [change] } : null);
     const started = now();
     const run: Run = {
       run_id: 'run_' + randomHex(), status: 'running', model_version_id: p.model_version_id, input_snapshot: snapshot, input_hash: await sha256Hex(canonicalJson(snapshot)),
@@ -384,10 +427,159 @@ export function createLocalSiteApi(store: SiteStore, runner: EngineRunner = brow
     return s;
   };
 
+  /** A simulated fix kept in memory until accepted or discarded. */
+  interface KeptFix { runId: string; intervention: Intervention; results: RunResults; accepted: Run | null }
+  /** The current analysis per project; a new analysis or `discardAnalysis` replaces it. */
+  const analyses = new Map<string, { results: Map<string, KeptFix> }>();
+
+  /** Rejects with an AbortError as soon as `signal` aborts. */
+  const untilAbort = <T>(work: Promise<T>, signal: AbortSignal) =>
+    new Promise<T>((resolve, reject) => {
+      const abort = () => reject(aborted());
+      if (signal.aborted) return abort();
+      signal.addEventListener('abort', abort, { once: true });
+      work.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
+    });
+
+  /** The baseline to analyse: the given run, the newest stored baseline, or a new baseline run (saved). */
+  const baselineFor = async (p: StoredProject, runId: string | undefined, log: (t: string) => void, signal: AbortSignal): Promise<{ run: Run; results: RunResults }> => {
+    const isBaseline = (r: Run) => (r.input_snapshot as { intervention?: unknown } | undefined)?.intervention === null;
+    if (runId) {
+      const r = await results(runId);
+      if (!isBaseline(r.run) || (await store.getRun(runId))?.projectId !== p.project_id) fail('Choose a baseline run of this project to analyse.');
+      return r;
+    }
+    for (const r of await listRuns(p.project_id)) {
+      if (r.status !== 'succeeded' || !isBaseline(r)) continue;
+      const stored = await store.getRunResults(r.run_id);
+      if (stored) return { run: r, results: stored };
+    }
+    log('No baseline run stored; running the baseline first…');
+    const { outcome } = await begin(p.project_id, { acknowledge_assumptions: true });
+    const final = await untilAbort(outcome, signal);
+    if (final.run.status !== 'succeeded' || !final.results) fail(final.run.error?.message ?? 'Baseline calculation failed.');
+    return { run: final.run, results: final.results! };
+  };
+
+  const analyse: LocalSiteApi['analyse'] = async (projectId, onEvent, signal, baselineRunId) => {
+    if (signal.aborted) throw aborted();
+    const p = await project(projectId);
+    const session = { results: new Map<string, KeptFix>() };
+    analyses.set(p.project_id, session);
+    const emit = (e: AnalysisEvent) => {
+      if (!signal.aborted) onEvent(e);
+    };
+    const log = (text: string) => emit({ type: 'log', text });
+    try {
+      const site = await siteSpec(p.project_id);
+      const rain = stormFromInp(p.sources.inp.text);
+      if (!rain.storm) fail(rain.errors.join(' ') || 'The SWMM file has no rainfall the subcatchments use.');
+      const baseline = await baselineFor(p, baselineRunId, log, signal);
+      if (signal.aborted) throw aborted();
+
+      // Hotspot street depth per frame (stored grids every 2nd frame, nearest earlier) for the 0.15 m ponding rule.
+      const sc = buildScenario([], 'synthetic_80mmh_60min', [], { site, storm: rain.storm!, blockage: {} });
+      const cell = sc.network.nodes.find((n) => n.id === site.hotspotNodeId)?.cell;
+      const { frames, metrics, depth } = baseline.results;
+      const hotspotStreetDepthM = cell === undefined ? undefined : frames.map((f) => depthAt(depth, f.timestamp_s)?.[cell] ?? 0);
+      const diagnosis = diagnose(frames, metrics as SimulationMetricsResponse & { j07_peak_depth_m: number; homes_flooded: number }, site, { hotspotStreetDepthM });
+      const before: Outcome = { homesFlooded: diagnosis.homesFlooded, floodVolumeM3: diagnosis.floodVolumeM3, hotspotPeakM: diagnosis.hotspotPeakM };
+      log(logLines.readingBaseline(diagnosis));
+      for (const line of logLines.bottlenecks(diagnosis, site)) log(line);
+
+      // Candidates the engine can apply; one it rejects is logged and skipped.
+      type Prepared = { fix: FixAction; problemId: string; label: string; costRM: number; location: { x: number; y: number }; site: SiteSpec; intervention: Intervention };
+      const prepared: Prepared[] = [];
+      for (const c of generateCandidates(diagnosis, site)) {
+        const label = fixLabel(c.fix, site);
+        try {
+          prepared.push({ ...c, label, costRM: fixCostRM(c.fix, site), location: fixLocation(c.fix, site), site: applyFix(site, c.fix), intervention: { kind: c.fix.kind, label, changes: changesOf(c.fix, site) } });
+        } catch (e) {
+          log(`${label}: skipped: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
+      if (!prepared.length) {
+        log(logLines.noFlooding());
+        return { baselineRunId: baseline.run.run_id, diagnosis, ranked: [], noEffect: [] };
+      }
+      const n = prepared.length;
+      log(logLines.generating(prepared.map((c) => c.label)));
+      emit({ type: 'progress', done: 0, total: n });
+
+      const simulated: (RankedFix | undefined)[] = new Array(n);
+      const failures: string[] = [];
+      let done = 0;
+      const pool = runPooled(prepared, analysisPool(), async (engine, c, i) => {
+        log(logLines.simulating(i + 1, n, c.label));
+        const runId = 'run_' + randomHex();
+        try {
+          const out = await runSite(engine, runId, c.site, rain.storm!);
+          const kept: RunResults = { frames: out.frames, metrics: { ...out.metrics, model_version_id: p.model_version_id }, depth: out.depth };
+          session.results.set(runId, { runId, intervention: c.intervention, results: kept, accepted: null });
+          const m = kept.metrics as SimulationMetricsResponse & { j07_peak_depth_m: number; homes_flooded: number };
+          const outcome: Outcome = { homesFlooded: m.homes_flooded, floodVolumeM3: m.total_flooding_volume_m3, hotspotPeakM: m.j07_peak_depth_m };
+          const improved = isImprovement(before, outcome);
+          simulated[i] = { fix: c.fix, problemId: c.problemId, label: c.label, costRM: c.costRM, outcome, location: c.location, metrics: kept.metrics, resultKey: runId };
+          log(logLines.result(c.label, diagnosis.hotspotNodeId, outcome, improved));
+          emit({ type: 'candidate', index: i, fix: c.fix, label: c.label, costRM: c.costRM, metrics: kept.metrics, improved });
+        } catch (e) {
+          failures.push(`${c.label}: ${runErrorMessage(e)}`);
+          log(`${c.label}: failed: ${runErrorMessage(e)}`);
+        }
+        emit({ type: 'progress', done: ++done, total: n });
+      }, () => signal.aborted);
+      pool.catch(() => {});
+      await untilAbort(pool, signal);
+      if (signal.aborted) throw aborted();
+      const tested = simulated.filter((r): r is RankedFix => !!r);
+      if (!tested.length) fail(`No candidate fix could be simulated. ${failures.join(' ')}`);
+
+      log(logLines.ranking());
+      const { ranked, noEffect } = rankResults(before, tested);
+      log(ranked.length ? logLines.recommended(ranked[0], before, diagnosis.hotspotNodeId) : logLines.noImprovingFix());
+      return { baselineRunId: baseline.run.run_id, diagnosis, ranked, noEffect: noEffect.map((r) => r.label) };
+    } catch (e) {
+      if (analyses.get(p.project_id) === session) analyses.delete(p.project_id);
+      throw signal.aborted ? aborted() : e;
+    }
+  };
+
+  const acceptFix: LocalSiteApi['acceptFix'] = async (projectId, resultKey) => {
+    const p = await project(projectId);
+    const kept = analyses.get(p.project_id)?.results.get(resultKey) ?? fail('This fix result is no longer kept in this page. Run the analysis again.');
+    if (kept.accepted) return kept.accepted as SimulationRun;
+    const snapshot = snapshotFor(p, kept.intervention);
+    const run: Run = {
+      run_id: kept.runId, status: 'succeeded', model_version_id: p.model_version_id, input_snapshot: snapshot, input_hash: await sha256Hex(canonicalJson(snapshot)),
+      engine: ENGINE, engine_version: ENGINE_VERSION, is_verified_site_model: false, assumptions: p.assumptions, warnings: kept.results.metrics.warnings, error: null,
+      storm_id: 'uploaded_rainfall', debris_scenario_id: null, tailwater_case: 'normal', created_at: now(),
+    };
+    try {
+      await store.putRunResults(run.run_id, kept.results);
+      await store.putRun({ run, projectId: p.project_id });
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      try {
+        await store.deleteRun(run.run_id);
+      } catch {
+        // Nothing more to undo; the run was not recorded.
+      }
+      fail(e instanceof DOMException && e.name === 'QuotaExceededError'
+        ? `The fix run could not be saved: this browser's storage for the site is full (${detail}). Delete old projects or free disk space.`
+        : `The fix run could not be saved in this browser (${detail}).`);
+    }
+    kept.accepted = run;
+    await prune(p.project_id);
+    return run as SimulationRun;
+  };
+
   return {
     request,
     execute,
     siteSpec,
+    analyse,
+    acceptFix,
+    discardAnalysis: (projectId) => void analyses.delete(projectId),
     startRun,
     uploadMedia,
     mediaUrl: async (mediaId) => URL.createObjectURL((await store.getMedia(mediaId)) ?? fail('This attachment is not stored in this browser.')),

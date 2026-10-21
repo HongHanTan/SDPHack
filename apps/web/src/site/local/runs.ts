@@ -14,15 +14,51 @@ export interface EngineRunner {
 /** Every 2nd engine frame (60 s) keeps its street-water depth grid. */
 export const DEPTH_EVERY = 2;
 
+const createWorker = () => new Worker(new URL('../../engine/workers/sim.worker.ts', import.meta.url), { type: 'module' }) as unknown as WorkerLike;
+
 let shared: SimRunner | null = null;
 /** The engine web worker, created on first use. */
 export function browserRunner(): EngineRunner {
   return {
     run: (...args) => {
-      shared ??= new SimRunner(() => new Worker(new URL('../../engine/workers/sim.worker.ts', import.meta.url), { type: 'module' }) as unknown as WorkerLike, 1);
+      shared ??= new SimRunner(createWorker, 1);
       return shared.run(...args);
     },
   };
+}
+
+/** The fix analysis never uses more than this many engine workers at once. */
+export const ANALYSIS_POOL_MAX = 3;
+/** Engine workers for the fix analysis: min(3, max(1, hardwareConcurrency − 1)). */
+export function analysisPoolSize(hardwareConcurrency: number | undefined): number {
+  const hc = hardwareConcurrency && hardwareConcurrency > 0 ? hardwareConcurrency : 2;
+  return Math.min(ANALYSIS_POOL_MAX, Math.max(1, Math.floor(hc) - 1));
+}
+
+let pool: EngineRunner[] | null = null;
+/** The fix-analysis worker pool (each `SimRunner` caches 1 result), created on first use and then reused. */
+export function browserRunnerPool(): EngineRunner[] {
+  pool ??= Array.from({ length: analysisPoolSize(typeof navigator === 'undefined' ? undefined : navigator.hardwareConcurrency) }, () => {
+    let r: SimRunner | null = null;
+    return { run: (...args) => (r ??= new SimRunner(createWorker, 1)).run(...args) } satisfies EngineRunner;
+  });
+  return pool;
+}
+
+/**
+ * Runs `work` on each item with at most `min(runners.length, ANALYSIS_POOL_MAX)` running at once, each on its own
+ * runner. No new item starts once `stopped()` is true. `work` must not reject.
+ */
+export async function runPooled<T>(items: readonly T[], runners: readonly EngineRunner[], work: (runner: EngineRunner, item: T, index: number) => Promise<void>, stopped: () => boolean): Promise<void> {
+  if (!runners.length) throw new Error('No engine workers are available for the analysis.');
+  let next = 0;
+  const lane = async (runner: EngineRunner) => {
+    while (!stopped() && next < items.length) {
+      const i = next++;
+      await work(runner, items[i], i);
+    }
+  };
+  await Promise.all(runners.slice(0, ANALYSIS_POOL_MAX).map(lane));
 }
 
 export interface EngineRunOutput {
