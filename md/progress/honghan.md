@@ -174,3 +174,10 @@ Plan: `docs/superpowers/plans/2026-10-23-team-ui-engine.md`
 |---|---|---|
 | P9-1 | Full-page Import site first, then the dashboard; app-level file watching | ✅ done (8eaf74c) |
 | P9-2 | Header watch chip, change-error banner, docs | ✅ done (a1f0f82, review fixes ff908d4) |
+
+## Phase 10: Merge Tay's portal; accept our SWMM package
+| Task | Description | Status |
+|---|---|---|
+| P10-0 | Merge tay branch (his portal, workspace, operations, story); remove scratch files | ✅ done (42e03c7, f5e65ee) |
+| P10-1 | Converter: SWMM .inp + layout + height grid → floodops-site-v1 bundle | ✅ done (4629b74, 9a3e446) — Tay's parser: map and simulation ready, no blocking issues |
+| P10-2 | Portal accepts the SWMM package; docs | ✅ done (2336257, fixes 21d56a4) — final review: ready for main |
