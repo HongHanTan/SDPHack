@@ -1,97 +1,117 @@
-# Township FloodOps — 三分钟演示剧本 (3-Minute Demo Runbook)
+# Township FloodOps — Three-Minute Demo Runbook
 
-> **标语：** From Flood Hindsight to Flood Readiness (从灾后复盘到汛前实战)  
-> **案例背景：** 雪兰莪 Klang 的 Taman Kyra, Bandar Bukit Raja 真实内涝关切背景下的合成数字化孪生系统  
-> **演示模式：** 前端默认集成 EPA SWMM 5.2.4 离线权威仿真，启动即用（访问 `http://localhost:5173`）
+> **Tagline:** From flood hindsight to flood readiness.
+>
+> **Setting:** The synthetic Taman Kyra / D07 demonstration, not a surveyed reconstruction of a real flood.
+>
+> **Main demo source:** The FloodOps TypeScript browser engine. Native EPA SWMM is a separate optional API route.
 
----
+## Prepare before presenting
 
-## 演示路线总览 (Storyline & Timeline)
+1. From the repository root, run `npm install` if dependencies are missing, then `npm run dev:web`.
+2. Open `http://localhost:5173`. The default page is the upload-first site portal. Choose **Open illustrative demo** for this D07 story.
+3. In **Settings**, select **Engine**. Keep the three-minute presentation in this mode.
+4. Rehearse the [exact operator walkthrough](EXACT_DEMO_WALKTHROUGH.md), including the synthetic problem, D07 inspection, three calculations, draft proposal and follow-up.
+5. Prepare the D07 comparison using **80 mm/h for 60 minutes**, **40% assumed inlet loss**, **Normal** canal conditions, **D07 street junction** and the **15 cm** measurement reference. Run the baseline, cleaning and P07 candidates during rehearsal. Browser calculations previously took about 17–19 seconds each on the documented machine; allow for your hardware.
+6. Have the prepared results ready before the timed pitch. If you show retained results, call them retained results. If you run live, show progress and wait for actual completion.
+
+This runbook replaces the earlier script that referred to removed field feeds and animated inspectors, treated fixture playback as the default native calculation, and used superseded comparison values. Do not present those earlier instructions as current behaviour.
+
+## Storyline and timing
 
 ```mermaid
 flowchart LR
-    A["Scene 1 (0:00-0:30)<br>痛点与小区全貌"] --> B["Scene 2 (0:30-1:00)<br>巡检打卡与照片证据"]
-    B --> C["Scene 3 (1:00-1:40)<br>杂物实验室与暴雨推演"]
-    C --> D["Scene 4 (1:40-2:30)<br>方案对比与水力启示"]
-    D --> E["Scene 5 (2:30-3:00)<br>行动工单闭环与价值总结"]
+    A["0:00–0:30<br>Problem and township"] --> B["0:30–1:00<br>Inspection evidence"]
+    B --> C["1:00–1:40<br>Same-storm comparison"]
+    C --> D["1:40–2:30<br>Interpret the options"]
+    D --> E["2:30–3:00<br>Draft and follow-up"]
 ```
 
----
+## Scene 1: the problem and the township (0:00–0:30)
 
-## Scene 1: 现实痛点与 3D 住宅区数字孪生 (0:00 - 0:30)
+### Speaker script
 
-### 讲者台词 (Speaker Script)
-> “2024 年 11 月，巴生 Bandar Bukit Raja 的 Taman Kyra 发生严重积水，居民纷纷呼吁排查排水系统。但对市镇运维管理团队来说，核心难题在于：**在下一次强降雨来临之前，现场究竟哪里需要立即清掏？哪里需要工程改造？依据是什么？**”
+> “A flooded street is visible, but the correct next action still needs evidence. Should the team inspect and clean an inlet, investigate pipe capacity, or check downstream conditions? FloodOps connects the report to the asset, the assumptions and the comparison behind that decision.”
 
-### 界面操作 (Screen Actions)
-1. 浏览器打开 `http://localhost:5174`（或 5173），默认进入极简明亮工程主题（Light Theme），首帧待命；
-2. 呈现全景白昼阳光数字孪生：成排联排洋房住宅群（North Ridge、Pinecrest、Cedar View）、沥青道路、回车岛、调蓄水景湖与出水明渠；
-3. 观察左上角选项卡扩展坞（`[Scenario] | [Layers] | [Legend]`）与左下角清爽图例，左侧布局零重叠；
-4. 鼠标旋转视角，展示穿行于居民街道地底的地下发光管网（绿/黄/红彩色管道）。
+### Screen actions
 
----
+1. Show the synthetic D07 problem in **Dashboard** and its missing-evidence or follow-up fields.
+2. Open the map or the guided browser story and locate **INLET-D07**.
+3. Show the 3D drainage context. Explain that the geometry is illustrative, rather than a surveyed site model.
 
-## Scene 2: 现场暗疾与数字巡检证据链 (0:30 - 1:00)
+## Scene 2: inspection evidence and assumptions (0:30–1:00)
 
-### 讲者台词 (Speaker Script)
-> “蓝图上的管网可能完美无缺，但现场环境每天都在发生变化。落叶、泥沙和生活垃圾随时可能封堵路边雨水口。FloodOps 将现场巡检变成可追溯的数字模型输入——但绝不草率地把‘目测覆盖率’等同于‘水力损失率’。”
+### Speaker script
 
-### 界面操作 (Screen Actions)
-1. 点击顶部视角预设 **`[Inlet D07]`**，镜头平滑拉近至低洼路口的 `INLET-D07`；
-2. 观察井旁身穿反光背心的 3D 巡检员 Unit A: Azman 正在进行脉冲扫描；
-3. 点击右下角 **`[Field Feed]`** 或点击管网节点 `INLET-D07`，右侧滑出 Light Theme 运维卡片（此时右下角浮动流智能折叠，无任何空间重叠）；
-4. 切换至 **`[Field CCTV]`** 选项卡，展示地表枯枝落叶实况照片与管内 CCTV 爬行内窥高精度影像；
-5. 演示 **`[Tune Blockage]`** 滑块，展示 0%~90% 自定义淤堵度调节如何实时改变过水截面。
+> “The inspection record preserves what someone saw and where it came from. Visible grate coverage is an observation. Hydraulic inlet loss is a separate modelling assumption; we do not automatically convert a photograph into a calibrated hydraulic parameter.”
 
----
+### Screen actions
 
-## Scene 3: 进水口虚拟实验室与 EPA SWMM 暴雨推演 (1:00 - 1:40)
+1. Open the prepared D07 inspection and its synthetic attachment.
+2. Show its source label, time and notes.
+3. Point out the independent **40% assumed inlet loss** used in the comparison.
 
-### 讲者台词 (Speaker Script)
-> “我们打开进水口虚拟实验室，将现场目测 65% 覆盖率科学折算为独立的 40% 水动力学折减假说。随后，系统调用美国环保署 **EPA SWMM 5.2.4 引擎** 进行非定常流动态求解——这是严谨的物理水动力学推演，绝非凭空捏造。”
+Use the exact input fields and synthetic files in the [operator walkthrough](EXACT_DEMO_WALKTHROUGH.md). Do not label demo PDFs as real field photographs or observed evidence.
 
-### 界面操作 (Screen Actions)
-1. 点击顶部主栏的 **`[Debris Lab]`**（虚拟杂物实验室）；
-2. 观察 1.8m × 0.15m 进水喉口剖面，展示 0%/20%/40%/60% 假说，点击应用 `40% (Site Observation Calibration)`；
-3. 确保暴雨开关已武装（`Rain: Armed`），点击底部居中的红色 **`[Start Simulation]`** 按钮正式启动推演；
-4. 季风暴雨倾泻而下，时间轴平滑推进至 T+00:30:00 产汇流峰值；
-5. 观察 3D 画面：`PIPE-P07` 管道变红警报（满管顶托超载），`INLET-D07` 路面动态漫溢上涨，生成大面积积水洼地与水深预警刻度尺。
+## Scene 3: test the same storm (1:00–1:40)
 
----
+### Speaker script
 
-## Scene 4: 方案比选与水动力学核心启示 (1:40 - 2:30)
+> “The browser engine calculates a baseline, then changes one intervention while retaining the other inputs. We compare the same storm and the same measurement area, so the displayed difference has an explicit basis.”
 
-### 讲者台词 (Speaker Script)
-> “发现了内涝风险，接下来该怎么办？清掏树叶？还是斥巨资开挖道路扩建管道？FloodOps 在完全相同的降雨和出流边界下，横向比选各个治理方案。结果揭示了一个深刻的水动力学规律：**蓝图与现场的背离**。”
+### Screen actions
 
-### 界面操作 (Screen Actions)
-1. 点击顶部导航栏的 **`[Reports]`**（或点击 `Analytics`），弹出极简精炼的治理决策报告看板；
-2. 切换 **“Base 80mm/h”**、**“Desilting”**、**“Pipe Upsizing”** 与 **“Combined Scheme”**：
-   - **清淤方案 (Desilting)**：地表积水从 686 m³ 骤降至 389 m³ (**-43.2%**)，但雨水全进地底导致现有 Ø600mm 管道超载持续 55 分钟；
-   - **单扩径方案 (Pipe Upsizing)**：管道超载降为 0，但因进水口卡死，路面依旧汪洋一片（686 m³）；
-   - **综合方案 (Combined Scheme)**：既消除了地面积水，又消除了地下管道顶托。
-3. 展示 4 个高对比度 KPI 指标卡、水量路由分配横向条形图与“3 条高管工程洞见 (Executive Summary)”。
+1. Show the prepared baseline from **Test this storm**.
+2. Show the independent **Try cleaning D07** and **Test P07: 600 → 750 mm** candidates.
+3. Keep **D07 street junction** and the **15 cm** reference selected. Show the fixed R1 point and selected road cells.
+4. If calculating live, wait for completion and retain any displayed errors. Do not replace failed output with fixture values.
 
----
+## Scene 4: interpret the options (1:40–2:30)
 
-## Scene 5: 建议行动工单闭环与业务价值 (2:30 - 3:00)
+### Speaker script
 
-### 讲者台词 (Speaker Script)
-> “数据最终要指导行动。FloodOps 自动生成两份可追溯的工单：一份是 24 小时内必须达到的**应急清淤抢修工单**，依据现场照片消除路面积水；另一份是纳入下年度资本预算的**主干管扩径改造提案**，彻底解决管网输送短板。从现场证据到物理模拟，再到可执行的决策工单，Township FloodOps 让内涝防治真正看得清、算得准、落得地！”
+> “In this synthetic example, cleaning alone barely changes the selected road result, while the pipe option changes it substantially. That is a reason to request a capacity investigation, not permission to construct a larger pipe. The result depends on the supplied model, storm and boundary assumptions.”
 
-### 界面操作 (Screen Actions)
-1. 在弹窗中查看下方的 **`[Traceable Action Work Orders]`**；
-2. 展示 **🔴 紧急抢险工单 (`WO-OPS-2026-10-19-D07`)** 与 **🟡 资本工程改造工单 (`PR-ENG-2026-Q4-P07`)**；
-3. 点击 **`[Copy]`** 复制工单按钮，展示已将规范化 Markdown 报告一键存入剪贴板；
-4. 点击关闭弹窗，系统平滑刷新为清淤后顺畅排水的孪生状态，演示完美收官！
+### Screen actions
 
----
+Show the actual retained comparison. The previously documented rounded outputs are:
 
-## 应急备忘 (Presenter Cheat Sheet)
+| Option | Peak at fixed road point R1 | Maximum simultaneous selected road area ≥15 cm | Approximate R1 duration ≥15 cm |
+|---|---:|---:|---:|
+| Baseline | 60.0 cm | 760 m² | 75.0 min |
+| Clean D07 | 59.8 cm | 760 m² | 74.0 min |
+| P07: 600 → 750 mm, original inlet loss retained | 7.7 cm | 0 m² | 0.0 min |
 
-| 突发情况 | 处理方式 |
+Use the values actually returned for your run. See the [calculation foundation](CALCULATION_FOUNDATION.md) for the exact road mask, assumptions, reproduction command and limitations. These are synthetic numerical outputs, not measured site benefits.
+
+If time permits, show the calculation reference checks and their **site/street-depth validation not established** qualification. Native SWMM reference checks require the optional API; they are separate calculations and do not validate the browser surface model.
+
+## Scene 5: retain the decision and follow up (2:30–3:00)
+
+### Speaker script
+
+> “The output is an evidence-linked next step. We retain the comparison, record what is still unknown and assign an owner to the investigation. The saved draft requests engineering review; it does not dispatch work, approve spending or claim measured savings.”
+
+### Screen actions
+
+1. Choose **Choose the next action → Request engineering review → Prepare a work proposal**.
+2. Show **PIPE-P07**, **Current comparison attached**, the review scope and the unresolved survey/downstream constraints.
+3. Show the prepared **Draft**. Unknown rates remain blank, with **Estimate required**.
+4. Show the evidence JSON export and the Operations case assigned to the township engineering team with an investigation due date.
+
+For a three-minute pitch, prepare these records in rehearsal and show them honestly as prepared records. The [full walkthrough](EXACT_DEMO_WALKTHROUGH.md) explains the manual problem/inspection cross-reference and the complete save/export sequence.
+
+## Presenter recovery notes
+
+| Situation | Response |
 |---|---|
-| **网络离线或无后端服务** | 系统默认处于 `Mock` 离线验证模式，所有 120 帧 SWMM 结果、3D 模型、照片与方案对比均不受网络影响，保证 100% 稳定运行。 |
-| **镜头不慎移出视野** | 点击顶部视角预设中的任意按钮（如 `[Overview]` 或 `[Inlet D07]`），镜头会自动平滑归位。 |
-| **想向评委展示地下管道细节** | 点击顶部视口模式切换为 **`[Underground]`**，地表房屋与绿地瞬间线框化，清晰呈现 9 个井室落深与 8 条管网水力水深。 |
-| **界面展开怕遮挡** | 左侧控制台已集成在 Tabbed Dock，最大高度仅 320px；右侧点击资产时巡检流自动变为紧凑胶囊按钮，绝无重叠。 |
+| Browser calculation takes longer than expected | Show progress and explain the inputs; use previously retained results only if clearly identified. |
+| API is unavailable | Keep the main pitch in the explicit browser Engine mode. Explain that native reference checks are unavailable; never claim a native result was computed. |
+| A run fails | Show the error and correct its cause before rerunning. Do not claim completion or silently switch to Mock. |
+| Camera view is lost | Use an available overview or asset view preset to return to the selected township area. |
+| A prepared record is missing | Rehearse the exact walkthrough in advance. Browser records are local and source modes use separate collections. |
+| Someone asks whether this proves real flood reduction | State that field survey, calibration, engineering review and post-work measurements are still required. |
+
+## Documentation update — 22 October 2026
+
+Published this English runbook with current portal entry, browser-engine terminology, retained D07 comparison values and draft-only follow-up. Application code and the recorded calculation evidence were not changed or rerun.

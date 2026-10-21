@@ -1,85 +1,230 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/floodops-logo-dark.png" />
+  <img src="docs/brand/floodops-logo.png" alt="Township FloodOps — township roofline and flowing water in red and gold" width="480" />
+</picture>
+
 # Township FloodOps
 
-> **Evidence-backed drainage maintenance planning for township operations.**
-> Upload a catchment's site and drainage data, identify missing inputs, build its 3D map, test a pipe option on the FloodOps engine in your browser, and prepare an evidence-linked investigation draft. Imported files remain uncalibrated until checked against the real site.
+### Understand the flood. Test the options. Plan the next action.
 
-The app opens on the **site portal**. Upload three files in one projected metric reference: a SWMM `.inp` (required), a layout `.geojson` (optional; buildings with `height_m`, roads with `width_m`) and a height grid `.asc` (optional). Checking, building the map and the Compare actions run in the browser on the FloodOps engine (uncalibrated), including street water. Readiness checks distinguish a usable map from a runnable hydraulic model, and original file hashes and run snapshots stay traceable. No backend is needed for this flow. Sample: `data/samples/taman_kyra_site` (also downloadable from the portal) · [sample files and specification](apps/web/public/site-examples/README.md) · [legacy API-based upload walkthrough](md/UPLOAD_FIRST_WALKTHROUGH.md).
+Evidence-backed drainage maintenance planning for township operations.
 
-Each imported project's **Operations** tab retains the problems register: record report sources, identify missing evidence, assign follow-up and prepare investigation drafts. Projects, runs, inspections/media and Draft proposals are stored in this browser (IndexedDB). The pilot does not dispatch work or approve construction. The explicit **Open illustrative demo** button retains the earlier D07 browser story and illustrative catalog workflows.
+**React 19 · TypeScript · Three.js · Browser flood engine · Optional FastAPI + EPA SWMM**
 
-The demo now measures an explicit **road-only area and fixed road point**, excluding grates/manholes, with sampled depth, simultaneous affected area and duration. Executable analytic reference checks show calculation errors and limits. Tay's Python SWMM API (`services/api`, kept in the repo for the legacy API mode and its tests) supports explicit conceptual cleaning, pipe and storage actions with retained input changes and matching-baseline checks. Neither the FloodOps engine nor SWMM establishes validated site flood depths. See the [calculation walkthrough, checked example values and limitations](md/CALCULATION_FOUNDATION.md).
+[Get started](#getting-started) · [Try the sample](#try-the-sample-township) · [How it works](#how-floodops-works) · [Documentation](#documentation)
 
-Uploaded-site comparisons support circular pipe diameter changes with 1D network outputs and the engine's street-water surface. Native CAD/PDF/GeoTIFF extraction and field calibration are not implemented. The legacy Python API (**v1.5.0**) still serves `/api/site-projects` routes. Earlier illustrative workflow: [guided D07 demo and maintenance workflow](md/MAINTENANCE_DEMO.md); [maintenance integration](contracts/MAINTENANCE_INTEGRATION.md).
-
----
-
-## 团队分工与架构 (Team Architecture)
-
-本项目由 Tay 与 Jiajie 协作并行开发：
-
-| 模块 / 领域 | 负责人 | 职责与归属路径 |
-|---|---|---|
-| **后端 / 数据 / SWMM** | **Tay** | `services/api/**`, `simulation/**`, `contracts/**`, `md/BACKEND_SETUP.md`, `md/progress/tay.md` |
-| **前端 / 3D / 交互** | **Jiajie** | `apps/web/**`, `md/FRONTEND_SETUP.md`, `md/progress/jiajie.md`, `README.md` |
-
-协作规则与接口标准详见 [团队分工与执行规则 (TEAM_WORKFLOW.md)](md/TEAM_WORKFLOW.md)。
+</div>
 
 ---
 
-## 快速开始 (Quickstart)
+## Start here
 
-### 1. 前端 3D 数字孪生 (Web 3D Twin)
+FloodOps brings site files, a 3D drainage map, flood calculations and investigation records into one workspace. Upload a township's drainage model, review missing inputs, compare a pipe option and retain the evidence behind the next decision.
 
-进入前端工作目录并启动开发服务器：
+The main app runs **entirely in your browser**. Projects, runs, inspections, attachments and draft proposals are stored locally in IndexedDB. No backend or sign-in is required for this route.
 
-```bash
-cd apps/web
-npm install
-npm run dev
+**New to the project?** [Start the app](#getting-started), then [load the synthetic Taman Kyra sample](#try-the-sample-township). For the earlier D07 maintenance story, choose **Open illustrative demo** on the portal and follow the [operator walkthrough](md/EXACT_DEMO_WALKTHROUGH.md) or [three-minute pitch runbook](md/DEMO_RUNBOOK.md).
+
+> **Pilot scope:** Imported models remain uncalibrated until checked against the real site. The sample township is synthetic. Calculated results support investigation; they do not establish validated street flood depths, construction approval or measured savings.
+
+## The problem
+
+**A flooded street is visible. The right intervention still needs evidence.** Township operations teams need to establish which asset is involved, what condition was observed and whether a proposed change improves the modelled outcome under the same storm.
+
+### The cost is measurable
+
+Malaysia's Department of Statistics reports the following flood damage losses:
+
+| Damage category | 2024 | 2025 |
+| --- | ---: | ---: |
+| **Total reported losses** | **RM933.4 million** | **RM636.9 million** |
+| **Public assets and infrastructure** | **RM303.4 million** | **RM380.2 million** |
+| **Living quarters** | **RM372.2 million** | **RM183.8 million** |
+
+Even as total losses fell, public asset and infrastructure losses **increased by 25.3%** (calculated from the reported figures). Source: [DOSM, *Special Report on Impact of Floods in Malaysia, 2025*, released 15 April 2026](https://www.dosm.gov.my/site/downloadrelease?id=special-report-on-impact-of-floods-in-malaysia2025&lang=English).
+
+These are national losses across flood types, not losses attributed solely to blocked drains or an estimate of what FloodOps could prevent.
+
+### The same symptom can have different causes
+
+DID identifies intense rainfall, increased impervious area, sediment and channel obstruction among flood drivers. Its stormwater inlet guidance calls for regular checks and cleaning to prevent debris blockage, while also explaining that insufficient downstream capacity can prevent an inlet from functioning properly. Together, these establish why both maintenance condition and hydraulic context matter. Sources: [DID flood management guidance](https://www.water.gov.my/index.php/pages/view/419), [Urban Stormwater Management Manual, chapter 24, §§24.1 and 24.7](https://www.water.gov.my/jps/resources/auto%20download%20images/58464dc10bb4f.pdf).
+
+```mermaid
+flowchart TD
+    Flood[Reported street flooding] --> Question{Which mechanism needs investigation?}
+    Question --> Inlet[Restricted inlet]
+    Question --> Pipe[Pipe capacity bottleneck]
+    Question --> Boundary[Downstream or catchment conditions]
+    Inlet --> Evidence[Inspect assets and check model inputs]
+    Pipe --> Evidence
+    Boundary --> Evidence
+    Evidence --> Test[Compare targeted changes under the same storm]
+    Test --> Action[Prepare a justified maintenance or engineering review]
 ```
 
-浏览器访问：`http://localhost:5173`。
+*Conceptual investigation paths, not an automatic diagnosis or a complete list of flood causes.*
 
-- The default site portal runs entirely in the browser on the FloodOps engine; no backend is needed. Tay's FastAPI backend (`services/api`, with the SWMM toolkit) is only used by the legacy API mode and his tests (see the backend setup). The illustrative browser demo remains an explicit separate option.
-- Calculation errors are displayed without a mock fallback.
-- 详细说明请参见 [前端开发与运行指南 (md/FRONTEND_SETUP.md)](md/FRONTEND_SETUP.md)。
+**The decision gap FloodOps targets:** connecting a report to the relevant asset, inspection evidence, explicit assumptions, matching comparisons and a retained follow-up draft. The national statistics establish the stakes; site evidence and calibrated modelling are still needed to justify a local intervention. See the [evidence and comparison notes](docs/PROBLEM_EVIDENCE.md).
 
-### 2. 评委与路演演示演练 (3-Minute Pitch Runbook)
+## How FloodOps works
 
-完整 3 分钟路演故事线、台词配搭与界面点击动作请参见：  
-👉 [**三分钟演示剧本 (md/DEMO_RUNBOOK.md)**](md/DEMO_RUNBOOK.md)
+```mermaid
+flowchart LR
+    A[Upload site files] --> B[Check inputs and gaps]
+    B --> C[Build the 3D township]
+    C --> D[Run a baseline]
+    D --> E[Compare a pipe option]
+    E --> F[Prepare an evidence-linked draft]
+    F --> G[Assign investigation follow-up]
+```
 
----
+| Stage | What you can do |
+| --- | --- |
+| **Diagnose** | Inspect supplied geometry, locate drainage assets and record problems, reports, inspections and missing evidence. |
+| **Anticipate** | Run the browser flood engine, inspect network and street-water outputs, and compare a circular pipe diameter change with the same baseline inputs. |
+| **Act** | Retain comparison evidence, prepare investigation drafts, assign follow-up and export records for review. |
 
-## 核心设计原则
+The separate illustrative demo adds the guided D07 story, conceptual cleaning and storage scenarios, road-area measurements and calculation reference checks. Its **Engine**, **Mock** and **SWMM API** modes are explicitly identified.
 
-1. **真实物理引擎为准：** 采用 EPA SWMM 5.2 求解非定常水动力学；前端 3D 负责沉浸式场景表现与交互映射，不凭空伪造负荷计算。
-2. **证据与假设显式区分：** 现场照片记录的“格栅表面覆盖率（65%）”与水动力学模型的“水力收水折减假设（40%）”分别存储并明确标识来源。
-3. **真实模式错误透明暴露：** 真实 API 连接失败或引擎报错时明确在界面呈现错误体，绝不隐蔽回退至 mock 数据。
-4. **数字孪生环境对齐：** 3D 场景忠实还原 Taman Kyra 联排住宅街区、沥青道路、绿化带、调蓄水景湖与出水明渠。
+## What makes FloodOps useful
 
----
+- **Start with your site.** The portal opens without a preloaded township. Map geometry comes from the files you supply, with unsupported or missing inputs listed for review.
+- **Check readiness before running.** A usable map and a runnable hydraulic model have separate readiness checks.
+- **Compare matching inputs.** A pipe option changes the selected diameter while retaining rainfall and other baseline inputs. Source hashes and run snapshots keep the comparison traceable.
+- **Keep observations and assumptions separate.** Visible grate coverage from an inspection is distinct from an assumed hydraulic inlet restriction.
+- **Carry evidence into operations.** Project problems, inspection attachments, draft proposals and follow-up records stay connected to the investigation.
+- **Show failures clearly.** Calculation and API errors are displayed. Failed real runs never silently become mock results.
 
-## TypeScript flood engine (Hong Han)
+### What makes us unique
 
-This repository also contains a browser-based flood simulation engine written in TypeScript, merged in from `github.com/HongHanTan/SDPHack` with its full history.
+**FloodOps brings the township investigation into one browser workspace:** report → asset → evidence → comparable calculation → follow-up draft. Its distinguishing focus is the connection between these steps, with missing inputs, source files and modelling assumptions visible throughout.
 
-- **Engine** (`packages/engine`):
-  - surface flow on a 2D grid (virtual-pipes shallow-water scheme with a stability guard), coupled to a capacity-routed pipe network with inlets, surcharge, outfall backflow, flap gates and pumps;
-  - MSMA-form design storms;
-  - mid-run network patching for live what-if;
-  - a water balance checked on every run.
-- **Legacy UI** (`apps/legacy`): the engine's original three.js interface (Live/Compare modes, x-ray, plan view, intervention panel). The team UI in `apps/web` will replace it.
+| Existing solution | What it already does well | Our approach in FloodOps |
+| --- | --- | --- |
+| [**Public InfoBanjir — DID Malaysia**](https://publicinfobanjir.water.gov.my/main/?lang=en) | Publishes rainfall, water-level information and flood warnings for public awareness. | Focus on an individual township's drainage assets, inspection evidence and intervention investigation. FloodOps currently uses supplied or synthetic inputs; it has no live warning feed. |
+| [**EPA SWMM**](https://www.epa.gov/water-research/storm-water-management-model-swmm) | Provides rainfall-runoff and drainage-network modelling, scenario analysis, maps, plots and reports. It is free and open source. | Pair a 3D operations workspace with readiness checks, evidence records and draft follow-up. The default portal uses our browser engine; native SWMM is a separate optional route. |
+| [**Autodesk InfoWorks ICM**](https://help.autodesk.com/cloudhelp/2025/ENU/ICM-Help/files/GUID-8BC95C3D-3957-4C59-8024-2DB91228CBF2.htm) | Supports integrated catchment modelling, scenario comparison, 2D/3D views, shared model data and audit trails. | Offer a narrower browser-local pilot for the township report-to-investigation workflow. FloodOps does not establish equivalent modelling accuracy, enterprise collaboration or engineering approval capability. |
 
-### Integration roadmap
-- Steps 1–3 are done: the histories are merged into this monorepo, the engine's township is rebuilt on the Taman Kyra network, and the `apps/web` 3D twin and dashboard are driven by the engine through adapters.
-- The team UI (`apps/web`) opens the upload-first project workspace. Its separate illustrative demo retains Engine, Mock and SWMM API modes.
-- `npm run dev:web` is the main way to run it.
+The pilot combines **separate map/model readiness**, **inspection observations kept distinct from hydraulic assumptions**, and **source-linked comparison drafts**. Existing engineering platforms already support advanced simulation and scenario management; our contribution is the specific operations workflow demonstrated here.
 
-### Run (from the repo root)
+#### A concrete demonstration: cleaning is not always the effective modelled change
 
-    npm install
-    npm test              # engine + legacy UI unit tests
-    npm run dev:legacy    # engine UI at http://localhost:5173
-    npm run dev:web       # upload-first main app; illustrative demo is an explicit option
-    npm run story         # slow demo-story and effect-drift checks (~15 min)
+The recorded **synthetic D07 browser demo** uses 80 mm/h rain for 60 minutes, 40% assumed inlet loss and Normal canal conditions. Independent candidate runs retain the other baseline inputs:
+
+| Modelled option | Peak depth at fixed road point R1 | Maximum simultaneous selected road area ≥15 cm |
+| --- | ---: | ---: |
+| Baseline | 60.0 cm | 760 m² |
+| Clean D07 | 59.8 cm | 760 m² |
+| Enlarge P07 from 600 to 750 mm, retaining original inlet loss | 7.7 cm | 0 m² |
+
+This example shows why a plausible cleaning action should be tested alongside a capacity hypothesis. These are rounded outputs from a synthetic model, not observed site improvements or a general recommendation to enlarge pipes. [Recorded calculation basis, study area, reproduction command and limits](md/CALCULATION_FOUNDATION.md).
+
+## Getting started
+
+### Requirements
+
+- **Node.js 20+** and **npm 10+**.
+- A modern browser with WebGL support for the 3D workspace.
+- Python and the native SWMM toolkit only if you want the optional API route.
+
+### Run the main app
+
+From the repository root:
+
+```bash
+npm install
+npm run dev:web
+```
+
+Open [http://localhost:5173](http://localhost:5173). The site portal checks, builds and simulates your project in the browser.
+
+### Try the sample township
+
+Use the sample downloads on the portal, or select these files from [`apps/web/public/site-examples/taman-kyra-swmm/`](apps/web/public/site-examples/taman-kyra-swmm/):
+
+| Upload slot | Sample file | Purpose |
+| --- | --- | --- |
+| **SWMM model** — required | `taman_kyra.inp` | Drainage network, coordinates, subcatchments and rainfall. |
+| **Layout** — optional | `taman_kyra_layout.geojson` | Buildings, roads and inlets in the same projected metric reference. |
+| **Height grid** — optional | `taman_kyra_ground.asc` | Ground elevations for the terrain and street-water model. |
+
+1. Select the three files, then choose **Check my files**.
+2. Review the supplied geometry and readiness notes. The sample includes **9 nodes, 8 pipes, 4 catchments and 35 buildings**.
+3. Choose **Build my township** to open the 3D workspace.
+4. Open **Compare actions**, calculate the baseline, then test **PIPE-P07 at 0.75 m**.
+5. Use **Operations** to record a problem and prepare its investigation follow-up. Reload the app to reopen the project under **Your saved projects**.
+
+All inputs must share one projected coordinate system in **metres**. Each file may be up to **8 MiB**. Buildings require `height_m`; roads require `width_m`. CAD, PDF and GeoTIFF extraction are not implemented. See the [complete file specification and sample notes](apps/web/public/site-examples/README.md).
+
+### Optional: native SWMM API
+
+The Python API is a separate route for native EPA SWMM network calculations and the earlier API workflows. Importing a `.inp` in the main portal runs the **FloodOps browser engine**, rather than invoking native SWMM.
+
+Follow the [backend setup guide](md/BACKEND_SETUP.md) to install and start FastAPI on port **8000**. In the illustrative demo, select **Settings → Live FastAPI**. The API retains its own records and native run artifacts; it is not required by the default portal.
+
+## Architecture at a glance
+
+![FloodOps architecture: site files pass through import checks, the 3D workspace and the browser flood engine into results and operations drafts, with local browser storage. A separate optional demo route connects FastAPI to native SWMM and retained evidence.](docs/diagrams/floodops-architecture.svg)
+
+*The default portal runs locally in the browser. The lower row is a separate, explicitly selected native API route. [Diagram source](docs/diagrams/README.md).*
+
+| Component | Implementation |
+| --- | --- |
+| **Main workspace** | React 19, TypeScript, Vite, Three.js / React Three Fiber, Drei and Tailwind CSS. |
+| **Browser calculations** | `packages/engine`: 2D surface flow coupled to a capacity-routed pipe network, with water-balance checks. |
+| **Local persistence** | IndexedDB for imported projects, retained runs, inspections/media and draft proposals; problem records remain browser-local. |
+| **Optional native calculations** | FastAPI and the SWMM toolkit, with Python simulation code under `simulation/` and retained runtime artifacts. |
+| **Interface contracts** | OpenAPI and examples under `contracts/`, with explicit source labels, assumptions and error responses. |
+
+The browser model and native SWMM model have different numerical scope. Passing a reference or conservation check does not establish real-site accuracy. The [calculation foundation](md/CALCULATION_FOUNDATION.md) explains the metrics, checked examples and remaining limits.
+
+## Documentation
+
+All guides below are written in English.
+
+| Guide | What it covers |
+| --- | --- |
+| [Problem evidence and comparison notes](docs/PROBLEM_EVIDENCE.md) | Official flood-loss statistics, maintenance rationale, existing solutions and the limits of the product claims. |
+| [Frontend setup](md/FRONTEND_SETUP.md) | Web development, modes and frontend configuration. |
+| [Backend setup](md/BACKEND_SETUP.md) | Optional FastAPI service, native SWMM installation and backend checks. |
+| [Site file specification](apps/web/public/site-examples/README.md) | Supported uploads, sample files, import rules and metric definitions. |
+| [Calculation foundation](md/CALCULATION_FOUNDATION.md) | Road measurements, matched-input checks, native actions and validation limits. |
+| [Exact operator walkthrough](md/EXACT_DEMO_WALKTHROUGH.md) | The guided illustrative maintenance story, evidence and proposal handoff. |
+| [Three-minute pitch runbook](md/DEMO_RUNBOOK.md) | Presentation flow and demo actions. |
+| [API contracts](contracts/README.md) | Machine-readable interfaces and integration examples. |
+| [Maintenance integration](contracts/MAINTENANCE_INTEGRATION.md) | Evidence-linked proposals and lifecycle rules. |
+| [Legacy API upload walkthrough](md/UPLOAD_FIRST_WALKTHROUGH.md) | The earlier server-backed site import route. |
+| [Team workflow](md/TEAM_WORKFLOW.md) | Responsibilities, file ownership and handoff rules. |
+
+## Repository layout
+
+```text
+apps/web/           Main upload-first workspace and illustrative demo
+apps/legacy/        Original engine UI, retained for reference
+packages/engine/    TypeScript browser flood engine
+services/api/       Optional FastAPI backend
+simulation/         Native SWMM and scenario calculation code
+contracts/          OpenAPI, examples and integration guides
+data/               Synthetic inputs, samples and retained validation evidence
+models/             Model assets and supporting files
+tests/              API, simulation and end-to-end checks
+md/                 Product background, setup, demos and team progress
+docs/               Engine notes, design records and README brand assets
+```
+
+### Development commands
+
+Run these from the repository root:
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev:web` | Start the main FloodOps app. |
+| `npm run dev:legacy` | Start the original engine UI; use separately to avoid a port collision. |
+| `npm test` | Run engine, legacy UI and main web unit tests. |
+| `npm run build` | Build both web apps for production. |
+| `npm -w township-floodops-web run lint` | Run the main app's TypeScript checks. |
+| `npm run story` | Run the slower engine story and effect-drift checks, approximately 15 minutes. |
+
+Native API tests and contract verification commands are documented in the [backend guide](md/BACKEND_SETUP.md).

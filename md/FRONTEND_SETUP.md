@@ -1,80 +1,104 @@
-# Township FloodOps — 前端开发与运行指南 (Frontend Setup Guide)
+# Township FloodOps — Frontend Setup Guide
 
-> 维护者：Jiajie (前端 / 3D / 用户交互)  
-> 技术栈：React 19 + TypeScript + Vite + Three.js / React Three Fiber (R3F) + Drei + Tailwind CSS
+> Maintainer: Jiajie (frontend / 3D / user interaction)
+>
+> Stack: React 19 + TypeScript + Vite + Three.js / React Three Fiber (R3F) + Drei + Tailwind CSS
 
----
+## 1. Quick start
 
-## 1. 快速启动
+### Requirements
 
-### 依赖环境
-- Node.js >= 20 (已在 v24.14.1 验证)
-- npm >= 10 (已在 11.11.0 验证)
+- Node.js >= 20 (previously verified with v24.14.1).
+- npm >= 10 (previously verified with 11.11.0).
+- A modern browser with WebGL support.
 
-### 安装与启动步骤
+From the repository root:
 
-1. **进入前端应用目录并安装依赖：**
-   ```bash
-   cd apps/web
-   npm install
-   ```
-
-2. **启动本地开发服务器（默认端口 5173）：**
-   ```bash
-   npm run dev
-   ```
-   打开浏览器访问 `http://localhost:5173`。
-
-3. **构建生产版本并校验类型：**
-   ```bash
-   npm run build
-   ```
-
----
-
-## 2. 数据模式与后端对接 (Data Modes)
-
-前端严格执行并行开发协议（`md/TEAM_WORKFLOW.md` 第 5 条与第 6 条）：
-
-| 模式 | 环境变量配置 | 说明与行为 |
-|---|---|---|
-| **开发 Mock 模式** (默认) | `VITE_DATA_MODE=mock` | 使用 `src/mocks/fixtures.ts` 静态数据。页面顶部醒目标注“开发 Mock 模式，非 SWMM 结果”。 |
-| **真实 API 模式** | `VITE_DATA_MODE=api` | 连接 FastAPI 后端（默认 `http://localhost:8000`）。若后端不可用或接口报错，**严格显示真实错误状态，不隐蔽降级为 mock 或伪造 SWMM 结果**。 |
-
-### 动态切换模式
-页面顶部状态栏右侧提供了 `[Mock] / [Real API]` 实时切换按钮，开发者可随时在界面上切换测试，选择会自动保存在浏览器的 `localStorage` 中。
-
----
-
-## 3. 架构设计与目录结构
-
+```bash
+npm install
+npm run dev:web
 ```
+
+Open `http://localhost:5173`. The app opens the upload-first site portal. The portal checks source files, builds the supplied geometry and runs the FloodOps TypeScript engine in the browser; it does not require FastAPI.
+
+To run the web workspace directly after installing the repository dependencies:
+
+```bash
+cd apps/web
+npm run dev
+```
+
+Run the main app's production build and TypeScript checks from the repository root:
+
+```bash
+npm -w township-floodops-web run build
+npm -w township-floodops-web run lint
+```
+
+## 2. Site portal and data modes
+
+### Default: your imported site
+
+The portal accepts a required SWMM `.inp`, an optional layout `.geojson` and an optional height grid `.asc`, all in the same projected metric reference. Importing a `.inp` here runs the browser FloodOps engine, not native EPA SWMM. Projects, retained runs, inspections/media and proposals use browser-local storage. The operations register also remains local to the browser.
+
+Use **Check my files**, review separate map and simulation readiness, then choose **Build my township**. See the [file specification and sample walkthrough](../apps/web/public/site-examples/README.md).
+
+### Separate illustrative demo
+
+Choose **Open illustrative demo** on the portal to access the earlier synthetic township and its Settings menu. The demo supports three explicit data modes:
+
+| Mode | Environment setting | Behaviour |
+|---|---|---|
+| **Engine** (default for the illustrative demo) | `VITE_DATA_MODE=engine` | Runs the TypeScript browser engine on the synthetic demo township. Results remain uncalibrated. |
+| **Mock** | `VITE_DATA_MODE=mock` | Uses `src/mocks/fixtures.ts` and an explicitly identified mock mode. Fixtures are not newly executed SWMM runs. |
+| **Live FastAPI** | `VITE_DATA_MODE=api` | Connects to the Python API, defaulting to `http://localhost:8000`. API or engine failures remain visible; there is no silent mock fallback. |
+
+`VITE_API_BASE_URL` sets the API destination. Change modes through **Settings**; the selection and API URL are retained in `localStorage`. A saved browser choice takes precedence over the environment default. These settings select the illustrative demo's source; they do not turn the upload-first portal into a server-backed import flow.
+
+For native calculations, follow the [backend setup guide](BACKEND_SETUP.md). For the browser story, use the [three-minute runbook](DEMO_RUNBOOK.md) or [exact operator walkthrough](EXACT_DEMO_WALKTHROUGH.md).
+
+## 3. Architecture and directory layout
+
+```text
 apps/web/
 ├── src/
 │   ├── api/
-│   │   └── client.ts            # 统一切换 Mock/Real API 的客户端实现
+│   │   └── client.ts            # Explicit Engine / Mock / API client
 │   ├── components/
-│   │   ├── StatusHeader.tsx     # 顶部状态栏（模式切换、SWMM 引擎健康状况、错误提醒）
-│   │   ├── SceneViewer.tsx      # R3F 3D 住宅区数字孪生视口（节点、管网、进水口、地面上下文）
-│   │   ├── SimulationHUD.tsx    # 水力工况设定、不可变 Run 执行、时间轴回放与指标卡片
-│   │   ├── AssetDetailModal.tsx # 资产属性详情与现场巡检历史抽屉
-│   │   └── InspectionModal.tsx  # 现场目测格栅覆盖率录入表单
+│   │   ├── StatusHeader.tsx     # Settings, source mode, health and errors
+│   │   ├── SceneViewer.tsx      # Illustrative R3F township viewport
+│   │   ├── SimulationHUD.tsx    # Scenario, run, timeline and metric controls
+│   │   ├── AssetDetailModal.tsx # Asset details and inspection history
+│   │   └── InspectionModal.tsx  # Inspection observations and attachments
+│   ├── site/                   # Upload portal, imported-site scene and comparisons
+│   │   ├── api.ts              # Local site request adapter
+│   │   └── local/              # Browser engine execution and IndexedDB store
+│   ├── operations/             # Problems register and follow-up records
+│   ├── maintenance/            # Evidence-linked proposals and lifecycle
+│   ├── story/                  # Guided D07 demo and calculation checks
+│   ├── engine/                 # Engine adapters and workers
 │   ├── mocks/
-│   │   └── fixtures.ts          # 严格符合团队 v1 契约的合成住宅区管网与模拟帧数据
+│   │   └── fixtures.ts         # Explicitly labelled demo fixtures
 │   ├── types/
-│   │   └── index.ts             # 契约 TypeScript 定义（Asset, Conduit, Inlet, Frame, Metric 等）
-│   ├── App.tsx                  # 核心交互状态管理与总控装配
-│   ├── main.tsx                 # React 入口
-│   └── index.css                # Tailwind 基础样式
-├── .env.example                 # 环境变量模板
+│   │   └── index.ts            # Contract types: assets, frames, metrics and records
+│   ├── App.tsx                 # Portal/demo routing and application state
+│   ├── main.tsx                # React entry point
+│   └── index.css               # Base styles and Tailwind setup
+├── .env.example                # Environment setting template
 ├── package.json
-└── vite.config.ts               # Vite 构建配置（端口 5173）
+└── vite.config.ts              # Vite configuration; port 5173
 ```
 
----
+The original team boundary and initial API schema are documented in the [team workflow](TEAM_WORKFLOW.md), sections 5 and 6. Current machine-readable API interfaces are in [contracts/openapi.json](../contracts/openapi.json).
 
-## 4. 坐标与数据规范
+## 4. Coordinates and data conventions
 
-- **局部坐标系：** 资产数据中的 `position_m: {x, y, z}` 分别为东、北、高程（米）。
-- **Three.js 映射：** 集中通过 `toThreeCoords` 转换为 `[x, z, -y]`，禁止组件内部硬编码魔数。
-- **数据来源标识：** 始终区分 `observed`、`synthetic`、`assumed` 与 `simulated`，不将合成住宅区伪装为现场实测。
+- **Local coordinates:** `position_m: {x, y, z}` means east, north and elevation in metres.
+- **Three.js mapping:** use the shared `toThreeCoords` conversion to produce `[x, z, -y]`; avoid hard-coded coordinate conversions inside components.
+- **Source labels:** distinguish `observed`, `synthetic`, `assumed` and `simulated`. A synthetic township is not a surveyed site.
+- **Inspection versus hydraulics:** visible grate coverage and assumed hydraulic inlet restriction are separate inputs.
+- **Failures:** show calculation, storage and API failures. Never silently substitute mock output for a failed real calculation.
+
+## Documentation update — 22 October 2026
+
+Converted this guide to English and corrected the outdated mock-default instructions to match the current upload-first portal and separate demo settings. This was a documentation update; no dependencies, application code or simulation behaviour changed.
