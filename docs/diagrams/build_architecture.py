@@ -8,10 +8,10 @@ RED = '#c8102e'
 GOLD = '#f1b43c'
 PALE = '#f7e5e8'
 BG = '#faf8f2'
-parts = [f'''<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1040" viewBox="0 0 1600 1040" role="img" aria-labelledby="title description">
+parts = [f'''<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1360" viewBox="0 0 1600 1360" role="img" aria-labelledby="title description">
 <title id="title">FloodOps system architecture</title>
-<desc id="description">The default browser portal imports INP, GeoJSON and ASC files, checks readiness, builds a React and Three.js workspace, runs the TypeScript flood engine in a web worker, and presents results and comparisons. Local browser storage uses IndexedDB for projects, runs and media and localStorage for the operations register. A separate illustrative demo can call the optional FastAPI service, which runs native EPA SWMM and retains SQLite metadata and local run files.</desc>
-<rect width="1600" height="1040" rx="24" fill="{BG}"/>
+<desc id="description">The default browser portal imports INP, GeoJSON and ASC files, checks readiness, builds a React and Three.js workspace, and runs the TypeScript flood engine in a web worker. Rule-based AI decision support diagnoses baseline bottlenecks and ponding, generates pipe upsizing, relief pipe and extra inlet candidates, simulates them with the same browser engine, and ranks improving options for map pins and engineering review. This uses programmed rules, not machine learning or an LLM. Local browser storage uses IndexedDB for projects, retained runs and media and localStorage for the operations register. A separate illustrative demo can call the optional FastAPI service, which runs native EPA SWMM and retains SQLite metadata and local run files.</desc>
+<rect width="1600" height="1360" rx="24" fill="{BG}"/>
 <defs>
   <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerUnits="userSpaceOnUse" markerWidth="17" markerHeight="17" orient="auto-start-reverse"><path d="M2 2L10 6L2 10" fill="none" stroke="{INK}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
 </defs>
@@ -64,22 +64,39 @@ for x, kind, label, sub in [
 for start, end in [(217, 395), (534, 710), (850, 1024), (1165, 1338)]:
     line(f'M{start} 284H{end}')
 
-# Persistence and investigation output: separate from the solver.
-icon(780, 535, 'database')
-text(780, 621, 'Browser storage')
-text(780, 655, 'IndexedDB + localStorage', 'sub')
-line('M780 436V473', both=True)
+# Automated suggestions: programmed rules generate candidates; simulation tests them.
+line('M1410 437V455H40V575H80')
+text(800, 444, 'Baseline results', 'sub')
+text(80, 497, 'RULE-BASED AI · SIMULATION-BASED DECISION SUPPORT', 'section')
+for x, kind, label, sub, detail in [
+    (150, 'portal', 'Diagnose problems', 'Bottlenecks · ponding', 'Up to 3 detected problems'),
+    (570, 'swmm', 'Generate fixes', 'Upsize · relief pipe · extra inlet', 'Up to 8 candidate fixes'),
+    (990, 'engine', 'Simulate candidates', 'Same browser flood engine', 'Same rain · baseline comparison'),
+    (1410, 'results', 'Rank & recommend', 'Improvement · indicative cost', 'Map pins · before / after'),
+]:
+    icon(x, 575, kind)
+    text(x, 662, label)
+    text(x, 696, sub, 'sub')
+    text(x, 726, detail, 'sub')
+for start, end in [(222, 495), (642, 916), (1062, 1338)]:
+    line(f'M{start} 575H{end}')
+text(800, 783, 'Programmed rules · no ML / LLM · uncalibrated results require engineering review', 'sub')
 
-icon(1410, 535, 'operations')
-text(1410, 621, 'Operations & drafts')
-text(1410, 655, 'Evidence · follow-up · exports', 'sub')
-line('M1410 437V472')
-line('M1340 535H850', both=True)
-text(1095, 519, 'Save / reopen', 'sub')
+# Persistence and investigation output: retained runs are saved when accepted.
+icon(780, 875, 'database')
+text(780, 961, 'Browser storage')
+text(780, 995, 'IndexedDB + localStorage', 'sub')
+
+icon(1410, 875, 'operations')
+text(1410, 961, 'Operations & drafts')
+text(1410, 995, 'Evidence · follow-up · exports', 'sub')
+line('M1410 747V812')
+line('M1340 875H850', both=True)
+text(1095, 859, 'Save / reopen', 'sub')
 
 # Explicit alternate route: the default portal does not invoke this API.
-parts.append('<path d="M80 715H1520" stroke="#ded8cd" stroke-width="2"/>')
-text(80, 765, 'OPTIONAL · ILLUSTRATIVE DEMO API MODE', 'section')
+parts.append('<path d="M80 1035H1520" stroke="#ded8cd" stroke-width="2"/>')
+text(80, 1085, 'OPTIONAL · ILLUSTRATIVE DEMO API MODE', 'section')
 
 for x, kind, label, sub in [
     (150, 'demo', 'Illustrative demo', 'Explicit API mode'),
@@ -87,14 +104,14 @@ for x, kind, label, sub in [
     (990, 'swmm', 'Native EPA SWMM', 'Network simulation'),
     (1410, 'evidence', 'Retained evidence', 'SQLite metadata · local files'),
 ]:
-    icon(x, 861, kind)
-    text(x, 948, label)
-    text(x, 982, sub, 'sub')
+    icon(x, 1181, kind)
+    text(x, 1268, label)
+    text(x, 1302, sub, 'sub')
 
-line('M222 861H495', both=True)
-line('M642 861H916', both=True)
-line('M1062 861H1338')
-text(1200, 841, 'Run outputs', 'sub')
+line('M222 1181H495', both=True)
+line('M642 1181H916', both=True)
+line('M1062 1181H1338')
+text(1200, 1161, 'Run outputs', 'sub')
 
 parts.append('</svg>')
 OUT.write_text('\n'.join(parts), encoding='utf-8')

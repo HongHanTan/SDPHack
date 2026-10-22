@@ -2,7 +2,7 @@
 // placed from the engine SiteSpec (team coordinates), with the FloodOps engine's street water.
 import { useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { Line, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import type { SiteSpec } from '@floodops/engine/scenario/site';
 import type { AssetConduit, AssetInlet, AssetNode, ConduitStatus, NodeStatus, SimulationFrame } from '../types';
@@ -19,8 +19,8 @@ import { cityCamera, fogScale, rainPlacement } from './siteCity';
 import { LinkedCamera, type CameraLink } from '../story/LinkedCamera';
 import { FixPins, type MapPin } from './FixPins';
 
-/** Links already posed at a site's overview (keyed by site), so a remount keeps the shared user view. */
-const posedLinks = new WeakMap<CameraLink, string>();
+/** A link is created per project; variants and remounts keep the shared user view. */
+const posedLinks = new WeakSet<CameraLink>();
 
 export interface SiteCitySceneProps {
   site: SiteSpec;
@@ -39,6 +39,8 @@ export interface SiteCitySceneProps {
   cameraLink?: CameraLink;
   /** Automated fix analysis pins (team coordinates), drawn as cards on the map. */
   pins?: readonly MapPin[];
+  /** Newly built pipes in this run; highlighted independently of their hydraulic status colour. */
+  addedConduitIds?: readonly string[];
 }
 
 /** SceneLook sets the shared fog distances for the built-in site; stretch them for larger sites. */
@@ -56,15 +58,15 @@ function FogScale({ k }: { k: number }) {
   return null;
 }
 
-export function SiteCityScene({ site, phase, xray, selected, onSelect, frame, depth, raining, rainMmh, cameraLink, pins }: SiteCitySceneProps) {
+export function SiteCityScene({ site, phase, xray, selected, onSelect, frame, depth, raining, rainMmh, cameraLink, pins, addedConduitIds }: SiteCitySceneProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const f = useMemo(() => siteFrame(site), [site.key]);
   const cam = useMemo(() => cityCamera(f), [f]);
   const rain = useMemo(() => rainPlacement(f), [f]);
-  // Tay's LinkedCamera applies link.pose when it mounts, so the pose is set to this site's overview first (once per link and site).
-  if (cameraLink && posedLinks.get(cameraLink) !== site.key) {
+  // LinkedCamera applies link.pose when it mounts; initialise it once per project's shared link.
+  if (cameraLink && !posedLinks.has(cameraLink)) {
     cameraLink.pose = { position: [...cam.position], target: [...cam.target] };
-    posedLinks.set(cameraLink, site.key);
+    posedLinks.add(cameraLink);
   }
   const controlsRef = useRef<any>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
@@ -135,17 +137,29 @@ export function SiteCityScene({ site, phase, xray, selected, onSelect, frame, de
             })}
             {conduits.map((c) => {
               const s = pipeState.get(c.conduit_id);
+              const from = nodeMap.get(c.from_node_id), to = nodeMap.get(c.to_node_id);
+              const added = addedConduitIds?.includes(c.conduit_id);
               return (
+                <group key={c.conduit_id} name={c.conduit_id}>
                 <ConduitMesh
-                  key={c.conduit_id}
                   conduit={c}
-                  fromNode={nodeMap.get(c.from_node_id)}
-                  toNode={nodeMap.get(c.to_node_id)}
+                  fromNode={from}
+                  toNode={to}
                   status={s?.status ?? 'unknown'}
                   flowM3s={s?.flow ?? 0}
                   isSelected={selected === c.conduit_id}
                   onClick={() => onSelect(c.conduit_id)}
                 />
+                {added && from && to && <Line
+                  points={[from, to].map((n) => {
+                    const p = toThreeCoords(n.position_m);
+                    return [p[0], p[1] + c.diameter_m / 2, p[2]] as [number, number, number];
+                  })}
+                  color="#a855f7" lineWidth={4} dashed dashSize={2} gapSize={1} transparent toneMapped={false}
+                  depthTest={false} depthWrite={false} renderOrder={20}
+                  onClick={(e) => { e.stopPropagation(); onSelect(c.conduit_id); }}
+                />}
+                </group>
               );
             })}
             <FlowRibbons nodes={nodes} conduits={conduits} frame={frame} onSelect={(c) => onSelect(c.conduit_id)} />

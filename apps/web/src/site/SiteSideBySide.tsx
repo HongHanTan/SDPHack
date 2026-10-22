@@ -12,6 +12,7 @@ import { rainingAt } from './siteCity';
 import { depthAt } from './local/runs';
 import { candidateTitle, comparisonItems, frameAtTime, runChange, runFixLabel, type ComparisonItem } from './compare';
 import type { SiteResult } from './types';
+import { runSiteView } from './runSiteView';
 
 interface PaneProps {
   title: string; result: SiteResult; timeS: number; site: SiteSpec; phase: number; xray: boolean; selected: string | null;
@@ -22,10 +23,13 @@ function ComparePane({ title, result, timeS, site, phase, xray, selected, onSele
   const frame = frameAtTime(result.frames, timeS);
   const t = frame?.timestamp_s;
   const depth = useMemo(() => (t === undefined ? null : depthAt(result.depth, t)), [result, t]);
+  const geometry = useMemo(() => runSiteView(site, result.run), [site, result.run]);
   return <div className="story-viewport">
     <div className="story-pane-title"><span>{title}</span><small>{((t ?? 0) / 60).toFixed(1)} min</small></div>
-    <SiteCityScene site={site} phase={phase} xray={xray} selected={selected} onSelect={onSelect} frame={frame}
-      depth={result.depth ? depth : null} raining={rainingAt(storm, t, playing)} rainMmh={storm && t !== undefined ? rainIntensityAt(storm, t) : undefined} cameraLink={cameraLink}/>
+    {geometry.error && <div role="alert" className="site-error">{geometry.error}</div>}
+    {geometry.site && <SiteCityScene site={geometry.site} addedConduitIds={geometry.addedConduitIds} phase={phase} xray={xray} selected={selected} onSelect={onSelect} frame={frame}
+      depth={result.depth ? depth : null} raining={rainingAt(storm, t, playing)} rainMmh={storm && t !== undefined ? rainIntensityAt(storm, t) : undefined} cameraLink={cameraLink}/>}
+    {geometry.addedConduitIds.length > 0 && <div className="site-added-pipe-note">New relief pipe · dashed violet route</div>}
   </div>;
 }
 

@@ -23,3 +23,8 @@ tmp/
 output/*.log
 output/recorded-walkthrough/
 output/site-onboarding-demo/
+
+reference-demo-video/
+
+flow/
+output/
